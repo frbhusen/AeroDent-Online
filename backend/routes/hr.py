@@ -7,6 +7,7 @@ from backend.auth import login_required, require_permission
 from backend.extensions import db
 from backend.models import StaffCredential, StaffShift, TimeClock, User
 from backend.services.audit import log_activity
+from backend.services.validation import query_int, query_page
 
 
 hr_blueprint = Blueprint("hr", __name__, url_prefix="/api/hr")
@@ -14,10 +15,31 @@ hr_blueprint = Blueprint("hr", __name__, url_prefix="/api/hr")
 VALID_SHIFT_STATUSES = frozenset({"scheduled", "completed", "absent", "leave"})
 VALID_CREDENTIAL_TYPES = frozenset({"license", "certification", "insurance", "registration", "other"})
 VALID_CREDENTIAL_STATUSES = frozenset({"active", "expired", "revoked"})
+VALID_SHIFT_TYPES = frozenset({"regular", "morning", "evening", "on_call"})
+# Mirrors the column sizes in backend/models/hr.py (notes are TEXT; capped for sanity).
+SHIFT_TEXT_LIMITS = {"notes": 1000}
+CREDENTIAL_TEXT_LIMITS = {"title": 150, "credential_number": 100, "issuing_authority": 150, "notes": 1000}
 
 
 def _error(message, status):
     return jsonify({"error": message}), status
+
+
+def _validate_input(data, text_limits, enums):
+    """Rejects non-text values, over-long text, and unknown enum values before any write."""
+    for field, limit in text_limits.items():
+        value = data.get(field)
+        if value is None:
+            continue
+        if not isinstance(value, str):
+            return _error(f"{field} must be text.", 422)
+        if len(value.strip()) > limit:
+            return _error(f"{field} is too long (maximum {limit} characters).", 422)
+    for field, allowed in enums.items():
+        value = data.get(field)
+        if value is not None and (not isinstance(value, str) or value not in allowed):
+            return _error(f"Invalid {field.replace('_', ' ')}.", 422)
+    return None
 
 
 def _scoped_shift(shift_id):
@@ -132,7 +154,7 @@ def list_shifts():
 
     if "user_id" in request.args:
         try:
-            query = query.where(StaffShift.user_id == int(request.args["user_id"]))
+            query = query.where(StaffShift.user_id == query_int(request.args["user_id"]))
         except ValueError:
             return _error("user_id must be an integer.", 400)
     elif g.current_user.role not in {"head_doctor", "super_admin"} and request.args.get("my_only") == "true":
@@ -167,6 +189,10 @@ def create_shift():
     if not isinstance(data, dict):
         return _error("Request body must be a JSON object.", 400)
 
+    input_error = _validate_input(data, SHIFT_TEXT_LIMITS, {"shift_type": VALID_SHIFT_TYPES, "status": VALID_SHIFT_STATUSES})
+    if input_error:
+        return input_error
+
     user_id = data.get("user_id")
     if not isinstance(user_id, int):
         return _error("user_id is required and must be an integer.", 400)
@@ -191,7 +217,7 @@ def create_shift():
         return _error("start_time must be earlier than end_time.", 422)
 
     status = data.get("status", "scheduled")
-    if status not in VALID_SHIFT_STATUSES:
+    if not isinstance(status, str) or status not in VALID_SHIFT_STATUSES:
         return _error("Invalid shift status.", 422)
 
     if _shift_overlaps(g.current_user.clinic_id, user_id, shift_date, start_time, end_time):
@@ -233,25 +259,32 @@ def update_shift(shift_id):
     if not shift:
         return _error("Shift not found.", 404)
 
-    data = request.get_json(silent=True) or {}
+    data = request.get_json(silent=True)
+    if data is None:
+        data = {}
+    if not isinstance(data, dict):
+        return _error("Request body must be a JSON object.", 400)
+    input_error = _validate_input(data, SHIFT_TEXT_LIMITS, {"shift_type": VALID_SHIFT_TYPES, "status": VALID_SHIFT_STATUSES})
+    if input_error:
+        return input_error
     if "date" in data:
         try:
             shift.date = date.fromisoformat(data["date"])
-        except ValueError:
+        except (ValueError, TypeError):
             db.session.rollback()
             return _error("date must be an ISO date.", 422)
 
     if "start_time" in data:
         try:
             shift.start_time = datetime.strptime(data["start_time"], "%H:%M").time()
-        except ValueError:
+        except (ValueError, TypeError):
             db.session.rollback()
             return _error("start_time must be HH:MM.", 422)
 
     if "end_time" in data:
         try:
             shift.end_time = datetime.strptime(data["end_time"], "%H:%M").time()
-        except ValueError:
+        except (ValueError, TypeError):
             db.session.rollback()
             return _error("end_time must be HH:MM.", 422)
 
@@ -259,7 +292,7 @@ def update_shift(shift_id):
         shift.shift_type = str(data["shift_type"] or "regular").strip()
 
     if "status" in data:
-        if data["status"] not in VALID_SHIFT_STATUSES:
+        if not isinstance(data["status"], str) or data["status"] not in VALID_SHIFT_STATUSES:
             db.session.rollback()
             return _error("Invalid shift status.", 422)
         shift.status = data["status"]
@@ -359,7 +392,11 @@ def time_clock_punch():
         .order_by(TimeClock.id.desc())
     )
 
-    data = request.get_json(silent=True) or {}
+    data = request.get_json(silent=True)
+    if data is None:
+        data = {}
+    if not isinstance(data, dict):
+        return _error("Request body must be a JSON object.", 400)
     notes = str(data.get("notes") or "").strip() or None
 
     if active_entry:
@@ -427,7 +464,7 @@ def list_time_clock_records():
         query = query.where(TimeClock.user_id == g.current_user.id)
     elif "user_id" in request.args:
         try:
-            query = query.where(TimeClock.user_id == int(request.args["user_id"]))
+            query = query.where(TimeClock.user_id == query_int(request.args["user_id"]))
         except ValueError:
             return _error("user_id must be an integer.", 400)
 
@@ -466,7 +503,7 @@ def list_credentials():
         query = query.where(StaffCredential.user_id == g.current_user.id)
     elif "user_id" in request.args:
         try:
-            query = query.where(StaffCredential.user_id == int(request.args["user_id"]))
+            query = query.where(StaffCredential.user_id == query_int(request.args["user_id"]))
         except ValueError:
             return _error("user_id must be an integer.", 400)
 
@@ -527,6 +564,10 @@ def create_credential():
     if not isinstance(data, dict):
         return _error("Request body must be a JSON object.", 400)
 
+    input_error = _validate_input(data, CREDENTIAL_TEXT_LIMITS, {"credential_type": VALID_CREDENTIAL_TYPES})
+    if input_error:
+        return input_error
+
     user_id = data.get("user_id")
     if not isinstance(user_id, int):
         return _error("user_id is required and must be an integer.", 400)
@@ -553,14 +594,14 @@ def create_credential():
     if data.get("issue_date"):
         try:
             issue_date = date.fromisoformat(data["issue_date"])
-        except ValueError:
+        except (ValueError, TypeError):
             return _error("issue_date must be an ISO date.", 422)
 
     credential = StaffCredential(
         clinic_id=g.current_user.clinic_id,
         user_id=user_id,
         title=title,
-        credential_type=data.get("credential_type", "license"),
+        credential_type=data.get("credential_type") or "license",
         credential_number=str(data.get("credential_number") or "").strip() or None,
         issuing_authority=str(data.get("issuing_authority") or "").strip() or None,
         issue_date=issue_date,
@@ -594,7 +635,14 @@ def update_credential(credential_id):
     if not credential:
         return _error("Credential not found.", 404)
 
-    data = request.get_json(silent=True) or {}
+    data = request.get_json(silent=True)
+    if data is None:
+        data = {}
+    if not isinstance(data, dict):
+        return _error("Request body must be a JSON object.", 400)
+    input_error = _validate_input(data, CREDENTIAL_TEXT_LIMITS, {"credential_type": VALID_CREDENTIAL_TYPES, "status": VALID_CREDENTIAL_STATUSES})
+    if input_error:
+        return input_error
     if "title" in data:
         t = str(data["title"] or "").strip()
         if t:
@@ -609,11 +657,11 @@ def update_credential(credential_id):
     if "expiry_date" in data:
         try:
             credential.expiry_date = date.fromisoformat(data["expiry_date"])
-        except ValueError:
+        except (ValueError, TypeError):
             return _error("expiry_date must be an ISO date.", 422)
 
     if "status" in data:
-        if data["status"] not in VALID_CREDENTIAL_STATUSES:
+        if not isinstance(data["status"], str) or data["status"] not in VALID_CREDENTIAL_STATUSES:
             return _error("Invalid credential status.", 422)
         credential.status = data["status"]
 

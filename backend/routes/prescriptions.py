@@ -7,6 +7,7 @@ from backend.auth import login_required, require_permission
 from backend.extensions import db
 from backend.models import Patient, Prescription, PrescriptionMedication, User
 from backend.services.audit import log_activity
+from backend.services.validation import query_int, query_page
 
 
 prescriptions_blueprint = Blueprint(
@@ -24,6 +25,8 @@ ELIGIBLE_DOCTOR_ROLES = frozenset({"head_doctor", "doctor"})
 DEFAULT_PER_PAGE = 25
 MAX_PER_PAGE = 100
 MAX_MEDICATIONS = 100
+# Mirrors the column sizes on PrescriptionMedication.
+MEDICATION_FIELD_LIMITS = {"name": 200, "dosage": 100, "frequency": 100, "duration": 100, "instructions": 2000}
 
 
 def _error(message, status):
@@ -99,12 +102,17 @@ def _validate_medications(value):
             return None, _error("Unsupported medication field.", 400)
         if not isinstance(medication.get("name"), str) or not medication["name"].strip():
             return None, _error("Medication name is required.", 422)
+        if len(medication["name"].strip()) > MEDICATION_FIELD_LIMITS["name"]:
+            return None, _error("Medication name is too long.", 422)
 
         item = {"name": medication["name"].strip()}
         for field in MEDICATION_FIELDS - {"name"}:
             value = medication.get(field)
             if value is not None and not isinstance(value, str):
                 return None, _error(f"Medication {field} must be a string or null.", 422)
+            limit = MEDICATION_FIELD_LIMITS.get(field)
+            if isinstance(value, str) and limit and len(value) > limit:
+                return None, _error(f"Medication {field} is too long (maximum {limit} characters).", 422)
             item[field] = value
         normalized.append(item)
 
@@ -190,7 +198,7 @@ def list_prescriptions():
     ):
         if field in request.args:
             try:
-                value = int(request.args[field])
+                value = query_int(request.args[field])
             except ValueError:
                 return _error(f"{field} must be a positive integer.", 400)
             if value <= 0:
@@ -204,9 +212,9 @@ def list_prescriptions():
         query = query.where(Prescription.date == requested_date)
 
     try:
-        page = max(int(request.args.get("page", 1)), 1)
+        page = max(query_page(request.args.get("page", 1)), 1)
         per_page = min(
-            max(int(request.args.get("per_page", DEFAULT_PER_PAGE)), 1),
+            max(query_int(request.args.get("per_page", DEFAULT_PER_PAGE)), 1),
             MAX_PER_PAGE,
         )
     except ValueError:

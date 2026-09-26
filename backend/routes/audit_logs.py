@@ -4,6 +4,7 @@ from sqlalchemy import func
 from backend.auth.routes import login_required
 from backend.extensions import db
 from backend.models.audit_log import AuditLog
+from backend.services.validation import query_int, query_page
 
 
 audit_blueprint = Blueprint("audit_logs", __name__, url_prefix="/api/audit-logs")
@@ -22,7 +23,7 @@ def list_audit_logs():
     if user.role != "super_admin":
         query = query.where(AuditLog.clinic_id == user.clinic_id)
     else:
-        clinic_filter = request.args.get("clinic_id", type=int)
+        clinic_filter = request.args.get("clinic_id", type=query_int)
         if clinic_filter:
             query = query.where(AuditLog.clinic_id == clinic_filter)
 
@@ -34,8 +35,8 @@ def list_audit_logs():
     if resource_filter:
         query = query.where(AuditLog.resource_type == resource_filter)
 
-    limit = min(request.args.get("limit", default=50, type=int), 200)
-    offset = max(request.args.get("offset", default=0, type=int), 0)
+    limit = max(1, min(request.args.get("limit", default=50, type=query_int), 200))
+    offset = max(request.args.get("offset", default=0, type=query_int), 0)
 
     total = db.session.scalar(db.select(func.count()).select_from(query.subquery()))
     logs = db.session.scalars(

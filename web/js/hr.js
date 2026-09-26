@@ -108,7 +108,7 @@ function _renderTimeClock() {
         const hoursDisplay = r.total_hours != null ? `${Number(r.total_hours).toFixed(2)}h` : "—";
         const day = r.clock_in ? new Date(r.clock_in).toLocaleDateString() : "—";
         return `<tr>
-            <td>${r.user_name || "—"}</td>
+            <td>${esc(r.user_name || "—")}</td>
             <td>${day}</td>
             <td>${inTime}</td>
             <td>${outTime}</td>
@@ -160,12 +160,12 @@ function _renderShifts() {
                <button class="button btn-danger-ghost btn-xs" data-hr-delete-shift="${s.id}" title="${t("delete")}">🗑</button>`
             : "";
         return `<tr>
-          <td>${s.user_name}</td>
-          <td>${s.date}</td>
-          <td>${s.start_time} – ${s.end_time}</td>
-          <td>${s.shift_type}</td>
+          <td>${esc(s.user_name)}</td>
+          <td>${esc(s.date)}</td>
+          <td>${esc(s.start_time)} – ${esc(s.end_time)}</td>
+          <td>${esc(t(s.shift_type === "on_call" ? "onCall" : s.shift_type) || s.shift_type)}</td>
           <td>${_shiftStatusBadge(s.status)}</td>
-          <td>${s.notes || "—"}</td>
+          <td>${esc(s.notes || "—")}</td>
           <td class="action-cell">${editDel}</td>
         </tr>`;
     }).join("") || `<tr><td colspan="7" class="muted tc-empty">${t("noShifts")}</td></tr>`;
@@ -231,12 +231,12 @@ function _renderCredentials() {
             ? `${c.days_remaining}d`
             : `${Math.abs(c.days_remaining)}d ${t("ago")}`;
         return `<tr>
-          <td>${c.user_name}</td>
-          <td>${c.title}</td>
-          <td>${t("credType_" + c.credential_type) || c.credential_type}</td>
-          <td>${c.credential_number || "—"}</td>
-          <td>${c.issuing_authority || "—"}</td>
-          <td>${c.expiry_date}</td>
+          <td>${esc(c.user_name)}</td>
+          <td>${esc(c.title)}</td>
+          <td>${esc(t("credType_" + c.credential_type) || c.credential_type)}</td>
+          <td>${esc(c.credential_number || "—")}</td>
+          <td>${esc(c.issuing_authority || "—")}</td>
+          <td>${esc(c.expiry_date)}</td>
           <td>${daysLabel}</td>
           <td>${_credBadge(c.computed_status)}</td>
           <td class="action-cell">${editDel}</td>
@@ -285,7 +285,7 @@ function renderHR() {
         return `<div class="hr-container"><div class="loading-spinner">⏳ ${t("loading")}</div></div>`;
     }
     if (state.hrError) {
-        return `<div class="hr-container"><div class="error-banner">${state.hrError}</div></div>`;
+        return `<div class="hr-container"><div class="error-banner">${esc(state.hrError)}</div></div>`;
     }
 
     const tab = state.hrTab || "time_clock";
@@ -323,27 +323,27 @@ function renderHR() {
 function _hrShiftModal(shift) {
     const isEdit = !!shift;
     const staffOptions = (state.staff || []).map(u =>
-        `<option value="${u.id}" ${shift?.user_id === u.id ? "selected" : ""}>${u.name} (${u.role})</option>`
+        `<option value="${u.id}" ${shift?.user_id === u.id ? "selected" : ""}>${esc(u.name)} (${esc(u.role)})</option>`
     ).join("");
     return `
     <h2>${isEdit ? t("editShift") : t("scheduleShift")}</h2>
     <form id="hrShiftForm" class="form-grid">
-      <input type="hidden" name="shift_id" value="${shift?.id || ""}">
+      <input type="hidden" name="shift_id" value="${esc(shift?.id || "")}">
       <div class="field full-span">
         <label>${t("staff")}</label>
         <select name="user_id" required>${staffOptions}</select>
       </div>
       <div class="field">
         <label>${t("date")}</label>
-        <input type="date" name="date" value="${shift?.date || ""}" required>
+        <input type="date" name="date" value="${esc(shift?.date || "")}" required>
       </div>
       <div class="field">
         <label>${t("startTime")}</label>
-        <input type="time" name="start_time" value="${shift?.start_time || "08:00"}" required>
+        <input type="time" name="start_time" value="${esc(shift?.start_time || "08:00")}" required>
       </div>
       <div class="field">
         <label>${t("endTime")}</label>
-        <input type="time" name="end_time" value="${shift?.end_time || "17:00"}" required>
+        <input type="time" name="end_time" value="${esc(shift?.end_time || "17:00")}" required>
       </div>
       <div class="field">
         <label>${t("shiftType")}</label>
@@ -365,7 +365,7 @@ function _hrShiftModal(shift) {
       </div>
       <div class="field full-span">
         <label>${t("notes")}</label>
-        <input type="text" name="notes" value="${shift?.notes || ""}" maxlength="300">
+        <input type="text" name="notes" value="${esc(shift?.notes || "")}" maxlength="300">
       </div>
       <div class="field full-span form-actions">
         <button type="submit" class="button button-primary">${isEdit ? t("save") : t("add")}</button>
@@ -377,19 +377,19 @@ function _hrShiftModal(shift) {
 function _hrCredentialModal(cred) {
     const isEdit = !!cred;
     const staffOptions = (state.staff || []).map(u =>
-        `<option value="${u.id}" ${cred?.user_id === u.id ? "selected" : ""}>${u.name} (${u.role})</option>`
+        `<option value="${u.id}" ${cred?.user_id === u.id ? "selected" : ""}>${esc(u.name)} (${esc(u.role)})</option>`
     ).join("");
     return `
     <h2>${isEdit ? t("editCredential") : t("addCredential")}</h2>
     <form id="hrCredForm" class="form-grid">
-      <input type="hidden" name="cred_id" value="${cred?.id || ""}">
+      <input type="hidden" name="cred_id" value="${esc(cred?.id || "")}">
       <div class="field full-span">
         <label>${t("staff")}</label>
         <select name="user_id" required>${staffOptions}</select>
       </div>
       <div class="field full-span">
         <label>${t("credentialTitle")}</label>
-        <input type="text" name="title" value="${cred?.title || ""}" required maxlength="200">
+        <input type="text" name="title" value="${esc(cred?.title || "")}" required maxlength="200">
       </div>
       <div class="field">
         <label>${t("type")}</label>
@@ -403,23 +403,23 @@ function _hrCredentialModal(cred) {
       </div>
       <div class="field">
         <label>${t("licenseNumber")}</label>
-        <input type="text" name="credential_number" value="${cred?.credential_number || ""}" maxlength="100">
+        <input type="text" name="credential_number" value="${esc(cred?.credential_number || "")}" maxlength="100">
       </div>
       <div class="field">
         <label>${t("issuingAuthority")}</label>
-        <input type="text" name="issuing_authority" value="${cred?.issuing_authority || ""}" maxlength="200">
+        <input type="text" name="issuing_authority" value="${esc(cred?.issuing_authority || "")}" maxlength="200">
       </div>
       <div class="field">
         <label>${t("issueDate")}</label>
-        <input type="date" name="issue_date" value="${cred?.issue_date || ""}">
+        <input type="date" name="issue_date" value="${esc(cred?.issue_date || "")}">
       </div>
       <div class="field">
         <label>${t("expiryDate")}</label>
-        <input type="date" name="expiry_date" value="${cred?.expiry_date || ""}" required>
+        <input type="date" name="expiry_date" value="${esc(cred?.expiry_date || "")}" required>
       </div>
       <div class="field full-span">
         <label>${t("notes")}</label>
-        <input type="text" name="notes" value="${cred?.notes || ""}" maxlength="300">
+        <input type="text" name="notes" value="${esc(cred?.notes || "")}" maxlength="300">
       </div>
       <div class="field full-span form-actions">
         <button type="submit" class="button button-primary">${isEdit ? t("save") : t("add")}</button>

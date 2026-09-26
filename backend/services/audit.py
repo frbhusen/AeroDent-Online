@@ -78,10 +78,14 @@ def log_activity(
             details=details_str,
             ip_address=ip_address,
         )
-        db.session.add(entry)
-        db.session.flush()
+        # A savepoint keeps an audit-insert failure from poisoning the caller's transaction.
+        with db.session.begin_nested():
+            db.session.add(entry)
         return entry
-    except Exception as err:
-        # Never fail the parent transaction if audit logging encounters an issue
-        print(f"Warning: Failed to log audit activity: {err}")
+    except Exception:
+        # Never fail the parent operation because of audit logging, but do record it.
+        try:
+            current_app.logger.exception("Failed to write audit log entry for action %s", action)
+        except RuntimeError:
+            pass
         return None

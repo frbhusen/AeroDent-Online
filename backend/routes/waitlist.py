@@ -6,6 +6,7 @@ from backend.auth import login_required, require_permission
 from backend.extensions import db
 from backend.models import Appointment, Patient, User, Waitlist
 from backend.services.audit import log_activity
+from backend.services.validation import query_int, query_page
 
 
 waitlist_blueprint = Blueprint("waitlist", __name__, url_prefix="/api/waitlist")
@@ -76,7 +77,7 @@ def list_waitlist():
 
     if "patient_id" in request.args:
         try:
-            query = query.where(Waitlist.patient_id == int(request.args["patient_id"]))
+            query = query.where(Waitlist.patient_id == query_int(request.args["patient_id"]))
         except ValueError:
             return _error("patient_id must be an integer.", 400)
 
@@ -135,7 +136,7 @@ def create_waitlist_entry():
             return _error("preferred_date must be an ISO date (YYYY-MM-DD).", 422)
 
     priority = data.get("priority", "normal")
-    if priority not in WAITLIST_PRIORITIES:
+    if not isinstance(priority, str) or priority not in WAITLIST_PRIORITIES:
         return _error("priority must be one of: normal, high, urgent.", 422)
 
     entry = Waitlist(
@@ -183,12 +184,12 @@ def update_waitlist_entry(entry_id):
         return _error("Request body must be a JSON object.", 400)
 
     if "priority" in data:
-        if data["priority"] not in WAITLIST_PRIORITIES:
+        if not isinstance(data["priority"], str) or data["priority"] not in WAITLIST_PRIORITIES:
             return _error("priority must be one of: normal, high, urgent.", 422)
         entry.priority = data["priority"]
 
     if "status" in data:
-        if data["status"] not in WAITLIST_STATUSES:
+        if not isinstance(data["status"], str) or data["status"] not in WAITLIST_STATUSES:
             return _error("status must be one of: waiting, booked, cancelled.", 422)
         entry.status = data["status"]
 
@@ -251,7 +252,11 @@ def auto_fill_waitlist_entry(entry_id):
     if not entry:
         return _error("Waitlist entry not found.", 404)
 
-    data = request.get_json(silent=True) or {}
+    data = request.get_json(silent=True)
+    if data is None:
+        data = {}
+    if not isinstance(data, dict):
+        return _error("Request body must be a JSON object.", 400)
     target_date_str = data.get("date") or (entry.preferred_date.isoformat() if entry.preferred_date else None)
     target_time_str = data.get("start_time") or "09:00"
 

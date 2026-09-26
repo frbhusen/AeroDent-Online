@@ -86,10 +86,15 @@ def run_security_and_stress_tests():
             with app.test_client() as client:
                 res = client.get("/api/auth/me")
                 assert res.headers.get("X-Content-Type-Options") == "nosniff", "Missing X-Content-Type-Options"
-                assert res.headers.get("X-Frame-Options") == "SAMEORIGIN", "Missing X-Frame-Options"
-                assert res.headers.get("X-XSS-Protection") == "1; mode=block", "Missing X-XSS-Protection"
-                assert res.headers.get("Referrer-Policy") == "strict-origin-when-cross-origin", "Missing Referrer-Policy"
+                assert res.headers.get("X-Frame-Options") == "DENY", "Missing X-Frame-Options"
+                assert res.headers.get("X-XSS-Protection") == "0", "Legacy XSS auditor must be disabled"
+                assert res.headers.get("Referrer-Policy") == "same-origin", "Missing Referrer-Policy"
                 assert "geolocation=()" in res.headers.get("Permissions-Policy", ""), "Missing Permissions-Policy"
+                csp = res.headers.get("Content-Security-Policy", "")
+                assert "script-src 'self'" in csp and "unsafe-inline' ;" not in csp.split("script-src")[1].split(";")[0], csp
+                assert "frame-ancestors 'none'" in csp and "object-src 'none'" in csp, csp
+                assert res.headers.get("Cross-Origin-Opener-Policy") == "same-origin"
+                assert "no-store" in res.headers.get("Cache-Control", ""), "API responses must not be cached"
                 print("PASS: All critical HTTP security headers are enforced.")
 
             # 2. TEST: Global CSRF / Cross-Origin Protection on state-changing API endpoints

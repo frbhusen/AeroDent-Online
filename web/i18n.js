@@ -363,6 +363,25 @@ I18N.en.confirmDeletePatient =
   "Delete this patient and all related clinical records?";
 I18N.ar.confirmDeletePatient = "هل تريد حذف هذا المريض وكل سجلاته السريرية؟";
 let currentLanguage = "ar";
+
+// Online mode keeps only the UI language (a non-sensitive preference) in localStorage.
+// Offline mode keeps it in its IndexedDB settings as before.
+const LANGUAGE_STORAGE_KEY = "aerodent-language";
+
+function storedLanguagePreference() {
+  try {
+    const value = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    return value === "en" || value === "ar" ? value : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function storeLanguagePreference(language) {
+  try {
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+  } catch (_) { /* storage unavailable: preference is optional */ }
+}
 I18N.en.noPhone = "No phone";
 I18N.ar.noPhone = "لا يوجد هاتف";
 I18N.en.readOnly = "Read-only access";
@@ -1626,6 +1645,50 @@ I18N.ar.auditSearchPlaceholder = "ابحث بالمستخدم أو الإجرا�
 
 I18N.en.shortcutSearch = "Search";
 I18N.ar.shortcutSearch = "بحث";
+
+I18N.en.sessionExpiredNotice = "Your session has ended. Please sign in again.";
+I18N.ar.sessionExpiredNotice = "انتهت جلستك. يرجى تسجيل الدخول مجدداً.";
+
+I18N.en.askForTrial = "Ask for a 14-day trial";
+I18N.ar.askForTrial = "اطلب تجربة مجانية لمدة 14 يوماً";
+I18N.en.trialBackToSignIn = "← Back to sign in";
+I18N.ar.trialBackToSignIn = "العودة إلى تسجيل الدخول →";
+I18N.en.trialEyebrow = "14-day free trial";
+I18N.ar.trialEyebrow = "تجربة مجانية لمدة 14 يوماً";
+I18N.en.trialTitle = "Request your AeroDent trial";
+I18N.ar.trialTitle = "اطلب تجربتك في AeroDent";
+I18N.en.trialSubtitle = "Leave your details and we will contact you to set up your clinic.";
+I18N.ar.trialSubtitle = "اترك بياناتك وسنتواصل معك لتجهيز عيادتك.";
+I18N.en.trialName = "Full name";
+I18N.ar.trialName = "الاسم الكامل";
+I18N.en.trialPhone = "Phone number";
+I18N.ar.trialPhone = "رقم الهاتف";
+I18N.en.trialEmail = "Email";
+I18N.ar.trialEmail = "البريد الإلكتروني";
+I18N.en.trialMessage = "Message (optional)";
+I18N.ar.trialMessage = "رسالة (اختياري)";
+I18N.en.trialSubmit = "Request trial";
+I18N.ar.trialSubmit = "اطلب التجربة";
+I18N.en.trialSuccessTitle = "Request received";
+I18N.ar.trialSuccessTitle = "تم استلام طلبك";
+I18N.en.trialSuccessBody = "Thank you. We will contact you soon to set up your 14-day trial.";
+I18N.ar.trialSuccessBody = "شكراً لك. سنتواصل معك قريباً لتفعيل تجربتك لمدة 14 يوماً.";
+I18N.en.trialErrorName = "Please enter your full name.";
+I18N.ar.trialErrorName = "يرجى إدخال اسمك الكامل.";
+I18N.en.trialErrorPhone = "Please enter a valid phone number.";
+I18N.ar.trialErrorPhone = "يرجى إدخال رقم هاتف صحيح.";
+I18N.en.trialErrorEmail = "Please enter a valid email address.";
+I18N.ar.trialErrorEmail = "يرجى إدخال بريد إلكتروني صحيح.";
+I18N.en.trialErrorMessage = "The message must be at most 1000 characters.";
+I18N.ar.trialErrorMessage = "يجب ألا تتجاوز الرسالة 1000 حرف.";
+I18N.en.trialErrorExpired = "This form has expired. Please return to the sign-in page and try again.";
+I18N.ar.trialErrorExpired = "انتهت صلاحية هذا النموذج. يرجى العودة إلى صفحة تسجيل الدخول والمحاولة مجدداً.";
+I18N.en.trialErrorTooMany = "Too many requests. Please try again later.";
+I18N.ar.trialErrorTooMany = "طلبات كثيرة جداً. يرجى المحاولة لاحقاً.";
+I18N.en.trialErrorNetwork = "Unable to reach the AeroDent server. Check your connection and try again.";
+I18N.ar.trialErrorNetwork = "تعذر الاتصال بخادم AeroDent. تحقق من اتصالك وحاول مجدداً.";
+I18N.en.trialErrorGeneric = "Something went wrong. Please try again.";
+I18N.ar.trialErrorGeneric = "حدث خطأ ما. يرجى المحاولة مجدداً.";
 
 function t(key) {
   return I18N[currentLanguage]?.[key] || I18N.en?.[key] || key;

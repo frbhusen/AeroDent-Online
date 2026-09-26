@@ -148,7 +148,7 @@ def run_xray_tests():
                     response = client.get(f"/api/x-rays/{xray_id}/file")
                     assert response.status_code == 200
                     assert response.content_type == "image/webp"
-                    assert response.headers["Cache-Control"] == "private, no-store"
+                    assert "no-store" in response.headers["Cache-Control"] and "private" in response.headers["Cache-Control"]
                     assert response.data[:4] == b"RIFF"
                     print("PASS: Metadata and protected file retrieval work without path leakage.")
 

@@ -12,6 +12,8 @@ from backend.models.audit_log import AuditLog
 from backend.models.payment import Payment
 from backend.models.waitlist import Waitlist
 from backend.models.hr import StaffShift, TimeClock, StaffCredential
+from backend.models.security import AuthThrottle, UserSession
+from backend.models.trial import TrialRequest
 from backend.models.inventory import (
     InventoryBatch,
     InventoryCategory,
@@ -44,4 +46,7 @@ __all__ = [
     "InventoryItem",
     "InventoryBatch",
     "InventoryMovement",
+    "AuthThrottle",
+    "UserSession",
+    "TrialRequest",
 ]

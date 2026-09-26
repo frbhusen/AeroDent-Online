@@ -8,6 +8,7 @@ from backend.auth.service import hash_password
 from backend.extensions import db
 from backend.models import User
 from backend.services.audit import log_activity
+from backend.services.auth_security import revoke_user_sessions, validate_new_password
 
 
 staff_blueprint = Blueprint("staff", __name__, url_prefix="/api")
@@ -100,10 +101,11 @@ def create_staff():
         return _error("A valid email address is required.", 422)
     email = email.strip().lower()
 
-    if not isinstance(password, str) or len(password) < 8:
-        return _error("Password must be at least 8 characters.", 422)
+    password_error = validate_new_password(password)
+    if password_error:
+        return _error(password_error, 422)
 
-    if role not in VALID_STAFF_ROLES:
+    if not isinstance(role, str) or role not in VALID_STAFF_ROLES:
         return _error("Invalid staff role.", 400)
 
     if role == "head_doctor" and g.current_user.role != "super_admin":
@@ -193,7 +195,7 @@ def update_staff(user_id):
 
     if "role" in data:
         new_role = data["role"]
-        if new_role not in VALID_STAFF_ROLES:
+        if not isinstance(new_role, str) or new_role not in VALID_STAFF_ROLES:
             return _error("Invalid staff role.", 400)
         if (
             new_role == "head_doctor"
@@ -240,12 +242,16 @@ def update_staff(user_id):
             if other_heads == 0:
                 return _error("Cannot deactivate the only active head doctor in the clinic.", 422)
         target_user.is_active = new_status
+        if not new_status:
+            revoke_user_sessions(target_user.id)
 
     if "password" in data:
         pwd = data["password"]
-        if not isinstance(pwd, str) or len(pwd) < 8:
-            return _error("Password must be at least 8 characters.", 422)
+        password_error = validate_new_password(pwd)
+        if password_error:
+            return _error(password_error, 422)
         target_user.password_hash = hash_password(pwd)
+        revoke_user_sessions(target_user.id)
 
     try:
         log_activity(

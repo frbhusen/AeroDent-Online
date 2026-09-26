@@ -1,30 +1,43 @@
 from datetime import datetime, timedelta, timezone
 from functools import wraps
-import time
-from collections import defaultdict
 
-from flask import Blueprint, g, jsonify, request, session
+from flask import Blueprint, current_app, g, jsonify, request, session
 from sqlalchemy import func
 
 from backend.extensions import db
 from backend.models import User, Clinic
 from backend.auth.service import verify_password, hash_password
 from backend.services.audit import log_activity, get_client_ip
+from backend.services.auth_security import (
+    cleanup_expired,
+    clear_failures,
+    current_session_record,
+    failure_lock_wait,
+    login_retry_after,
+    normalize_email,
+    rate_limited,
+    record_failure,
+    record_login_failure,
+    record_login_success,
+    revoke_current_session,
+    revoke_user_sessions,
+    start_session,
+    validate_new_password,
+)
 
 
 auth_blueprint = Blueprint("auth", __name__, url_prefix="/api/auth")
 
-_rate_limits = defaultdict(list)
+# Verified against when the email is unknown so both paths cost the same scrypt time and the
+# response timing does not reveal whether an account exists.
+_DUMMY_PASSWORD_HASH = hash_password("aerodent-timing-equalizer-not-a-real-password")
 
 
-def _check_rate_limit(key, max_attempts=15, window_seconds=60):
-    now = time.time()
-    attempts = [t for t in _rate_limits[key] if now - t < window_seconds]
-    _rate_limits[key] = attempts
-    if len(attempts) >= max_attempts:
-        return False
-    _rate_limits[key].append(now)
-    return True
+def _too_many(retry_after, message="Too many attempts. Please wait before trying again."):
+    response = jsonify({"error": message, "retry_after": retry_after})
+    response.status_code = 429
+    response.headers["Retry-After"] = str(retry_after)
+    return response
 
 
 def _same_origin_request():
@@ -54,6 +67,18 @@ def _user_response(user):
 def _invalid_credentials():
     session.clear()
     return jsonify({"error": "Invalid email or password."}), 401
+
+
+def _resolve_session_user():
+    """Loads the user for the current cookie if (and only if) its server-side session is live."""
+    user_id = session.get("user_id")
+    if not isinstance(user_id, int):
+        return None
+    user = db.session.get(User, user_id)
+    if user is None or current_session_record(user.id) is None:
+        session.clear()
+        return None
+    return user
 
 
 def evaluate_user_access(user):
@@ -123,13 +148,8 @@ def evaluate_user_access(user):
 
 
 def get_current_user():
-    user_id = session.get("user_id")
-    if not isinstance(user_id, int):
-        return None
-
-    user = db.session.get(User, user_id)
+    user = _resolve_session_user()
     if user is None:
-        session.clear()
         return None
 
     allowed, _, _ = evaluate_user_access(user)
@@ -143,13 +163,8 @@ def get_current_user():
 def login_required(view):
     @wraps(view)
     def wrapped_view(*args, **kwargs):
-        user_id = session.get("user_id")
-        if not isinstance(user_id, int):
-            return jsonify({"error": "Authentication required."}), 401
-
-        user = db.session.get(User, user_id)
+        user = _resolve_session_user()
         if user is None:
-            session.clear()
             return jsonify({"error": "Authentication required."}), 401
 
         allowed, error_msg, status_code = evaluate_user_access(user)
@@ -174,38 +189,52 @@ def protect_state_changing_requests():
 
 @auth_blueprint.post("/login")
 def login():
-    ip = get_client_ip()
-    if not _check_rate_limit(f"login_{ip}", max_attempts=20, window_seconds=60):
-        return jsonify({"error": "Too many login attempts. Please wait a minute before trying again."}), 429
-
+    ip = get_client_ip() or "unknown"
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
         return jsonify({"error": "Request body must be JSON."}), 400
 
     email = data.get("email")
     password = data.get("password")
-    if not isinstance(email, str) or not isinstance(password, str):
+    if not isinstance(email, str) or not isinstance(password, str) or len(email) > 255 or len(password) > 1024:
         return _invalid_credentials()
 
-    normalized_email = email.strip().lower()
+    normalized_email = normalize_email(email)
+    retry_after = login_retry_after(normalized_email, ip)
+    if retry_after:
+        db.session.rollback()
+        return _too_many(retry_after, "Too many failed sign-in attempts. Please wait before trying again.")
+
     user = db.session.scalar(
         db.select(User).where(func.lower(User.email) == normalized_email)
     )
+    password_ok = verify_password(password, user.password_hash if user else _DUMMY_PASSWORD_HASH)
 
-    if (
-        user is None
-        or not verify_password(password, user.password_hash)
-    ):
+    if user is None or not password_ok:
+        wait = record_login_failure(normalized_email, ip)
+        log_activity(
+            action="login_failed",
+            resource_type="auth",
+            clinic_id=user.clinic_id if user else None,
+            user_id=user.id if user else None,
+            details={"reason": "invalid_credentials", "throttled_seconds": wait},
+        )
+        db.session.commit()
+        session.clear()
+        if wait:
+            return _too_many(wait, "Too many failed sign-in attempts. Please wait before trying again.")
         return _invalid_credentials()
 
     allowed, error_msg, status_code = evaluate_user_access(user)
     if not allowed:
+        # The password was correct, so this reveals nothing to someone who does not own it.
+        db.session.commit()
         session.clear()
         return jsonify({"error": error_msg}), status_code
 
-    session.clear()
-    session.permanent = True
-    session["user_id"] = user.id
+    record_login_success(normalized_email, ip)
+    cleanup_expired()
+    start_session(user, ip)
 
     log_activity(
         action="user_login",
@@ -224,11 +253,18 @@ def login():
 
 @auth_blueprint.post("/register")
 def register_clinic():
-    ip = get_client_ip()
-    if not _check_rate_limit(f"reg_{ip}", max_attempts=5, window_seconds=60):
-        return jsonify({"error": "Too many registration attempts. Please wait a moment."}), 429
+    if not current_app.config.get("ALLOW_SELF_REGISTRATION"):
+        return jsonify({"error": "Self-service registration is disabled. Please request a trial."}), 403
 
-    data = request.get_json(silent=True) or {}
+    ip = get_client_ip() or "unknown"
+    retry_after = rate_limited("register_ip", ip, limit=5, window_seconds=3600)
+    db.session.commit()
+    if retry_after:
+        return _too_many(retry_after, "Too many registration attempts. Please try again later.")
+
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Request body must be JSON."}), 400
     clinic_name = (data.get("clinic_name") or "").strip()
     head_doctor_name = (data.get("head_doctor_name") or "").strip()
     email = (data.get("email") or "").strip().lower()
@@ -238,8 +274,13 @@ def register_clinic():
     if not clinic_name or not head_doctor_name or not email or not password:
         return jsonify({"error": "Clinic name, doctor name, email, and password are required."}), 400
 
-    if len(password) < 8:
-        return jsonify({"error": "Password must be at least 8 characters long."}), 400
+    if len(clinic_name) > 150 or len(head_doctor_name) > 150 or len(email) > 255 or len(phone) > 50:
+        return jsonify({"error": "One or more fields are too long."}), 400
+    if "@" not in email or " " in email:
+        return jsonify({"error": "A valid email address is required."}), 400
+    password_error = validate_new_password(password)
+    if password_error:
+        return jsonify({"error": password_error}), 400
 
     existing_user = db.session.scalar(db.select(User).where(func.lower(User.email) == email))
     if existing_user:
@@ -278,11 +319,8 @@ def register_clinic():
         details={"clinic_name": clinic.name, "trial_days": 14},
     )
 
+    start_session(user, ip)
     db.session.commit()
-
-    session.clear()
-    session.permanent = True
-    session["user_id"] = user.id
 
     return jsonify({
         "message": "Clinic trial registered successfully.",
@@ -315,32 +353,53 @@ def logout():
             user_name=user.name,
             user_role=user.role,
         )
-        db.session.commit()
-    session.clear()
+    revoke_current_session()
+    db.session.commit()
     return jsonify({"message": "Logged out."})
 
 
 @auth_blueprint.post("/change-password")
 @login_required
 def change_password():
-    data = request.get_json(silent=True) or {}
-    current_password = data.get("current_password") or ""
-    new_password = data.get("new_password") or ""
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Request body must be JSON."}), 400
+    current_password = data.get("current_password")
+    new_password = data.get("new_password")
 
-    if not current_password or not new_password:
+    if not isinstance(current_password, str) or not isinstance(new_password, str) or not current_password or not new_password:
         return jsonify({"error": "Current password and new password are required."}), 400
 
     user = g.current_user
-    if not verify_password(current_password, user.password_hash):
+    # A stolen session must not be usable to brute-force the account password.
+    retry_after = failure_lock_wait("password_change", user.id)
+    if retry_after:
+        return _too_many(retry_after)
+
+    if len(current_password) > 1024 or not verify_password(current_password, user.password_hash):
+        wait = record_failure("password_change", user.id, policy=(5, 60, 30 * 60))
+        log_activity(
+            action="password_change_failed",
+            resource_type="auth",
+            resource_id=user.id,
+            details={"reason": "wrong_current_password"},
+        )
+        db.session.commit()
+        if wait:
+            return _too_many(wait)
         return jsonify({"error": "Current password is incorrect."}), 400
 
-    if len(new_password) < 8:
-        return jsonify({"error": "New password must be at least 8 characters long."}), 400
+    password_error = validate_new_password(new_password)
+    if password_error:
+        return jsonify({"error": password_error}), 400
 
     if current_password == new_password:
         return jsonify({"error": "New password must be different from current password."}), 400
 
     user.password_hash = hash_password(new_password)
+    clear_failures("password_change", user.id)
+    # Sign out every other device; the current one stays signed in.
+    revoke_user_sessions(user.id, keep_current=True)
     log_activity(
         action="password_changed",
         resource_type="auth",
@@ -349,10 +408,7 @@ def change_password():
         user_id=user.id,
         user_name=user.name,
         user_role=user.role,
-        details={"email": user.email},
     )
     db.session.commit()
 
     return jsonify({"message": "Password changed successfully."})
-
-

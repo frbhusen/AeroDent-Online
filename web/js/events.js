@@ -340,6 +340,10 @@ function bindTreatmentPlanEvents() {
 
 
 function bindTreatmentEvents() {
+    $$("[data-print-invoices]").forEach((button) => {
+        button.onclick = () => printInvoices();
+    });
+
     $$("[data-treatment-status]").forEach((select) => {
         select.onchange = async () => {
             const treatmentId = Number(select.dataset.treatmentStatus);
@@ -424,6 +428,11 @@ function bindTreatmentEvents() {
 
 
 function bindAppointmentEvents() {
+    // Clicks on inline controls inside an agenda card must not also open the card.
+    $$("[data-stop-propagation]").forEach((node) => {
+        node.onclick = (event) => event.stopPropagation();
+    });
+
     $$("[data-update-appt-status]").forEach((select) => {
         select.onchange = async (e) => {
             const apptId = Number(select.dataset.updateApptStatus);
@@ -1311,14 +1320,19 @@ function bindGlobalEvents() {
                     ? "ar"
                     : "en";
 
-            await dbPut(
-                "settings",
-                {
-                    ...state.settings,
-                    id: 1,
-                    currentLanguage,
-                }
-            );
+            if (window.AERODENT_ONLINE) {
+                // Never write online clinic settings into the offline IndexedDB store.
+                storeLanguagePreference(currentLanguage);
+            } else {
+                await dbPut(
+                    "settings",
+                    {
+                        ...state.settings,
+                        id: 1,
+                        currentLanguage,
+                    }
+                );
+            }
 
             render();
 

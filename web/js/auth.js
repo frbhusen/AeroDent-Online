@@ -318,9 +318,21 @@ function setOnlineUser(user) {
     }
 }
 
+// Discard every piece of in-memory clinic data by reloading the document. Clearing state
+// field by field is fragile (any new module can forget a field); a fresh document cannot leak
+// the previous account's patients, dashboard, or permissions into the next session.
+function resetOnlineSession(reason) {
+    try {
+        if (reason) sessionStorage.setItem("aerodent-auth-notice", reason);
+    } catch (_) { /* storage unavailable: the notice is optional */ }
+    clearOnlineClinicState();
+    window.location.replace(`${window.location.pathname}${window.location.search}`);
+}
+
 function handleOnlineUnauthorized() {
     if (!window.AERODENT_ONLINE || !state.auth.authenticated) return;
-    setOnlineUser(null);
+    state.auth.authenticated = false;
+    resetOnlineSession("sessionExpired");
 }
 
 window.handleOnlineUnauthorized = handleOnlineUnauthorized;
@@ -334,6 +346,7 @@ async function initializeOnlineAuth() {
     } catch (error) {
         if (error.status === 401) {
             setOnlineUser(null);
+            showPendingAuthNotice();
             return false;
         }
         state.auth.loading = false;
@@ -375,10 +388,23 @@ async function logoutOnline() {
     try {
         await window.AERODENT_API.post("/api/auth/logout", {});
     } catch (error) {
-        if (error.status !== 401) toast(error.message);
+        if (error.status !== 401) {
+            toast(error.message);
+            return;
+        }
     }
-    setOnlineUser(null);
-    render();
+    state.auth.authenticated = false;
+    resetOnlineSession("signedOut");
+}
+
+function showPendingAuthNotice() {
+    let reason = null;
+    try {
+        reason = sessionStorage.getItem("aerodent-auth-notice");
+        sessionStorage.removeItem("aerodent-auth-notice");
+    } catch (_) { /* ignore */ }
+    const node = $("#onlineLoginError");
+    if (node && reason === "sessionExpired") node.textContent = t("sessionExpiredNotice");
 }
 
 function hasRole(...roles) {
@@ -439,68 +465,32 @@ function hasPermission(permission) {
     return permissions[role]?.includes(permission) || false;
 }
 
-function openTrialRegistrationModal() {
-    modal(t("trialRegistration") || "Register New Clinic (14-Day Trial)", `
-        <form id="trialRegisterForm" class="form-grid">
-            <div class="field full-span">
-                <label>${t("clinicNameLabel") || "Clinic Name"}</label>
-                <input name="clinic_name" required placeholder="e.g. Al-Nour Dental Center">
-            </div>
-            <div class="field full-span">
-                <label>${t("headDoctorNameLabel") || "Head Doctor Name"}</label>
-                <input name="head_doctor_name" required placeholder="Dr. First Last">
-            </div>
-            <div class="field">
-                <label>${t("email") || "Email Address"}</label>
-                <input name="email" type="email" required placeholder="doctor@clinic.com">
-            </div>
-            <div class="field">
-                <label>${t("phone") || "Phone Number"}</label>
-                <input name="phone" placeholder="+963 ...">
-            </div>
-            <div class="field full-span">
-                <label>${t("password") || "Password"} (min 8 chars)</label>
-                <input name="password" type="password" minlength="8" required placeholder="••••••••">
-            </div>
-            <p id="trialRegisterError" class="login-error full-span" style="color:#b91c1c;font-size:12px;margin:4px 0 0;"></p>
-            <div class="form-actions full-span" style="margin-top:10px;">
-                <button class="button button-primary full" id="trialSubmitBtn" type="submit">
-                    ✨ ${t("startFreeTrial") || "Start 14-Day Free Trial"}
-                </button>
-            </div>
-        </form>
-    `);
+// "Ask for a 14-day trial": the server issues a short-lived, HTTP-only intent cookie and the
+// request-trial page is only served when that cookie is present (see backend/routes/trial.py).
+async function openTrialRequestPage() {
+    const button = $("#startTrialBtn");
+    const errorNode = $("#onlineLoginError");
+    if (button) button.disabled = true;
+    try {
+        const response = await window.AERODENT_API.post("/api/trial/intent", {});
+        window.location.assign(response?.redirect || "/request-trial");
+    } catch (error) {
+        if (errorNode) errorNode.textContent = error.status === 429 ? t("trialErrorTooMany") : t("trialErrorNetwork");
+        if (button) button.disabled = false;
+    }
+}
 
-    $("#trialRegisterForm").onsubmit = async (e) => {
-        e.preventDefault();
-        const btn = $("#trialSubmitBtn");
-        const errEl = $("#trialRegisterError");
-        errEl.textContent = "";
-        btn.disabled = true;
-        btn.classList.add("is-loading");
-
-        const data = Object.fromEntries(new FormData(e.target));
-        try {
-            const res = await window.AERODENT_API.post("/api/auth/register", data);
-            $("#modal")?.classList.remove("show");
-            toast(t("trialStarted") || "Welcome! Your 14-day free trial has been activated.");
-            setOnlineUser(res.user);
-            if (typeof window.refreshOnlineWorkspace === "function") {
-                await window.refreshOnlineWorkspace();
-            }
-        } catch (err) {
-            errEl.textContent = err.message || "Registration failed. Please check inputs.";
-        } finally {
-            btn.disabled = false;
-            btn.classList.remove("is-loading");
-        }
-    };
+function toggleLoginLanguage() {
+    currentLanguage = currentLanguage === "ar" ? "en" : "ar";
+    storeLanguagePreference(currentLanguage);
+    setText();
 }
 
 function bindOnlineAuthControls() {
     $("#onlineLoginForm")?.addEventListener("submit", loginOnline);
     $("#onlineLogoutBtn")?.addEventListener("click", logoutOnline);
-    $("#startTrialBtn")?.addEventListener("click", openTrialRegistrationModal);
+    $("#startTrialBtn")?.addEventListener("click", openTrialRequestPage);
+    $("#loginLangBtn")?.addEventListener("click", toggleLoginLanguage);
 
     // Password visibility toggle
     const toggleBtn = $("#togglePasswordBtn");

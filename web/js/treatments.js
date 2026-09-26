@@ -188,7 +188,7 @@ function renderTreatments() {
                 <h2>${t("invoices")}</h2>
                 <div style="display: flex; gap: 8px;">
                     ${canCreateInvoices() && patient ? `<button class="button button-primary" data-action="addInvoice">＋ ${t("addInvoice")}</button>` : ""}
-                    <button class="button button-ghost" onclick="printInvoices()">⌁ ${t("print")}</button>
+                    <button class="button button-ghost" data-print-invoices>⌁ ${t("print")}</button>
                 </div>
             </div>
             <div class="patient-summary">

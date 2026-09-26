@@ -31,6 +31,11 @@ def run_tests():
                 "password": "Password123!",
                 "phone": "+963991234567",
             }
+            # Self-registration is disabled by default (trial requests go through the contact
+            # page); this test covers the optional self-service mode explicitly.
+            disabled = client.post("/api/auth/register", json=reg_payload)
+            assert disabled.status_code == 403, disabled.data
+            app.config["ALLOW_SELF_REGISTRATION"] = True
             res = client.post("/api/auth/register", json=reg_payload)
             assert res.status_code == 201, f"Expected 201, got {res.status_code}: {res.data}"
             data = res.get_json()

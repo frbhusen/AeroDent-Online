@@ -68,7 +68,11 @@ def add_invoice_payment(invoice_id):
     if not invoice:
         return jsonify({"error": "Invoice not found."}), 404
 
-    data = request.get_json(silent=True) or {}
+    data = request.get_json(silent=True)
+    if data is None:
+        data = {}
+    if not isinstance(data, dict):
+        return jsonify({"error": "Request body must be a JSON object."}), 400
     try:
         amount = Decimal(str(data.get("amount", 0)))
         if not amount.is_finite():

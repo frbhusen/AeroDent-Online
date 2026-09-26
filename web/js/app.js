@@ -944,6 +944,8 @@ window.refreshOnlineWorkspace = refreshOnlineWorkspace;
 
 async function startApplication() {
   if (window.AERODENT_ONLINE) {
+    currentLanguage = storedLanguagePreference() || currentLanguage;
+    setText();
     updateClock();
     setInterval(updateClock, 1000);
     const authenticated = await initializeOnlineAuth();

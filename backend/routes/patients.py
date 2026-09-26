@@ -8,6 +8,7 @@ from backend.auth import login_required, require_permission, validate_patient_up
 from backend.extensions import db
 from backend.models import Patient
 from backend.services.audit import log_activity
+from backend.services.validation import query_int, query_page
 
 
 patients_blueprint = Blueprint("patients", __name__, url_prefix="/api/patients")
@@ -133,7 +134,7 @@ def _scoped_patient(patient_id):
 def list_patients():
     query = db.select(Patient).where(Patient.clinic_id == g.current_user.clinic_id)
 
-    search = request.args.get("q", "").strip()
+    search = request.args.get("q", "").strip()[:100]
     if search:
         pattern = f"%{search}%"
         query = query.where(
@@ -141,9 +142,9 @@ def list_patients():
         )
 
     try:
-        page = max(int(request.args.get("page", 1)), 1)
+        page = max(query_page(request.args.get("page", 1)), 1)
         per_page = min(
-            max(int(request.args.get("per_page", DEFAULT_PER_PAGE)), 1),
+            max(query_int(request.args.get("per_page", DEFAULT_PER_PAGE)), 1),
             MAX_PER_PAGE,
         )
     except ValueError:

@@ -312,7 +312,7 @@ async function openXrayViewer(xrayId) {
     const editable = canModifyXrays();
 
     modal(
-        xray.filename || t("xrays"),
+        esc(xray.filename || t("xrays")),
         `<div class="xray-viewer">
             <div class="xray-viewer-toolbar">
                 <div class="xray-viewer-info">

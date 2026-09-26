@@ -16,6 +16,7 @@ from backend.models import (
     InventorySupplier,
 )
 from backend.services.audit import log_activity
+from backend.services.validation import query_int, query_page
 from backend.services.inventory import (
     ZERO,
     InventoryError,
@@ -177,8 +178,8 @@ def _warning_days():
 
 def _pagination():
     try:
-        page = max(int(request.args.get("page", 1)), 1)
-        per_page = min(max(int(request.args.get("per_page", DEFAULT_PER_PAGE)), 1), MAX_PER_PAGE)
+        page = max(query_page(request.args.get("page", 1)), 1)
+        per_page = min(max(query_int(request.args.get("per_page", DEFAULT_PER_PAGE)), 1), MAX_PER_PAGE)
     except ValueError:
         raise InventoryError("page and per_page must be positive integers.", 400)
     return page, per_page
@@ -198,7 +199,7 @@ def _int_arg(name):
     if raw in (None, "", "all"):
         return None
     try:
-        return int(raw)
+        return query_int(raw)
     except ValueError:
         raise InventoryError(f"{name} must be an integer.", 400)
 
@@ -560,7 +561,7 @@ def list_items():
     elif active != "all":
         return _error("active must be true, false, or all.", 400)
 
-    search = request.args.get("q", "").strip()
+    search = request.args.get("q", "").strip()[:100]
     if search:
         pattern = f"%{search}%"
         query = query.where(
@@ -1132,9 +1133,13 @@ def create_category():
 @login_required
 @require_permission("inventory.manage_categories")
 def create_default_categories():
-    data = request.get_json(silent=True) or {}
-    language = data.get("language", "en") if isinstance(data, dict) else "en"
-    names = DEFAULT_CATEGORIES.get(language, DEFAULT_CATEGORIES["en"])
+    data = request.get_json(silent=True)
+    if data is None:
+        data = {}
+    if not isinstance(data, dict):
+        return _error("Request body must be a JSON object.", 400)
+    language = data.get("language") if data.get("language") in ("en", "ar") else "en"
+    names = DEFAULT_CATEGORIES[language]
 
     existing = {
         name.lower()
@@ -1253,7 +1258,7 @@ def list_suppliers():
         query = query.where(InventorySupplier.is_active.is_(True))
     elif active == "false":
         query = query.where(InventorySupplier.is_active.is_(False))
-    search = request.args.get("q", "").strip()
+    search = request.args.get("q", "").strip()[:100]
     if search:
         pattern = f"%{search}%"
         query = query.where(

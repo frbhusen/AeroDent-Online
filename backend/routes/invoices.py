@@ -7,6 +7,7 @@ from backend.auth import login_required, require_permission
 from backend.extensions import db
 from backend.models import Invoice, Patient, Treatment
 from backend.services.audit import log_activity
+from backend.services.validation import query_int, query_page
 
 
 invoices_blueprint = Blueprint("invoices", __name__, url_prefix="/api/invoices")
@@ -113,7 +114,7 @@ def _financial_values(data, existing=None):
         return None, _error("paid_amount cannot exceed the payable amount.", 422)
     balance = payable - paid_amount
     requested_status = data.get("status", existing.status if existing else None)
-    if requested_status is not None and requested_status not in INVOICE_STATUSES:
+    if requested_status is not None and (not isinstance(requested_status, str) or requested_status not in INVOICE_STATUSES):
         return None, _error("Invalid invoice status.", 400)
     if requested_status == "cancelled":
         status = "cancelled"
@@ -160,7 +161,7 @@ def list_invoices():
     ):
         if field in request.args:
             try:
-                value = int(request.args[field])
+                value = query_int(request.args[field])
             except ValueError:
                 return _error(f"{field} must be a positive integer.", 400)
             if value <= 0:
@@ -171,8 +172,8 @@ def list_invoices():
             return _error("Invalid invoice status.", 400)
         query = query.where(Invoice.status == request.args["status"])
     try:
-        page = max(int(request.args.get("page", 1)), 1)
-        per_page = min(max(int(request.args.get("per_page", DEFAULT_PER_PAGE)), 1), MAX_PER_PAGE)
+        page = max(query_page(request.args.get("page", 1)), 1)
+        per_page = min(max(query_int(request.args.get("per_page", DEFAULT_PER_PAGE)), 1), MAX_PER_PAGE)
     except ValueError:
         return _error("page and per_page must be positive integers.", 400)
     total = db.session.scalar(db.select(db.func.count()).select_from(query.subquery()))

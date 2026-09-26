@@ -47,7 +47,7 @@ def _scoped_patient(patient_id):
 
 
 def _validate_tooth(tooth_mode, tooth_number):
-    if tooth_mode not in VALID_TOOTH_MODES:
+    if not isinstance(tooth_mode, str) or tooth_mode not in VALID_TOOTH_MODES:
         return _error("Invalid tooth mode.", 400)
 
     if tooth_number not in TOOTH_RANGES[tooth_mode]:
@@ -110,7 +110,7 @@ def list_odontogram(patient_id):
         return _error("Patient not found.", 404)
 
     mode = request.args.get("mode")
-    if mode is not None and mode not in VALID_TOOTH_MODES:
+    if mode is not None and (not isinstance(mode, str) or mode not in VALID_TOOTH_MODES):
         return _error("Invalid tooth mode.", 400)
 
     query = db.select(Odontogram).where(

@@ -1,5 +1,14 @@
 
 let undoAction = null;
+
+// Replaces inline onerror="" attributes (blocked by the Content-Security-Policy): images that
+// opt in with data-hide-on-error are hidden when they fail to load.
+document.addEventListener("error", (event) => {
+    const target = event.target;
+    if (target instanceof HTMLImageElement && target.hasAttribute("data-hide-on-error")) {
+        target.style.display = "none";
+    }
+}, true);
 let undoTimer = null;
 
 function setText() {
@@ -31,6 +40,9 @@ function setText() {
         logoutBtn.setAttribute("aria-label", t("logout"));
         logoutBtn.title = t("logout");
     }
+
+    const loginLangBtn = $("#loginLangBtn");
+    if (loginLangBtn) loginLangBtn.textContent = currentLanguage === "ar" ? "English" : "العربية";
 
     $("#langBtn").textContent =
         currentLanguage === "ar"

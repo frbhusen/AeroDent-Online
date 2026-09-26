@@ -192,7 +192,7 @@ function renderAppointments() {
                                                 ${item.doctorName ? `<span>· 👨‍⚕️ ${esc(item.doctorName)}</span>` : ""}
                                             </span>
                                         </div>
-                                        <div style="display:flex;gap:6px;align-items:center;" onclick="event.stopPropagation();">
+                                        <div style="display:flex;gap:6px;align-items:center;" data-stop-propagation>
                                             <select class="appointment-status-select" data-update-appt-status="${item.id}">
                                                 <option value="booked" ${item.status === "booked" ? "selected" : ""}>📅 ${t("statusBooked")}</option>
                                                 <option value="arrived" ${item.status === "arrived" ? "selected" : ""}>🚶 ${t("statusArrived")}</option>
@@ -580,7 +580,7 @@ function renderWaitlistPanel() {
                         </div>
                         ${item.patient_phone ? `<div class="muted" style="font-size:11px;">📞 ${esc(item.patient_phone)}</div>` : ""}
                         ${item.notes ? `<p style="margin:2px 0 0 0;font-size:11px;color:var(--muted);">${esc(item.notes)}</p>` : ""}
-                        <div style="margin-top:6px;display:flex;justify-content:space-between;align-items:center;" onclick="event.stopPropagation();">
+                        <div style="margin-top:6px;display:flex;justify-content:space-between;align-items:center;" data-stop-propagation>
                             <button class="button button-ghost button-sm" data-book-waitlist="${item.id}" title="${t("bookSlot")}">
                                 ⚡ ${t("bookSlot")}
                             </button>
@@ -820,10 +820,14 @@ function promptWaitlistAutoFill(cancelledAppt) {
                 `).join("")}
             </div>
             <div class="form-actions" style="margin-top:8px;">
-                <button type="button" class="button button-ghost" onclick="$('#modal').classList.remove('show');">${t("cancel")}</button>
+                <button type="button" class="button button-ghost" data-close-modal>${t("cancel")}</button>
             </div>
         </div>`
     );
+
+    $$("#modal [data-close-modal]").forEach((btn) => {
+        btn.onclick = () => $("#modal").classList.remove("show");
+    });
 
     $$("[data-autofill-confirm]").forEach((btn) => {
         btn.onclick = async () => {

@@ -109,7 +109,7 @@ def _normalize_image(file_storage):
         with Image.open(BytesIO(content)) as image:
             image.verify()
             image_format = image.format
-        if image_format not in ALLOWED_IMAGE_FORMATS:
+        if not isinstance(image_format, str) or image_format not in ALLOWED_IMAGE_FORMATS:
             return None, _error("Unsupported image format.", 422)
 
         with Image.open(BytesIO(content)) as image:

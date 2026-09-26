@@ -9,6 +9,8 @@ from backend.auth.service import hash_password
 from backend.extensions import db
 from backend.models import Clinic, User
 from backend.services.audit import log_activity
+from backend.services.auth_security import revoke_user_sessions, validate_new_password
+from backend.services.validation import query_int, query_page
 
 
 admin_blueprint = Blueprint("admin", __name__, url_prefix="/api/admin")
@@ -256,10 +258,11 @@ def create_clinic():
         return _error("Head doctor name is required.", 422)
     if not isinstance(head_email, str) or not EMAIL_REGEX.match(head_email.strip()):
         return _error("A valid head doctor email is required.", 422)
-    if not isinstance(head_password, str) or len(head_password) < 8:
-        return _error("Head doctor password must be at least 8 characters.", 422)
+    password_error = validate_new_password(head_password)
+    if password_error:
+        return _error(password_error, 422)
 
-    if subscription_status not in VALID_SUBSCRIPTION_STATUSES:
+    if not isinstance(subscription_status, str) or subscription_status not in VALID_SUBSCRIPTION_STATUSES:
         return _error(f"Invalid subscription status. Must be one of {sorted(VALID_SUBSCRIPTION_STATUSES)}", 400)
 
     head_email = head_email.strip().lower()
@@ -362,7 +365,7 @@ def update_clinic(clinic_id):
 
     if "subscription_status" in data:
         status = str(data["subscription_status"]).strip().lower()
-        if status not in VALID_SUBSCRIPTION_STATUSES:
+        if not isinstance(status, str) or status not in VALID_SUBSCRIPTION_STATUSES:
             return _error(f"Invalid subscription status. Must be one of {sorted(VALID_SUBSCRIPTION_STATUSES)}", 400)
         clinic.subscription_status = status
 
@@ -515,7 +518,7 @@ def delete_clinic(clinic_id):
 # ==========================================
 @admin_blueprint.get("/users")
 def list_users():
-    clinic_id = request.args.get("clinic_id", type=int)
+    clinic_id = request.args.get("clinic_id", type=query_int)
     role = request.args.get("role")
     search = request.args.get("search", "").strip()
     is_active_raw = request.args.get("is_active")
@@ -559,9 +562,10 @@ def create_user():
         return _error("Name is required.", 422)
     if not isinstance(email, str) or not EMAIL_REGEX.match(email.strip()):
         return _error("Valid email is required.", 422)
-    if not isinstance(password, str) or len(password) < 8:
-        return _error("Password must be at least 8 characters.", 422)
-    if role not in VALID_ADMIN_ROLES:
+    password_error = validate_new_password(password)
+    if password_error:
+        return _error(password_error, 422)
+    if not isinstance(role, str) or role not in VALID_ADMIN_ROLES:
         return _error("Invalid role.", 400)
 
     if role != "super_admin":
@@ -646,7 +650,7 @@ def update_user(user_id):
 
     if "role" in data:
         new_role = data["role"]
-        if new_role not in VALID_ADMIN_ROLES:
+        if not isinstance(new_role, str) or new_role not in VALID_ADMIN_ROLES:
             return _error("Invalid role.", 400)
         # Prevent demoting the last super admin
         if user.role == "super_admin" and new_role != "super_admin":
@@ -676,12 +680,16 @@ def update_user(user_id):
             if super_count == 0:
                 return _error("Cannot deactivate the only active Super Admin.", 422)
         user.is_active = new_status
+        if not new_status:
+            revoke_user_sessions(user.id)
 
     if "password" in data:
         pwd = data["password"]
-        if not isinstance(pwd, str) or len(pwd) < 8:
-            return _error("Password must be at least 8 characters.", 422)
+        password_error = validate_new_password(pwd)
+        if password_error:
+            return _error(password_error, 422)
         user.password_hash = hash_password(pwd)
+        revoke_user_sessions(user.id)
 
     if "clinic_id" in data:
         new_cid = data["clinic_id"]
@@ -689,6 +697,8 @@ def update_user(user_id):
             c = db.session.get(Clinic, new_cid)
             if c is None:
                 return _error("Clinic not found.", 404)
+        if new_cid != user.clinic_id:
+            revoke_user_sessions(user.id)
         user.clinic_id = new_cid
 
     try:

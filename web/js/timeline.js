@@ -76,7 +76,7 @@ function renderPatientTimeline(patientId) {
                                 <img src="/api/x-rays/${event.id}/file" 
                                      alt="${esc(event.title)}" 
                                      style="width: 56px; height: 56px; object-fit: cover; border-radius: var(--radius-sm, 6px); border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.06);" 
-                                     onerror="this.style.display='none'" 
+                                     data-hide-on-error 
                                      loading="lazy">
                                 <span class="badge" style="cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
@@ -207,7 +207,7 @@ function renderPatientTimeline(patientId) {
                             <img src="${esc(event.imageUrl)}" 
                                  alt="${esc(event.title)}" 
                                  style="width: 56px; height: 56px; object-fit: cover; border-radius: var(--radius-sm, 6px); border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.06);" 
-                                 onerror="this.style.display='none'" 
+                                 data-hide-on-error 
                                  loading="lazy">
                             <span class="badge" style="cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>

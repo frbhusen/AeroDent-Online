@@ -8,6 +8,7 @@ from backend.auth import login_required, require_permission
 from backend.extensions import db
 from backend.models import Appointment, Patient, User
 from backend.services.audit import log_activity
+from backend.services.validation import query_int, query_page
 
 
 appointments_blueprint = Blueprint(
@@ -98,7 +99,7 @@ def _parse_fields(data):
             return None, _error("duration must be a positive integer.", 422)
 
     if "status" in data:
-        if data["status"] not in APPOINTMENT_STATUSES:
+        if not isinstance(data["status"], str) or data["status"] not in APPOINTMENT_STATUSES:
             return None, _error("Invalid appointment status.", 400)
 
     for field in ("patient_id", "doctor_id"):
@@ -229,7 +230,7 @@ def list_appointments():
     ):
         if field in request.args:
             try:
-                value = int(request.args[field])
+                value = query_int(request.args[field])
             except ValueError:
                 return _error(f"{field} must be a positive integer.", 400)
             if value <= 0:
@@ -264,9 +265,9 @@ def list_appointments():
         query = query.where(Appointment.date <= end_date)
 
     try:
-        page = max(int(request.args.get("page", 1)), 1)
+        page = max(query_page(request.args.get("page", 1)), 1)
         per_page = min(
-            max(int(request.args.get("per_page", DEFAULT_PER_PAGE)), 1),
+            max(query_int(request.args.get("per_page", DEFAULT_PER_PAGE)), 1),
             MAX_PER_PAGE,
         )
     except ValueError:

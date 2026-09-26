@@ -4619,3 +4619,128 @@ body.is-super-admin .main {
 .topbar .button-primary {
   border-color: rgba(125, 211, 252, 0.45);
 }
+
+/* ================================================================
+   Sign-in & request-trial screens
+   ================================================================ */
+
+/* The card must stay reachable on short screens (phones in landscape): scroll the screen
+   instead of clipping, and center with auto margins so nothing is cut off at the top. */
+.online-login-screen {
+  display: flex;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+.online-login-screen > .online-login-card,
+.online-login-screen > .trial-card {
+  margin: auto;
+}
+
+.login-lang-btn {
+  justify-self: end;
+  padding: 6px 12px;
+  font-size: 12px;
+  margin-bottom: -8px;
+}
+
+.trial-page {
+  background: #0b2942;
+}
+.trial-screen {
+  position: fixed;
+}
+.trial-card {
+  width: min(520px, 100%);
+}
+.trial-card h1 {
+  margin: 0;
+  font-size: 22px;
+  text-align: center;
+}
+.trial-card > .muted,
+.trial-card > .eyebrow {
+  text-align: center;
+  margin: 0;
+}
+.trial-card .brand-mark {
+  margin: 0 auto;
+}
+.trial-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.trial-back {
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+}
+.trial-back:hover { text-decoration: underline; }
+.trial-lang {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+.trial-form {
+  display: grid;
+  gap: 14px;
+}
+.trial-form .field input,
+.trial-form .field textarea {
+  font-size: 16px; /* prevents iOS zoom-on-focus */
+}
+.trial-form .field input[aria-invalid="true"],
+.trial-form .field textarea[aria-invalid="true"] {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+}
+.field-error {
+  margin: 0;
+  min-height: 0;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 600;
+}
+.field-error:empty { display: none; }
+.field-hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: end;
+}
+.trial-honeypot {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.trial-success {
+  display: grid;
+  gap: 12px;
+  text-align: center;
+}
+.trial-success.hidden,
+.trial-form.hidden { display: none; }
+.trial-success h2 { margin: 0; }
+.trial-success-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 28px;
+  font-weight: 700;
+}
+@media (max-width: 480px) {
+  .online-login-card { padding: 28px 20px; }
+}
+.trial-form .login-error:empty { display: none; }
+.trial-card > .eyebrow { justify-self: center; }

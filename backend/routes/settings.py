@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from backend.auth import login_required, require_permission
 from backend.extensions import db
 from backend.services.audit import log_activity
+from backend.services.auth_security import rate_limited
 from backend.models import (
     Appointment,
     Clinic,
@@ -175,6 +176,15 @@ def update_settings():
 @login_required
 @require_permission("clinic_settings.read")
 def export_clinic_data():
+    # Full exports read every clinic record; cap them per user to prevent resource exhaustion.
+    retry_after = rate_limited("clinic_export_user", g.current_user.id, limit=10, window_seconds=3600)
+    db.session.commit()
+    if retry_after:
+        response = jsonify({"error": "Export limit reached. Please try again later.", "retry_after": retry_after})
+        response.status_code = 429
+        response.headers["Retry-After"] = str(retry_after)
+        return response
+
     clinic_id = g.current_user.clinic_id
     clinic = g.current_clinic
 
