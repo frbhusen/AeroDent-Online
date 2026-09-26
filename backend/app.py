@@ -21,6 +21,7 @@ from backend.routes.audit_logs import audit_blueprint
 from backend.routes.payments import payments_blueprint
 from backend.routes.waitlist import waitlist_blueprint
 from backend.routes.hr import hr_blueprint
+from backend.routes.inventory import inventory_blueprint
 
 
 WEB_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "web"))
@@ -50,6 +51,7 @@ def create_app() -> Flask:
     app.register_blueprint(payments_blueprint)
     app.register_blueprint(waitlist_blueprint)
     app.register_blueprint(hr_blueprint)
+    app.register_blueprint(inventory_blueprint)
 
     from flask import request as req
 

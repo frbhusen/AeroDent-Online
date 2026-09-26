@@ -85,7 +85,10 @@ async function loadOnlineDashboard() {
   const requestId = ++onlineDashboardRequest;
   state.dashboardLoading = true;
   try {
-    const response = await window.AERODENT_API.get("/api/dashboard");
+    const [response] = await Promise.all([
+      window.AERODENT_API.get("/api/dashboard"),
+      typeof loadInventoryAlertSummary === "function" ? loadInventoryAlertSummary() : null,
+    ]);
     if (requestId !== onlineDashboardRequest) return;
     state.dashboard = response.data || {};
   } catch (error) {
@@ -217,6 +220,7 @@ function renderDashboard() {
 
     return `
       ${_renderDashboardUserBanner()}
+      ${typeof renderInventoryDashboardAlert === "function" ? renderInventoryDashboardAlert() : ""}
       <div class="stats-grid">
         <div class="stat stat-card-patients">
           <div class="stat-icon-wrap stat-icon-blue">
@@ -456,6 +460,7 @@ async function loadOnlineSettings() {
       workStartHour: d.work_start,
       workEndHour: d.work_end,
       slotDuration: d.slot_duration,
+      inventoryExpiryWarningDays: d.inventory_expiry_warning_days,
     };
   } catch (error) {
     // Graceful error handling
@@ -559,6 +564,10 @@ function renderSettings() {
           <div class="field">
             <label>${t("end")}</label>
             <input type="time" name="work_end" value="${esc(s.workEndHour || "18:00")}" ${!canEditClinic ? "disabled" : ""}>
+          </div>
+          <div class="field">
+            <label>${t("invExpiryWarningDays")}</label>
+            <input type="number" name="inventory_expiry_warning_days" min="1" max="365" step="1" value="${esc(s.inventoryExpiryWarningDays || 60)}" ${!canEditClinic ? "disabled" : ""}>
           </div>
           ${canEditClinic ? `<div class="form-actions full-span"><button class="button button-primary" type="submit">${t("save")}</button></div>` : ""}
         </form>
@@ -926,6 +935,8 @@ async function refreshOnlineWorkspace() {
     if (hasPermission("staff.read")) {
       await loadOnlineStaff();
     }
+  } else if (state.view === "inventory") {
+    await loadInventoryView();
   }
   render();
 }

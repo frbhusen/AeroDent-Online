@@ -1,4 +1,4 @@
-const CACHE = "aerodent-online-v2";
+const CACHE = "aerodent-online-v3";
 const ASSETS = [
   "./",
   "./index.html",
@@ -22,6 +22,7 @@ const ASSETS = [
   "./js/xrays.js",
   "./js/timeline.js",
   "./js/backup.js",
+  "./js/inventory.js",
   "./js/events.js",
   "./js/app.js",
 ];

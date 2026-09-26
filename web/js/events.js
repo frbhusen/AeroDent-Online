@@ -828,6 +828,7 @@ function bindFormEvents() {
                     slot_duration: Number(data.slot_duration) || 30,
                     work_start: data.work_start || "09:00",
                     work_end: data.work_end || "18:00",
+                    inventory_expiry_warning_days: Number(data.inventory_expiry_warning_days) || 60,
                 });
                 toast(t("savedOnline"));
                 await loadOnlineSettings();
@@ -1002,6 +1003,9 @@ function bindView() {
     }
     if (typeof bindAuditLogEvents === "function") {
         bindAuditLogEvents();
+    }
+    if (typeof bindInventoryEvents === "function") {
+        bindInventoryEvents();
     }
 
     const searchInput = $("#globalSearch");

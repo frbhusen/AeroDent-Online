@@ -413,6 +413,11 @@ def purge_clinic_data(clinic_id):
     from backend.models import (
         Appointment,
         AuditLog,
+        InventoryBatch,
+        InventoryCategory,
+        InventoryItem,
+        InventoryMovement,
+        InventorySupplier,
         Invoice,
         Odontogram,
         Patient,
@@ -459,6 +464,10 @@ def purge_clinic_data(clinic_id):
 
     # 8. Patients
     db.session.query(Patient).filter(Patient.clinic_id == clinic_id).delete(synchronize_session=False)
+
+    # 9a. Inventory (movements reference staff, so they must go before users)
+    for model in (InventoryMovement, InventoryBatch, InventoryItem, InventoryCategory, InventorySupplier):
+        db.session.query(model).filter(model.clinic_id == clinic_id).delete(synchronize_session=False)
 
     # 9. Clinic Staff (all users under this clinic)
     db.session.query(User).filter(User.clinic_id == clinic_id).delete(synchronize_session=False)

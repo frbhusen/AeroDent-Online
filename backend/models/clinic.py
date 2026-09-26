@@ -50,6 +50,14 @@ class Clinic(db.Model):
         default=30,
     )
 
+    # Inventory batches expiring within this many days are flagged as "expiring soon".
+    inventory_expiry_warning_days = db.Column(
+        db.Integer,
+        nullable=False,
+        default=60,
+        server_default="60",
+    )
+
     is_active = db.Column(
         db.Boolean,
         nullable=False,

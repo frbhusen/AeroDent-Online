@@ -56,6 +56,7 @@ IndexedDB + Web Crypto API (PBKDF2 Local PIN Auth)
 | **Prescriptions** | Read, Create, Update, Delete | Read, Create, Update, Delete | Read-only |
 | **X-Rays** | Read, Upload, Update, Delete | Read, Upload, Update, Delete | Read & Download only |
 | **Invoices** | Read, Create, Update, Delete | Read, Create, Update | Read, Create, Update |
+| **Inventory** | Full management (items, categories, suppliers, receive, use, adjust, write-off) | Read, Receive, Use/Return | Read, Receive, Use/Return, Manage suppliers |
 | **Clinic Settings** | Read, Update | Read-only | No access |
 | **Staff Management** | Full CRUD | No access | No access |
 | **Clinic Export** | Full export | Full export | No access |
@@ -70,7 +71,7 @@ IndexedDB + Web Crypto API (PBKDF2 Local PIN Auth)
 │   ├── auth/                 # Session auth, login/logout, RBAC permissions
 │   ├── models/               # SQLAlchemy models (Clinic, User, Patient, etc.)
 │   ├── routes/               # API route blueprints (patients, treatments, etc.)
-│   ├── services/             # Storage service (X-ray file handling)
+│   ├── services/             # Audit log, X-ray storage, inventory stock operations
 │   ├── app.py                # Flask app factory and entry point
 │   ├── config.py             # Development, testing, production configurations
 │   ├── requirements.txt      # Python dependencies
@@ -97,6 +98,7 @@ IndexedDB + Web Crypto API (PBKDF2 Local PIN Auth)
 │       ├── prescriptions.js  # Medications & prescription generator
 │       ├── xrays.js          # Secure X-ray viewer & uploader
 │       ├── timeline.js       # Patient clinical history timeline
+│       ├── inventory.js      # Inventory: stock, batches/expiry, suppliers, categories
 │       ├── backup.js         # Offline export/import & online clinic data export
 │       ├── events.js         # Event listeners & UI dispatchers
 │       └── app.js            # App initialization, dashboard, settings & staff
@@ -205,7 +207,38 @@ Get-ChildItem -Path web -Recurse -Filter "*.js" | ForEach-Object {
 
 ---
 
-## 6. Super Admin & Subscription System Architecture
+## 6. Inventory Module (Online)
+
+Clinic-scoped stock management for dental materials, medicines, consumables, instruments and
+supplies (`/api/inventory/...`, `web/js/inventory.js`). Offline mode does not include inventory.
+
+- **Server-authoritative stock**: an item's `quantity` is never edited directly. Every change is an
+  append-only `inventory_movements` row (`opening`, `stock_in`, `usage`, `return`, `adjustment`,
+  `expired`, `damaged`, `loss`, `supplier_return`) that records the signed change, the resulting
+  balance, who made it, and why. Mistakes are corrected with a new adjustment, never by rewriting
+  history. Stock operations lock the item row and run in a single transaction.
+- **No negative stock**: usage or write-offs larger than the available quantity are rejected with
+  `409`; database check constraints back this up.
+- **Batches & expiry (optional per item)**: items with *batch tracking* hold stock in lots with
+  batch numbers and expiry dates. Usage consumes earliest-expiry-first automatically (or from a
+  chosen lot). Expired lots are excluded from usable stock and cannot be used; they stay on hand
+  until written off, so history is preserved. The "expiring soon" window is a clinic setting
+  (`inventory_expiry_warning_days`, default 60).
+- **Stock status**: `out` when usable quantity ≤ 0, `low` when ≤ the item's own minimum.
+- **Estimated value**: usable quantity × recorded unit cost (lot cost where known, otherwise the
+  item's latest received cost). It is an operational estimate, not an accounting valuation.
+- **Clinical links**: a movement may carry `reference_type`/`reference_id` (patient, treatment,
+  appointment), validated against the same clinic but intentionally not a foreign key.
+- **Deletion policy**: items are deactivated, never deleted. Categories and suppliers can only
+  be deleted when nothing references them; otherwise they are deactivated.
+- **Permissions**: `inventory.read`, `inventory.create`, `inventory.update`, `inventory.delete`
+  (deactivate), `inventory.stock_in`, `inventory.stock_out` (usage/return), `inventory.adjust`
+  (count corrections and write-offs), `inventory.manage_categories`, `inventory.manage_suppliers`.
+- All inventory actions are written to the audit log (`inventory_*` actions).
+
+---
+
+## 7. Super Admin & Subscription System Architecture
 
 The **Super Admin** role (`super_admin`) is the global platform owner who controls clinic subscriptions, clinic access, and all staff accounts:
 
@@ -216,7 +249,7 @@ The **Super Admin** role (`super_admin`) is the global platform owner who contro
 
 ---
 
-## 7. Production Deployment Readiness
+## 8. Production Deployment Readiness
 
 - Ensure `AERODENT_ENV=production` — this automatically enforces HTTPS-only (`Secure`) session
   cookies; there is no separate `SESSION_COOKIE_SECURE` environment variable to set.
@@ -235,7 +268,7 @@ The **Super Admin** role (`super_admin`) is the global platform owner who contro
 
 ---
 
-## 8. Commercial SaaS Capabilities
+## 9. Commercial SaaS Capabilities
 
 - **Audit Trail & Activity Logging**: Tamper-evident logging tracking all patient modifications, invoices, logins, and registrations (`/api/audit-logs`), viewable by Head Doctors and Super Admins.
 - **Invoice Installments & Debt Ledger**: Full support for partial down-payments and installments with automatic balance recalculation (`POST /api/invoices/<id>/payments`).

@@ -130,6 +130,10 @@ function renderNav() {
             if (window.AERODENT_ONLINE && id === "settings" && !hasPermission("clinic_settings.read")) {
                 return false;
             }
+            // Inventory is an online, server-authoritative module; offline mode has no inventory store.
+            if (id === "inventory" && (!window.AERODENT_ONLINE || !hasPermission("inventory.read"))) {
+                return false;
+            }
             return true;
         });
         if (state.auth?.user?.role === "head_doctor") {
@@ -197,6 +201,8 @@ function renderNav() {
                             if (hasPermission("staff.read")) await loadOnlineStaff();
                         } else if (state.view === "hr") {
                             if (typeof loadOnlineHRData === "function") await loadOnlineHRData();
+                        } else if (state.view === "inventory") {
+                            if (typeof loadInventoryView === "function") await loadInventoryView();
                         } else if (state.view === "audit_logs") {
                             if (typeof loadAuditLogs === "function") await loadAuditLogs();
                         }
@@ -221,7 +227,7 @@ function render() {
         ? t(section[2]).toUpperCase()
         : isSuperAdmin ? "ADMIN" : "OVERVIEW";
     $("#selectedPatientLabel").textContent =
-        (isSuperAdmin || state.view === "appointments" || state.view === "dashboard" || state.view === "settings" || state.view === "audit_logs" || state.view === "hr")
+        (isSuperAdmin || state.view === "appointments" || state.view === "dashboard" || state.view === "settings" || state.view === "audit_logs" || state.view === "hr" || state.view === "inventory")
             ? ""
             : state.selectedPatient?.name || t("selectPatient");
     $(".page-heading h1").textContent = section ? t(section[2]) : isSuperAdmin ? t("adminOverview") : t("dashboard");
@@ -236,6 +242,7 @@ function render() {
         xrays: renderXrays,
         settings: renderSettings,
         hr: typeof renderHR === "function" ? renderHR : () => "<div>HR</div>",
+        inventory: typeof renderInventory === "function" ? renderInventory : () => "<div>Inventory</div>",
         admin_overview: renderAdminOverview,
         admin_clinics: renderAdminClinics,
         admin_users: renderAdminUsers,

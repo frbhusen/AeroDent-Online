@@ -8,6 +8,11 @@ from backend.services.audit import log_activity
 from backend.models import (
     Appointment,
     Clinic,
+    InventoryBatch,
+    InventoryCategory,
+    InventoryItem,
+    InventoryMovement,
+    InventorySupplier,
     Invoice,
     Odontogram,
     Patient,
@@ -22,7 +27,16 @@ from backend.models import (
 settings_blueprint = Blueprint("settings", __name__, url_prefix="/api")
 
 ALLOWED_SETTING_FIELDS = frozenset(
-    {"name", "phone", "address", "currency", "work_start", "work_end", "slot_duration"}
+    {
+        "name",
+        "phone",
+        "address",
+        "currency",
+        "work_start",
+        "work_end",
+        "slot_duration",
+        "inventory_expiry_warning_days",
+    }
 )
 
 
@@ -49,6 +63,7 @@ def _serialize_settings(clinic):
         "work_start": clinic.work_start.strftime("%H:%M") if clinic.work_start else "09:00",
         "work_end": clinic.work_end.strftime("%H:%M") if clinic.work_end else "18:00",
         "slot_duration": clinic.slot_duration or 30,
+        "inventory_expiry_warning_days": clinic.inventory_expiry_warning_days or 60,
         "created_at": clinic.created_at.isoformat() if clinic.created_at else None,
         "updated_at": clinic.updated_at.isoformat() if clinic.updated_at else None,
     }
@@ -130,6 +145,12 @@ def update_settings():
             return _error("slot_duration must be a positive integer up to 240 minutes.", 422)
         clinic.slot_duration = val
 
+    if "inventory_expiry_warning_days" in data:
+        val = data["inventory_expiry_warning_days"]
+        if isinstance(val, bool) or not isinstance(val, int) or val < 1 or val > 365:
+            return _error("inventory_expiry_warning_days must be an integer between 1 and 365.", 422)
+        clinic.inventory_expiry_warning_days = val
+
     try:
         log_activity(
             action="clinic_settings_updated",
@@ -181,6 +202,85 @@ def export_clinic_data():
     xrays = db.session.scalars(
         db.select(XRay).where(XRay.clinic_id == clinic_id).order_by(XRay.id)
     ).all()
+
+    def _clinic_rows(model):
+        return db.session.scalars(
+            db.select(model).where(model.clinic_id == clinic_id).order_by(model.id)
+        ).all()
+
+    def _decimal(value):
+        return format(value, "f") if value is not None else None
+
+    inventory_export = {
+        "categories": [
+            {"id": c.id, "name": c.name, "is_active": c.is_active}
+            for c in _clinic_rows(InventoryCategory)
+        ],
+        "suppliers": [
+            {
+                "id": s.id,
+                "name": s.name,
+                "contact_person": s.contact_person,
+                "phone": s.phone,
+                "email": s.email,
+                "address": s.address,
+                "notes": s.notes,
+                "is_active": s.is_active,
+            }
+            for s in _clinic_rows(InventorySupplier)
+        ],
+        "items": [
+            {
+                "id": i.id,
+                "name": i.name,
+                "sku": i.sku,
+                "barcode": i.barcode,
+                "category_id": i.category_id,
+                "supplier_id": i.supplier_id,
+                "description": i.description,
+                "unit": i.unit,
+                "quantity": _decimal(i.quantity),
+                "minimum_quantity": _decimal(i.minimum_quantity),
+                "cost_per_unit": _decimal(i.cost_per_unit),
+                "location": i.location,
+                "track_batches": i.track_batches,
+                "is_active": i.is_active,
+            }
+            for i in _clinic_rows(InventoryItem)
+        ],
+        "batches": [
+            {
+                "id": b.id,
+                "item_id": b.item_id,
+                "batch_number": b.batch_number,
+                "quantity": _decimal(b.quantity),
+                "unit_cost": _decimal(b.unit_cost),
+                "expiry_date": b.expiry_date.isoformat() if b.expiry_date else None,
+                "supplier_id": b.supplier_id,
+            }
+            for b in _clinic_rows(InventoryBatch)
+        ],
+        "movements": [
+            {
+                "id": m.id,
+                "item_id": m.item_id,
+                "batch_id": m.batch_id,
+                "type": m.type,
+                "quantity": _decimal(m.quantity),
+                "quantity_after": _decimal(m.quantity_after),
+                "unit_cost": _decimal(m.unit_cost),
+                "supplier_id": m.supplier_id,
+                "reference": m.reference,
+                "reason": m.reason,
+                "notes": m.notes,
+                "reference_type": m.reference_type,
+                "reference_id": m.reference_id,
+                "created_by": m.created_by,
+                "created_at": m.created_at.isoformat() if m.created_at else None,
+            }
+            for m in _clinic_rows(InventoryMovement)
+        ],
+    }
 
     export_payload = {
         "clinic": _serialize_settings(clinic),
@@ -298,6 +398,7 @@ def export_clinic_data():
             }
             for x in xrays
         ],
+        "inventory": inventory_export,
     }
 
     return jsonify({"data": export_payload})

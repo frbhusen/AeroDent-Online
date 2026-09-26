@@ -83,6 +83,20 @@ function renderCommandPaletteResults(query = "") {
         });
     }
 
+    if (window.AERODENT_ONLINE && !isSuperAdmin && hasPermission("inventory.read")) {
+        defaultActions.push({
+            id: "view_inventory",
+            title: t("inventory"),
+            icon: "📦",
+            action: async () => {
+                closeCommandPalette();
+                state.view = "inventory";
+                render();
+                await reloadInventoryView();
+            }
+        });
+    }
+
     const filteredActions = defaultActions.filter((a) => a.title.toLowerCase().includes(lowerQuery));
 
     // 2. Patients search

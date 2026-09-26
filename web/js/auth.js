@@ -290,6 +290,7 @@ function clearOnlineClinicState() {
     state.dashboardData = null;
     state.timelineData = null;
     state.settings = {};
+    if (typeof resetInventoryState === "function") resetInventoryState();
 }
 
 function setOnlineUser(user) {
@@ -405,6 +406,9 @@ function hasPermission(permission) {
             "invoices.read", "invoices.create", "invoices.update", "invoices.delete",
             "clinic_settings.read", "clinic_settings.update",
             "staff.read", "staff.create", "staff.update", "staff.deactivate", "staff.delete",
+            "inventory.read", "inventory.create", "inventory.update", "inventory.delete",
+            "inventory.stock_in", "inventory.stock_out", "inventory.adjust",
+            "inventory.manage_categories", "inventory.manage_suppliers",
         ],
         doctor: [
             "dashboard.read",
@@ -417,6 +421,7 @@ function hasPermission(permission) {
             "xrays.read", "xrays.create", "xrays.update", "xrays.delete",
             "invoices.read", "invoices.create", "invoices.update",
             "clinic_settings.read",
+            "inventory.read", "inventory.stock_in", "inventory.stock_out",
         ],
         secretary: [
             "dashboard.read",
@@ -428,6 +433,7 @@ function hasPermission(permission) {
             "prescriptions.read",
             "xrays.read",
             "invoices.read", "invoices.create", "invoices.update",
+            "inventory.read", "inventory.stock_in", "inventory.stock_out", "inventory.manage_suppliers",
         ],
     };
     return permissions[role]?.includes(permission) || false;

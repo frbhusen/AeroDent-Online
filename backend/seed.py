@@ -1,4 +1,5 @@
-from datetime import date, time
+from datetime import date, time, timedelta
+from decimal import Decimal
 import os
 import sys
 from pathlib import Path
@@ -13,6 +14,9 @@ from backend.extensions import db
 from backend.models import (
     Appointment,
     Clinic,
+    InventoryCategory,
+    InventoryItem,
+    InventorySupplier,
     Invoice,
     Odontogram,
     Patient,
@@ -302,6 +306,67 @@ with app.app_context():
         db.session.add(invoice)
 
     db.session.commit()
+
+    # Inventory demo data, created through the stock service so the ledger stays consistent.
+    if not InventoryItem.query.filter_by(clinic_id=clinic.id).first():
+        from backend.services.inventory import receive_stock
+
+        categories = {}
+        for name in ("Restorative Materials", "Anesthesia", "PPE", "Disinfection & Sterilization"):
+            category = InventoryCategory(clinic_id=clinic.id, name=name, is_active=True)
+            db.session.add(category)
+            categories[name] = category
+        supplier = InventorySupplier(
+            clinic_id=clinic.id,
+            name="Development Dental Depot",
+            contact_person="Sales Desk",
+            phone="0110000000",
+            is_active=True,
+        )
+        db.session.add(supplier)
+        db.session.flush()
+
+        demo_items = [
+            ("Composite A2 syringe", "Restorative Materials", "syringe", 3, "12.50", False, [(8, None, None)]),
+            ("Glass ionomer capsule", "Restorative Materials", "capsule", 20, "1.80", False, [(12, None, None)]),
+            ("Lidocaine 2% carpule", "Anesthesia", "carpule", 30, "0.90", True, [
+                (40, "LD-2402", date.today() + timedelta(days=20)),
+                (50, "LD-2410", date.today() + timedelta(days=300)),
+            ]),
+            ("Nitrile gloves (M)", "PPE", "box", 5, "7.00", False, [(14, None, None)]),
+            ("Surface disinfectant 1L", "Disinfection & Sterilization", "bottle", 2, "9.50", True, [
+                (3, "SD-001", date.today() - timedelta(days=4)),
+            ]),
+        ]
+        for name, category_name, unit, minimum, cost, tracked, lots in demo_items:
+            item = InventoryItem(
+                clinic_id=clinic.id,
+                name=name,
+                category_id=categories[category_name].id,
+                supplier_id=supplier.id,
+                unit=unit,
+                quantity=Decimal("0"),
+                minimum_quantity=Decimal(minimum),
+                cost_per_unit=Decimal(cost),
+                track_batches=tracked,
+                is_active=True,
+                created_by=head_doctor.id,
+            )
+            db.session.add(item)
+            db.session.flush()
+            for quantity, lot, expiry in lots:
+                receive_stock(
+                    item,
+                    quantity=Decimal(quantity),
+                    user=head_doctor,
+                    movement_type="opening",
+                    batch_number=lot,
+                    expiry_date=expiry,
+                    unit_cost=Decimal(cost),
+                    supplier_id=supplier.id,
+                    reason="Opening balance",
+                )
+        db.session.commit()
 
     print("Development data created successfully.")
     print(f"Clinic ID: {clinic.id}")

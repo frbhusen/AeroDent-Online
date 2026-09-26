@@ -65,6 +65,15 @@ EXPECTED_PERMISSIONS = {
         "staff.update",
         "staff.deactivate",
         "staff.delete",
+        "inventory.read",
+        "inventory.create",
+        "inventory.update",
+        "inventory.delete",
+        "inventory.stock_in",
+        "inventory.stock_out",
+        "inventory.adjust",
+        "inventory.manage_categories",
+        "inventory.manage_suppliers",
     },
     "doctor": {
         "dashboard.read",
@@ -98,6 +107,9 @@ EXPECTED_PERMISSIONS = {
         "invoices.create",
         "invoices.update",
         "clinic_settings.read",
+        "inventory.read",
+        "inventory.stock_in",
+        "inventory.stock_out",
     },
     "secretary": {
         "dashboard.read",
@@ -116,6 +128,10 @@ EXPECTED_PERMISSIONS = {
         "invoices.read",
         "invoices.create",
         "invoices.update",
+        "inventory.read",
+        "inventory.stock_in",
+        "inventory.stock_out",
+        "inventory.manage_suppliers",
     },
 }
 

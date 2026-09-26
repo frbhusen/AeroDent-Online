@@ -12,6 +12,13 @@ from backend.models.audit_log import AuditLog
 from backend.models.payment import Payment
 from backend.models.waitlist import Waitlist
 from backend.models.hr import StaffShift, TimeClock, StaffCredential
+from backend.models.inventory import (
+    InventoryBatch,
+    InventoryCategory,
+    InventoryItem,
+    InventoryMovement,
+    InventorySupplier,
+)
 
 
 __all__ = [
@@ -32,4 +39,9 @@ __all__ = [
     "StaffShift",
     "TimeClock",
     "StaffCredential",
+    "InventoryCategory",
+    "InventorySupplier",
+    "InventoryItem",
+    "InventoryBatch",
+    "InventoryMovement",
 ]
