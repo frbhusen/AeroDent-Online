@@ -169,7 +169,7 @@ function bindPatientEvents() {
         $("#prescriptionPatientSelect");
 
     if (prescriptionPatientSelect) {
-        prescriptionPatientSelect.onchange = () => {
+        prescriptionPatientSelect.onchange = async () => {
             state.prescriptionPatientId =
                 Number(
                     prescriptionPatientSelect.value
@@ -182,6 +182,10 @@ function bindPatientEvents() {
                         state.prescriptionPatientId
                 ) || state.selectedPatient;
 
+            if (window.AERODENT_ONLINE) {
+                await loadOnlinePrescriptions();
+            }
+
             render();
         };
     }
@@ -190,7 +194,7 @@ function bindPatientEvents() {
         $("#xrayPatientSelect");
 
     if (xrayPatientSelect) {
-        xrayPatientSelect.onchange = () => {
+        xrayPatientSelect.onchange = async () => {
             state.selectedPatient =
                 state.patients.find(
                     (patient) =>
@@ -199,6 +203,10 @@ function bindPatientEvents() {
                             xrayPatientSelect.value
                         )
                 ) || null;
+
+            if (window.AERODENT_ONLINE) {
+                await loadOnlineXrays();
+            }
 
             render();
         };
