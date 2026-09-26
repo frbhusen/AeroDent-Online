@@ -267,6 +267,16 @@ def auto_fill_waitlist_entry(entry_id):
     duration = int(data.get("duration") or 30)
     doctor_id = data.get("doctor_id") or entry.doctor_id
 
+    if doctor_id is not None:
+        doctor = db.session.scalar(
+            db.select(User).where(
+                User.id == doctor_id,
+                User.clinic_id == g.current_user.clinic_id,
+            )
+        )
+        if not doctor:
+            return _error("Doctor not found.", 404)
+
     # Create the appointment
     appointment = Appointment(
         clinic_id=entry.clinic_id,

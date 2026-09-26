@@ -110,6 +110,59 @@ def run_waitlist_tests():
 
             print("PASS: Waitlist creation, prioritization, listing, and auto-fill verified.")
 
+            # Auto-fill with a cross-clinic doctor_id must be rejected cleanly (not a 500)
+            other_clinic = Clinic.query.filter_by(name="Waitlist Test Clinic B").first()
+            if not other_clinic:
+                other_clinic = Clinic(
+                    name="Waitlist Test Clinic B",
+                    currency="USD",
+                    work_start=time(9, 0),
+                    work_end=time(18, 0),
+                    slot_duration=30,
+                )
+                db.session.add(other_clinic)
+                db.session.commit()
+
+            other_doctor = User.query.filter_by(email="waitlist_doc_b@clinic.local").first()
+            if not other_doctor:
+                other_doctor = User(
+                    clinic_id=other_clinic.id,
+                    name="Dr. Other Clinic",
+                    email="waitlist_doc_b@clinic.local",
+                    password_hash=hash_password("DoctorPass123!"),
+                    role="doctor",
+                    is_active=True,
+                )
+                db.session.add(other_doctor)
+                db.session.commit()
+
+            second_create_res = client.post(
+                "/api/waitlist",
+                json={
+                    "patient_id": patient.id,
+                    "procedure": "Cross-clinic doctor_id check",
+                    "priority": "normal",
+                },
+            )
+            assert second_create_res.status_code == 201
+            second_entry_id = second_create_res.get_json()["data"]["id"]
+
+            cross_clinic_autofill_res = client.post(
+                f"/api/waitlist/{second_entry_id}/auto-fill",
+                json={
+                    "date": "2026-10-16",
+                    "start_time": "11:00",
+                    "duration": 30,
+                    "doctor_id": other_doctor.id,
+                },
+            )
+            assert cross_clinic_autofill_res.status_code == 404, (
+                f"Expected 404, got {cross_clinic_autofill_res.status_code}: "
+                f"{cross_clinic_autofill_res.data}"
+            )
+            client.delete(f"/api/waitlist/{second_entry_id}")
+            print("PASS: Auto-fill with a cross-clinic doctor_id is rejected with 404, not a crash.")
+
 
 if __name__ == "__main__":
     run_waitlist_tests()
