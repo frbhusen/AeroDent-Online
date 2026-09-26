@@ -1,9 +1,29 @@
 import json
 
-from flask import request
+from flask import current_app, request
 
 from backend.extensions import db
 from backend.models.audit_log import AuditLog
+
+
+def get_client_ip():
+    """
+    Returns the direct socket peer address unless TRUST_PROXY_HEADERS is enabled, in which
+    case the app is assumed to sit behind a reverse proxy that strips/overwrites any
+    client-supplied X-Forwarded-For, so the header's first entry can be trusted instead.
+    """
+    trust_proxy = False
+    try:
+        trust_proxy = bool(current_app.config.get("TRUST_PROXY_HEADERS"))
+    except RuntimeError:
+        pass
+
+    if trust_proxy:
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
+
+    return request.remote_addr
 
 
 def log_activity(
@@ -38,9 +58,7 @@ def log_activity(
 
         if ip_address is None:
             try:
-                ip_address = request.headers.get("X-Forwarded-For", request.remote_addr)
-                if ip_address and "," in ip_address:
-                    ip_address = ip_address.split(",")[0].strip()
+                ip_address = get_client_ip()
             except Exception:
                 ip_address = None
 
