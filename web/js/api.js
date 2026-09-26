@@ -1,8 +1,8 @@
 const AERODENT_MODE = new URLSearchParams(window.location.search).get("mode") || "online";
 const AERODENT_ONLINE = AERODENT_MODE === "online";
-const API_BASE_URL = window.AERODENT_API_BASE_URL
-    || new URLSearchParams(window.location.search).get("api")
-    || "";
+// Same-origin by default. The API base is never taken from the URL: a crafted link could
+// otherwise send sign-in credentials to another host.
+const API_BASE_URL = window.AERODENT_API_BASE_URL || "";
 
 class ApiError extends Error {
     constructor(message, status, payload = null) {
@@ -31,7 +31,7 @@ async function apiRequest(path, options = {}) {
             credentials: "include",
         });
     } catch (error) {
-        throw new ApiError("Unable to reach the AeroDent server.", 0, error);
+        throw new ApiError(typeof t === "function" ? t("serverUnreachable") : "Unable to reach the AeroDent server.", 0, error);
     }
 
     let payload = null;
