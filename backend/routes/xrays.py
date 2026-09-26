@@ -1,19 +1,25 @@
 from datetime import date, datetime
 from io import BytesIO
-from pathlib import PurePosixPath
-from uuid import uuid4
 
-from PIL import Image, UnidentifiedImageError
 from flask import Blueprint, current_app, g, jsonify, request, send_file
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload, undefer
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
 from backend.auth import login_required, require_permission
 from backend.extensions import db
-from backend.models import Patient, XRay
-from backend.services.storage import LocalFileStorage
+from backend.models import Patient, XRay, XRayImage
 from backend.services.audit import log_activity
+from backend.services.auth_security import rate_limited
+from backend.services.storage import LocalFileStorage
+from backend.services.xray_images import (
+    XRayImageError,
+    download_name,
+    process_upload,
+    verify_bytes,
+    verify_full,
+)
 
 
 xrays_blueprint = Blueprint("xrays", __name__, url_prefix="/api")
@@ -22,8 +28,7 @@ XRAY_METADATA_FIELDS = frozenset({"filename", "tooth_tag", "type", "date", "time
 XRAY_INTERNAL_FIELDS = frozenset(
     {"id", "clinic_id", "patient_id", "uploaded_by", "storage_key", "created_at", "updated_at"}
 )
-MAX_IMAGE_DIMENSION = 1600
-ALLOWED_IMAGE_FORMATS = frozenset({"JPEG", "PNG", "WEBP", "GIF", "BMP", "TIFF"})
+UPLOADS_PER_HOUR = 200
 MAX_METADATA_LENGTHS = {"filename": 255, "tooth_tag": 100, "type": 100, "notes": 2000}
 
 
@@ -39,7 +44,8 @@ def _validate_metadata_lengths(data):
     return None
 
 
-def _storage():
+def _legacy_storage():
+    """Filesystem storage used only for X-rays uploaded before images moved into PostgreSQL."""
     return LocalFileStorage(current_app.config["AERODENT_STORAGE_PATH"])
 
 
@@ -91,53 +97,40 @@ def _serialize_xray(xray):
         "date": xray.date.isoformat(),
         "time": xray.time.isoformat() if xray.time else None,
         "notes": xray.notes,
+        "uploaded_by": xray.uploaded_by,
+        "image": _serialize_image(xray.image),
         "created_at": xray.created_at.isoformat() if xray.created_at else None,
         "updated_at": xray.updated_at.isoformat() if xray.updated_at else None,
     }
 
 
-def _normalize_image(file_storage):
+def _serialize_image(image):
+    if image is None:
+        return None
+    return {
+        "format": image.image_format,
+        "mime_type": image.mime_type,
+        "encoding": image.encoding,
+        "lossless": image.encoding in ("original", "png-lossless"),
+        "size_bytes": image.size_bytes,
+        "original_size_bytes": image.original_size_bytes,
+        "width": image.width,
+        "height": image.height,
+        "color_mode": image.color_mode,
+        "sha256": image.sha256,
+        "original_sha256": image.original_sha256,
+        "has_preview": image.preview_mime_type is not None,
+    }
+
+
+def _read_upload(file_storage):
     if not isinstance(file_storage, FileStorage) or not file_storage.filename:
         return None, _error("An image file is required.", 400)
-
     max_bytes = current_app.config["XRAY_MAX_UPLOAD_BYTES"]
     content = file_storage.stream.read(max_bytes + 1)
     if len(content) > max_bytes:
         return None, _error("Image file is too large.", 413)
-
-    try:
-        with Image.open(BytesIO(content)) as image:
-            image.verify()
-            image_format = image.format
-        if not isinstance(image_format, str) or image_format not in ALLOWED_IMAGE_FORMATS:
-            return None, _error("Unsupported image format.", 422)
-
-        with Image.open(BytesIO(content)) as image:
-            image.load()
-            scale = min(
-                1,
-                MAX_IMAGE_DIMENSION / image.width,
-                MAX_IMAGE_DIMENSION / image.height,
-            )
-            if scale < 1:
-                image = image.resize(
-                    (round(image.width * scale), round(image.height * scale)),
-                    Image.Resampling.LANCZOS,
-                )
-            if "A" in image.getbands():
-                image = image.convert("RGBA")
-            else:
-                image = image.convert("RGB")
-            output = BytesIO()
-            image.save(output, format="WEBP", quality=82, method=6)
-
-        return {
-            "content": output.getvalue(),
-            "original_mime_type": Image.MIME.get(image_format, "image/" + image_format.lower()),
-            "mime_type": "image/webp",
-        }, None
-    except (UnidentifiedImageError, OSError, ValueError):
-        return None, _error("Uploaded file is not a valid image.", 422)
+    return content, None
 
 
 def _metadata_from_form(form):
@@ -183,36 +176,39 @@ def upload_xray(patient_id):
     if patient is None:
         return _error("Patient not found.", 404)
 
-    image, error = _normalize_image(request.files.get("file"))
+    retry_after = rate_limited("xray_upload_user", g.current_user.id, limit=UPLOADS_PER_HOUR, window_seconds=3600)
+    db.session.commit()
+    if retry_after:
+        return _error("Upload limit reached. Please try again later.", 429)
+
+    file_item = request.files.get("file")
+    content, error = _read_upload(file_item)
     if error:
         return error
     metadata, error = _metadata_from_form(request.form)
     if error:
         return error
 
-    file_item = request.files.get("file")
-    raw_name = file_item.filename if file_item and file_item.filename else "xray.webp"
-    metadata.setdefault("filename", secure_filename(raw_name) or "xray.webp")
+    original_name = secure_filename(file_item.filename) or "xray"
+    try:
+        image_fields = process_upload(content, original_name[:255], file_item.mimetype)
+    except XRayImageError as exc:
+        return _error(exc.message, exc.status)
+
+    metadata.setdefault("filename", original_name[:255])
     metadata.setdefault("date", date.today())
-    storage_key = PurePosixPath(
-        "clinics",
-        str(g.current_user.clinic_id),
-        "patients",
-        str(patient.id),
-        "x-rays",
-        f"{uuid4().hex}.webp",
-    ).as_posix()
-    storage = _storage()
-    storage.save(image["content"], storage_key)
+
+    # Record and image bytes are written in ONE transaction: either both exist or neither.
     xray = XRay(
         **metadata,
         clinic_id=g.current_user.clinic_id,
         patient_id=patient.id,
         uploaded_by=g.current_user.id,
-        storage_key=storage_key,
-        mime_type=image["mime_type"],
-        original_mime_type=image["original_mime_type"],
+        storage_key=None,
+        mime_type=image_fields["mime_type"],
+        original_mime_type=image_fields["original_mime_type"],
     )
+    xray.image = XRayImage(clinic_id=g.current_user.clinic_id, **image_fields)
     db.session.add(xray)
     try:
         db.session.flush()
@@ -223,14 +219,16 @@ def upload_xray(patient_id):
             clinic_id=xray.clinic_id,
             details={
                 "patient_id": xray.patient_id,
-                "filename": xray.filename,
                 "type": xray.type,
+                "format": xray.image.image_format,
+                "encoding": xray.image.encoding,
+                "size_bytes": xray.image.size_bytes,
+                "sha256": xray.image.sha256,
             },
         )
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
-        storage.delete(storage_key)
         return _error("X-ray could not be saved.", 409)
 
     return jsonify({"data": _serialize_xray(xray)}), 201
@@ -257,7 +255,9 @@ def list_xrays(patient_id):
             return _error("date must be an ISO date.", 422)
         query = query.where(XRay.date == requested_date)
 
-    records = db.session.scalars(query.order_by(XRay.date.desc(), XRay.id.desc())).all()
+    records = db.session.scalars(
+        query.options(selectinload(XRay.image)).order_by(XRay.date.desc(), XRay.id.desc())
+    ).all()
     return jsonify({"data": [_serialize_xray(item) for item in records], "meta": {"count": len(records)}})
 
 
@@ -271,27 +271,89 @@ def get_xray(xray_id):
     return jsonify({"data": _serialize_xray(xray)})
 
 
+def _load_image_bytes(xray, *, preview=False):
+    column = XRayImage.preview_data if preview else XRayImage.data
+    return db.session.scalar(
+        db.select(column).where(XRayImage.clinic_id == xray.clinic_id, XRayImage.xray_id == xray.id)
+    )
+
+
+def _private_file_response(data, mimetype, filename, as_attachment):
+    response = send_file(BytesIO(data), mimetype=mimetype, as_attachment=as_attachment, download_name=filename)
+    response.headers["Cache-Control"] = "no-store, private"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Content-Security-Policy"] = "default-src 'none'; sandbox"
+    return response
+
+
 @xrays_blueprint.get("/x-rays/<int:xray_id>/file")
 @login_required
 @require_permission("xrays.read")
 def get_xray_file(xray_id):
+    """
+    ?download=1  -> the stored (original or lossless) bytes as an attachment
+    default      -> inline display; formats browsers cannot render use the preview rendition
+    """
     xray = _scoped_xray(xray_id)
     if xray is None:
         return _error("X-ray not found.", 404)
-    try:
-        file_handle = _storage().open(xray.storage_key)
-    except (FileNotFoundError, ValueError):
-        return _error("X-ray file not found.", 404)
+    as_attachment = request.args.get("download") == "1"
+    record = xray.image
 
-    response = send_file(
-        file_handle,
-        mimetype=xray.mime_type or "image/webp",
-        as_attachment=False,
-        download_name=xray.filename,
+    if record is None:
+        return _legacy_file_response(xray, as_attachment)
+
+    if not as_attachment and record.preview_mime_type:
+        preview = _load_image_bytes(xray, preview=True)
+        if preview:
+            return _private_file_response(preview, record.preview_mime_type, download_name(xray.filename, "PNG"), False)
+
+    data = _load_image_bytes(xray)
+    if not verify_bytes(record, data):
+        current_app.logger.error("Integrity check failed for X-ray %s (clinic %s)", xray.id, xray.clinic_id)
+        log_activity(
+            action="xray_integrity_failed",
+            resource_type="xray",
+            resource_id=xray.id,
+            clinic_id=xray.clinic_id,
+            details={"expected_sha256": record.sha256},
+        )
+        db.session.commit()
+        return _error("This X-ray failed its integrity check and cannot be served.", 409)
+
+    if as_attachment:
+        log_activity(action="xray_downloaded", resource_type="xray", resource_id=xray.id, clinic_id=xray.clinic_id)
+        db.session.commit()
+    return _private_file_response(data, record.mime_type, download_name(xray.filename, record.image_format), as_attachment)
+
+
+def _legacy_file_response(xray, as_attachment):
+    if not xray.storage_key:
+        return _error("X-ray file not found.", 404)
+    try:
+        with _legacy_storage().open(xray.storage_key) as handle:
+            data = handle.read()
+    except (FileNotFoundError, ValueError, OSError):
+        return _error("X-ray file not found.", 404)
+    return _private_file_response(data, xray.mime_type or "image/webp", xray.filename, as_attachment)
+
+
+@xrays_blueprint.get("/x-rays/<int:xray_id>/verify")
+@login_required
+@require_permission("xrays.read")
+def verify_xray(xray_id):
+    xray = _scoped_xray(xray_id)
+    if xray is None:
+        return _error("X-ray not found.", 404)
+    record = db.session.scalar(
+        db.select(XRayImage)
+        .options(undefer(XRayImage.data))
+        .where(XRayImage.clinic_id == xray.clinic_id, XRayImage.xray_id == xray.id)
     )
-    response.headers["Cache-Control"] = "private, no-store"
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    return response
+    if record is None:
+        return jsonify({"data": {"id": xray.id, "verified": False, "reason": "no database-stored image (legacy file)"}})
+    ok, reason = verify_full(record, record.data)
+    return jsonify({"data": {"id": xray.id, "verified": ok, "reason": reason, "sha256": record.sha256}})
 
 
 @xrays_blueprint.patch("/x-rays/<int:xray_id>")
@@ -357,7 +419,7 @@ def delete_xray(xray_id):
     xray = _scoped_xray(xray_id)
     if xray is None:
         return _error("X-ray not found.", 404)
-    storage_key = xray.storage_key
+    legacy_key = xray.storage_key
     log_activity(
         action="xray_deleted",
         resource_type="xray",
@@ -374,8 +436,9 @@ def delete_xray(xray_id):
     except IntegrityError:
         db.session.rollback()
         return _error("X-ray could not be deleted.", 409)
-    try:
-        _storage().delete(storage_key)
-    except (OSError, ValueError):
-        current_app.logger.exception("Failed to clean up X-ray storage key %s", storage_key)
+    if legacy_key:
+        try:
+            _legacy_storage().delete(legacy_key)
+        except (OSError, ValueError):
+            current_app.logger.exception("Failed to clean up legacy X-ray file %s", legacy_key)
     return "", 204

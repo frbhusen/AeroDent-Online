@@ -74,6 +74,10 @@ def create_app() -> Flask:
     app.register_blueprint(inventory_blueprint)
     app.register_blueprint(trial_blueprint)
 
+    from backend.cli import xrays_cli
+
+    app.cli.add_command(xrays_cli)
+
     from flask import request as req
 
     # Global cross-origin CSRF protection for all state-changing API endpoints
@@ -103,12 +107,13 @@ def create_app() -> Flask:
         response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
         # No inline scripts or inline event handlers exist in the frontend, so scripts are
         # restricted to our own origin. Inline style attributes are still used by templates.
-        response.headers["Content-Security-Policy"] = (
+        # Responses that set a stricter policy of their own (e.g. sandboxed X-ray files) keep it.
+        response.headers.setdefault("Content-Security-Policy", (
             "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; "
             "worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; "
             "form-action 'self'; frame-ancestors 'none'"
-        )
+        ))
         if app.config.get("SESSION_COOKIE_SECURE"):
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         if req.path.startswith("/api/"):
@@ -163,7 +168,7 @@ def create_app() -> Flask:
 
     @app.errorhandler(413)
     def payload_too_large(e):
-        return jsonify({"error": "Request payload exceeds maximum allowed size (16MB)."}), 413
+        return jsonify({"error": "Request payload exceeds the maximum allowed size."}), 413
 
     @app.errorhandler(429)
     def rate_limited(e):

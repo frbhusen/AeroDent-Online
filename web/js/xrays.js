@@ -1,12 +1,35 @@
 let onlineXrayRequest = 0;
 
+const XRAY_MAX_BYTES = 25 * 1024 * 1024; // mirrors AERODENT_XRAY_MAX_MB (server re-checks)
+const XRAY_ACCEPT_ONLINE = "image/png,image/jpeg,image/webp,image/gif,image/bmp,image/tiff,.tif,.tiff,.bmp";
+const XRAY_ACCEPT_OFFLINE = "image/png,image/jpeg,image/webp,image/gif,image/bmp,.bmp";
+
+function formatBytes(bytes) {
+    const value = Number(bytes) || 0;
+    if (value >= 1024 * 1024) return `${(value / 1024 / 1024).toFixed(1)} MB`;
+    return `${Math.max(1, Math.round(value / 1024))} KB`;
+}
+
+function xrayImageSummary(item) {
+    const image = item.image;
+    if (!image) return "";
+    const parts = [
+        image.format,
+        `${image.width}×${image.height}`,
+        formatBytes(image.size_bytes),
+        image.lossless ? t("xrayLossless") : t("xrayLegacyImage"),
+    ];
+    return `<span class="badge ${image.lossless ? "badge-green" : "badge-amber"}" title="SHA-256 ${esc(image.sha256)}">${esc(parts.join(" · "))}</span>`;
+}
+
 function mapApiXray(item) {
     return {
         ...item,
         patientId: item.patient_id,
         toothTag: item.tooth_tag,
         imageUrl: `${API_BASE_URL}/api/x-rays/${item.id}/file`,
-        downloadUrl: `${API_BASE_URL}/api/x-rays/${item.id}/file`,
+        // ?download=1 returns the stored original / lossless bytes (never the display preview).
+        downloadUrl: `${API_BASE_URL}/api/x-rays/${item.id}/file?download=1`,
         createdAt: item.created_at,
         updatedAt: item.updated_at,
     };
@@ -96,7 +119,7 @@ function renderXrays() {
                     </div>
                     <label class="button button-primary">
                         ＋ ${t("upload")}
-                        <input id="xrayUpload" type="file" accept="image/*" hidden>
+                        <input id="xrayUpload" type="file" accept="${window.AERODENT_ONLINE ? XRAY_ACCEPT_ONLINE : XRAY_ACCEPT_OFFLINE}" hidden>
                     </label>
                 </div>
             `;
@@ -319,6 +342,7 @@ async function openXrayViewer(xrayId) {
                     <span class="badge">${t(xray.type || "other")}</span>
                     ${xray.toothTag ? `<span class="badge">${t("toothNumber")} #${esc(xray.toothTag)}</span>` : ""}
                     <span class="muted">${formatXrayTimestamp(xray)}</span>
+                    ${xrayImageSummary(xray)}
                 </div>
                 <div class="xray-viewer-actions">
                     ${editable ? `<button type="button" class="button button-ghost" id="xrayEdit">${t("edit")}</button>` : ""}
@@ -327,7 +351,7 @@ async function openXrayViewer(xrayId) {
                     <button type="button" class="button button-ghost" id="xrayZoomIn">+</button>
                     <button type="button" class="button button-ghost" id="xrayReset">${t("reset")}</button>
                     <button type="button" class="button button-ghost" id="xrayRotate">↻</button>
-                    <a class="button button-primary" id="xrayDownload" href="${downloadSrc}" download="${esc(xray.filename || "xray.webp")}" target="_blank">
+                    <a class="button button-primary" id="xrayDownload" href="${downloadSrc}" ${window.AERODENT_ONLINE ? "download" : `download="${esc(xray.filename || "xray")}"`}>
                         ${t("download")}
                     </a>
                 </div>
@@ -450,14 +474,21 @@ async function openXrayViewer(xrayId) {
 async function handleXrayUploadFile(file) {
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
+    const extension = (file.name.split(".").pop() || "").toLowerCase();
+    const looksLikeImage = file.type.startsWith("image/") || ["tif", "tiff", "bmp"].includes(extension);
+    if (!looksLikeImage) {
         toast(t("unableProcessXray"));
         return;
     }
+    // Offline mode has no server to build a preview, so it only accepts formats browsers can show.
+    const isTiff = file.type === "image/tiff" || ["tif", "tiff"].includes(extension);
+    if (!window.AERODENT_ONLINE && isTiff) {
+        toast(t("xrayTiffOnlineOnly"));
+        return;
+    }
 
-    const MAX_SOURCE_BYTES = 15 * 1024 * 1024;
-    if (file.size > MAX_SOURCE_BYTES) {
-        toast("Image is too large (max 15MB).");
+    if (file.size > XRAY_MAX_BYTES) {
+        toast(t("xrayTooLarge").replace("{mb}", String(Math.round(XRAY_MAX_BYTES / 1024 / 1024))));
         return;
     }
 
@@ -497,8 +528,8 @@ async function handleXrayUploadFile(file) {
     }
 
     try {
-        const compressed = await compressXray(file);
-        const base64Data = await blobToBase64(compressed);
+        // Stored exactly as selected: no resizing or re-encoding (X-rays must stay lossless).
+        const base64Data = await blobToBase64(file);
         await dbPut("xrays", {
             patientId: patient.id,
             filename: file.name,
@@ -555,39 +586,11 @@ async function deleteXrayRecord(xrayId) {
     }
 }
 
-async function compressXray(file) {
-    const bitmap = await createImageBitmap(file);
-    const maxWidth = 1600;
-    const maxHeight = 1600;
-    const scale = Math.min(1, maxWidth / bitmap.width, maxHeight / bitmap.height);
-    const width = Math.round(bitmap.width * scale);
-    const height = Math.round(bitmap.height * scale);
-
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-
-    const context = canvas.getContext("2d");
-    if (!context) throw new Error("Could not create canvas context.");
-
-    context.drawImage(bitmap, 0, 0, width, height);
-
-    return new Promise((resolve, reject) => {
-        canvas.toBlob((blob) => {
-            if (!blob) {
-                reject(new Error("Image compression failed."));
-                return;
-            }
-            resolve(blob);
-        }, "image/webp", 0.82);
-    });
-}
-
 function blobToBase64(blob) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(new Error("Could not read compressed image."));
+        reader.onerror = () => reject(new Error("Could not read image."));
         reader.readAsDataURL(blob);
     });
 }

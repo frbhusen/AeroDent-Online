@@ -162,7 +162,7 @@ def run_fuzz_tests():
         print(f"INFO: second pass used real IDs for {sorted(ids)}")
 
         # Oversized payload is rejected cleanly (413), not by crashing.
-        big = client.post("/api/patients", data=b"{" + b" " * (17 * 1024 * 1024) + b"}", content_type="application/json")
+        big = client.post("/api/patients", data=b"{" + b" " * (app.config["MAX_CONTENT_LENGTH"] + 1024) + b"}", content_type="application/json")
         assert big.status_code == 413, big.status_code
 
         assert not failures, "\n".join(failures[:40]) + f"\n... {len(failures)} failures"

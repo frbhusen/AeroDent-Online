@@ -266,23 +266,42 @@ with app.app_context():
         filename="development-test.webp",
     ).first()
 
-    if not xray:
-        xray = XRay(
-            clinic_id=clinic.id,
-            patient_id=patient.id,
-            uploaded_by=doctor.id,
-            filename="development-test.webp",
-            storage_key="development/test.webp",
-            mime_type="image/webp",
-            original_mime_type="image/webp",
-            tooth_tag="14",
-            type="bitewing",
-            date=date.today(),
-            time=time(10, 30),
-            notes="Metadata-only development record",
-        )
+    if xray is None or xray.image is None:
+        # A synthetic 16-bit radiograph stored through the same lossless pipeline as uploads.
+        from io import BytesIO
 
-        db.session.add(xray)
+        from PIL import Image
+
+        from backend.models import XRayImage
+        from backend.services.xray_images import process_upload
+
+        width, height = 480, 320
+        radiograph = Image.new("I", (width, height))
+        radiograph.putdata([
+            int(12000 + 40000 * (1 - abs((x - width / 2) / (width / 2))) * (0.6 + 0.4 * ((y // 40) % 2)))
+            for y in range(height) for x in range(width)
+        ])
+        buffer = BytesIO()
+        radiograph.convert("I;16").save(buffer, format="TIFF")
+        image_fields = process_upload(buffer.getvalue(), "development-bitewing.tif", "image/tiff")
+
+        if xray is None:
+            xray = XRay(
+                clinic_id=clinic.id,
+                patient_id=patient.id,
+                uploaded_by=doctor.id,
+                filename="development-test.webp",
+                tooth_tag="14",
+                type="bitewing",
+                date=date.today(),
+                time=time(10, 30),
+                notes="Synthetic development radiograph",
+            )
+            db.session.add(xray)
+        xray.storage_key = None
+        xray.mime_type = image_fields["mime_type"]
+        xray.original_mime_type = image_fields["original_mime_type"]
+        xray.image = XRayImage(clinic_id=clinic.id, **image_fields)
 
     invoice = Invoice.query.filter_by(
         clinic_id=clinic.id,

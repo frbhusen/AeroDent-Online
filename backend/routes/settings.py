@@ -1,6 +1,7 @@
 from datetime import datetime, time
 from flask import Blueprint, g, jsonify, request
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload
 
 from backend.auth import login_required, require_permission
 from backend.extensions import db
@@ -210,7 +211,7 @@ def export_clinic_data():
         db.select(Odontogram).where(Odontogram.clinic_id == clinic_id).order_by(Odontogram.id)
     ).all()
     xrays = db.session.scalars(
-        db.select(XRay).where(XRay.clinic_id == clinic_id).order_by(XRay.id)
+        db.select(XRay).options(selectinload(XRay.image)).where(XRay.clinic_id == clinic_id).order_by(XRay.id)
     ).all()
 
     def _clinic_rows(model):
@@ -405,6 +406,22 @@ def export_clinic_data():
                 "tooth_tag": x.tooth_tag,
                 "date": x.date.isoformat(),
                 "notes": x.notes,
+                # Image bytes live in PostgreSQL (xray_images) and are covered by database
+                # backups; the export carries the metadata and hashes needed to verify them.
+                "image": (
+                    {
+                        "format": x.image.image_format,
+                        "encoding": x.image.encoding,
+                        "size_bytes": x.image.size_bytes,
+                        "width": x.image.width,
+                        "height": x.image.height,
+                        "sha256": x.image.sha256,
+                        "original_sha256": x.image.original_sha256,
+                        "download_url": f"/api/x-rays/{x.id}/file?download=1",
+                    }
+                    if x.image
+                    else None
+                ),
             }
             for x in xrays
         ],

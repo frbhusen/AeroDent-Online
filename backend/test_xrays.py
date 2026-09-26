@@ -131,12 +131,13 @@ def run_xray_tests():
                     assert xray.clinic_id == clinic_a_id
                     assert xray.patient_id == patient_a_id
                     assert xray.uploaded_by == doctor_a.id
-                    assert xray.mime_type == "image/webp"
+                    assert xray.mime_type == "image/png"
                     assert xray.original_mime_type == "image/png"
-                    assert "unsafe" in xray.filename
-                    assert Path(storage_root, xray.storage_key).is_file()
-                    assert ".." not in xray.storage_key
-                    print("PASS: Valid images are normalized and stored under safe server keys.")
+                    assert "unsafe" in xray.filename and ".." not in xray.filename
+                    assert xray.storage_key is None, "new X-rays must not depend on filesystem storage"
+                    assert xray.image is not None and xray.image.encoding in ("original", "png-lossless")
+                    assert not any(Path(storage_root).rglob("*")), "nothing may be written to disk"
+                    print("PASS: Valid images are stored in the database, losslessly, with safe filenames.")
 
                     response = client.get(f"/api/patients/{patient_a_id}/x-rays")
                     assert response.status_code == 200
@@ -147,9 +148,9 @@ def run_xray_tests():
                     assert "storage_key" not in response.json["data"]
                     response = client.get(f"/api/x-rays/{xray_id}/file")
                     assert response.status_code == 200
-                    assert response.content_type == "image/webp"
+                    assert response.content_type == "image/png"
                     assert "no-store" in response.headers["Cache-Control"] and "private" in response.headers["Cache-Control"]
-                    assert response.data[:4] == b"RIFF"
+                    assert response.data[:8] == b"\x89PNG\r\n\x1a\n"
                     print("PASS: Metadata and protected file retrieval work without path leakage.")
 
                     response = client.patch(
@@ -213,7 +214,7 @@ def run_xray_tests():
                     assert missing.status_code == 400
                     oversized = client.post(
                         f"/api/patients/{patient_a_id}/x-rays",
-                        data={"file": (BytesIO(b"x" * (15 * 1024 * 1024 + 1)), "large.png")},
+                        data={"file": (BytesIO(b"x" * (app.config["XRAY_MAX_UPLOAD_BYTES"] + 1)), "large.png")},
                         content_type="multipart/form-data",
                     )
                     assert oversized.status_code == 413

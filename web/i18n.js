@@ -1690,6 +1690,15 @@ I18N.ar.trialErrorNetwork = "تعذر الاتصال بخادم AeroDent. تحق
 I18N.en.trialErrorGeneric = "Something went wrong. Please try again.";
 I18N.ar.trialErrorGeneric = "حدث خطأ ما. يرجى المحاولة مجدداً.";
 
+I18N.en.xrayTooLarge = "Image is too large (max {mb} MB).";
+I18N.ar.xrayTooLarge = "الصورة كبيرة جداً (الحد الأقصى {mb} ميغابايت).";
+I18N.en.xrayTiffOnlineOnly = "TIFF images are supported in online mode only.";
+I18N.ar.xrayTiffOnlineOnly = "صور TIFF مدعومة في الوضع المتصل فقط.";
+I18N.en.xrayLossless = "Lossless";
+I18N.ar.xrayLossless = "بدون فقدان للجودة";
+I18N.en.xrayLegacyImage = "Legacy compressed copy";
+I18N.ar.xrayLegacyImage = "نسخة قديمة مضغوطة";
+
 function t(key) {
   return I18N[currentLanguage]?.[key] || I18N.en?.[key] || key;
 }

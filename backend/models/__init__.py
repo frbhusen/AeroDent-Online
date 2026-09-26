@@ -7,6 +7,7 @@ from backend.models.treatment_plan import TreatmentPlan
 from backend.models.appointment import Appointment
 from backend.models.prescription import Prescription, PrescriptionMedication
 from backend.models.xray import XRay
+from backend.models.xray_image import XRayImage
 from backend.models.invoice import Invoice
 from backend.models.audit_log import AuditLog
 from backend.models.payment import Payment
@@ -34,6 +35,7 @@ __all__ = [
     "Prescription",
     "PrescriptionMedication",
     "XRay",
+    "XRayImage",
     "Invoice",
     "AuditLog",
     "Payment",

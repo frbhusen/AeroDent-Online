@@ -54,9 +54,11 @@ class XRay(db.Model):
         nullable=False,
     )
 
+    # Legacy only: path of an image stored on the server filesystem before X-ray bytes moved
+    # into the database (xray_images). New uploads never set it.
     storage_key = db.Column(
         db.String(500),
-        nullable=False,
+        nullable=True,
     )
 
     mime_type = db.Column(
@@ -117,6 +119,15 @@ class XRay(db.Model):
         back_populates="x_rays",
         primaryjoin="and_(Patient.clinic_id == XRay.clinic_id, Patient.id == XRay.patient_id)",
         foreign_keys="XRay.patient_id",
+    )
+
+    image = db.relationship(
+        "XRayImage",
+        primaryjoin="and_(XRayImage.clinic_id == XRay.clinic_id, XRayImage.xray_id == XRay.id)",
+        foreign_keys="XRayImage.xray_id",
+        uselist=False,
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     uploader = db.relationship(
