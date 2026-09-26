@@ -1786,7 +1786,7 @@ html[dir="rtl"] .nav-item.active::before {
 
 @media (max-width: 1024px) {
   .content-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -1926,6 +1926,7 @@ html[dir="rtl"] .nav-item.active::before {
 
 .dashboard-patients-list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 6px;
 }
 
@@ -1965,6 +1966,7 @@ html[dir="rtl"] .nav-item.active::before {
 
 .patient-row-info b {
   display: block;
+  overflow-wrap: anywhere;
   font-size: 13px;
   color: #0f172a;
 }
@@ -3282,7 +3284,7 @@ textarea {
   }
 
   .content-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .stats-grid {
@@ -4112,6 +4114,8 @@ body.is-super-admin .main {
   background: #f1f5f9;
   border-radius: 12px;
   padding: 6px;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 .hr-tab {
   flex: 1;
@@ -4744,3 +4748,254 @@ body.is-super-admin .main {
 }
 .trial-form .login-error:empty { display: none; }
 .trial-card > .eyebrow { justify-self: center; }
+
+/* ================================================================
+   Odontogram quadrants (responsive)
+   ================================================================ */
+.teeth-row {
+  gap: 18px;
+  align-items: flex-end;
+}
+.teeth-quadrant {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+/* Midline between the patient's right and left quadrants. */
+.teeth-quadrant + .teeth-quadrant {
+  border-inline-start: 2px dashed #cbd5e1;
+  padding-inline-start: 18px;
+}
+.teeth-row { direction: ltr; }
+
+@media (max-width: 1100px) {
+  .odontogram-wrap {
+    padding: 14px 4px;
+    overflow: visible;
+  }
+  .teeth-row {
+    min-width: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .teeth-quadrant {
+    position: relative;
+    gap: 2px;
+    padding-top: 18px;
+  }
+  .teeth-quadrant + .teeth-quadrant {
+    border-inline-start: 0;
+    border-top: 2px dashed #cbd5e1;
+    padding-inline-start: 0;
+    padding-top: 26px;
+  }
+  .teeth-quadrant::before {
+    content: attr(data-side);
+    position: absolute;
+    top: 0;
+    inset-inline-start: 2px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .teeth-quadrant + .teeth-quadrant::before { top: 8px; }
+  .odontogram-direction-labels { display: none; }
+  .tooth,
+  .primary-odontogram .tooth {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 44px;
+    width: auto;
+    height: auto;
+    min-height: 44px;
+  }
+  .tooth-visual,
+  .primary-odontogram .tooth-visual {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 2 / 3;
+  }
+  .tooth-label,
+  .primary-odontogram .tooth-label { font-size: 13px; }
+  .tooth:hover { transform: none; }
+}
+
+/* ================================================================
+   Responsive & touch layer
+   ================================================================ */
+
+/* Overlays must stack above the sticky top bar (z-index 50). */
+.drawer-backdrop { z-index: 150; }
+.context-drawer { z-index: 160; }
+.modal { z-index: 200; }
+.toast { z-index: 300; }
+
+/* Safe areas (notches / home indicator) for installed apps and mobile browsers. */
+.topbar {
+  padding-top: max(0px, env(safe-area-inset-top));
+  padding-inline-start: max(28px, env(safe-area-inset-left));
+  padding-inline-end: max(28px, env(safe-area-inset-right));
+}
+.main { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+
+/* Wide tables scroll horizontally inside their card; edge shadows show there is more. */
+.table-wrap,
+.table-wrapper,
+.admin-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background:
+    linear-gradient(to right, #fff 30%, rgba(255, 255, 255, 0)) left center / 24px 100% no-repeat local,
+    linear-gradient(to left, #fff 30%, rgba(255, 255, 255, 0)) right center / 24px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgba(15, 23, 42, 0.14), transparent) left center / 10px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgba(15, 23, 42, 0.14), transparent) right center / 10px 100% no-repeat scroll;
+}
+
+/* Touch devices: comfortable hit areas for icon-sized controls. */
+@media (pointer: coarse) {
+  .modal-close,
+  .icon-button,
+  .appointment-delete,
+  .xray-delete-button,
+  .btn-xs,
+  .btn-admin-action,
+  .medication-delete-button,
+  .button-sm,
+  .sidebar-toggle,
+  .toggle-password-btn {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .tooth:hover,
+  .button:hover { transform: none; }
+}
+
+/* Phones: 16px form text prevents iOS zoom-on-focus; dialogs become bottom sheets. */
+@media (max-width: 700px), (max-height: 500px) and (orientation: landscape) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea,
+  .field input,
+  .field select,
+  .field textarea,
+  .hr-date-input,
+  .inv-search,
+  .inv-toolbar select,
+  #auditSearchInput,
+  #adminClinicSearch,
+  #adminUserSearch,
+  .treatment-status-select,
+  .appointment-status-select {
+    font-size: 16px;
+  }
+  .modal {
+    padding: 8px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    align-items: end;
+  }
+  .modal-card {
+    width: 100%;
+    max-height: calc(100dvh - 16px - env(safe-area-inset-top));
+    padding: 22px 16px 18px;
+    border-radius: 16px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .modal-card .form-grid,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .modal-card h2 { font-size: 18px; padding-inline-end: 40px; }
+  .context-drawer {
+    width: 100% !important;
+    max-width: 100%;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  .page-heading h1 { font-size: 22px; }
+}
+
+/* Phones in landscape have little height: use the compact rail, not the full sidebar. */
+@media (max-height: 500px) and (orientation: landscape) {
+  body .sidebar,
+  body:not(.sidebar-collapsed) .sidebar {
+    width: 60px !important;
+    padding: 10px 6px !important;
+  }
+  body .profile > div:last-child,
+  body .sidebar-foot span:last-child,
+  body .nav-item span:last-child,
+  body:not(.sidebar-collapsed) .profile > div:last-child,
+  body:not(.sidebar-collapsed) .sidebar-foot span:last-child,
+  body:not(.sidebar-collapsed) .nav-item span:last-child {
+    display: none !important;
+  }
+  body .nav-item,
+  body:not(.sidebar-collapsed) .nav-item {
+    justify-content: center !important;
+    padding: 9px 4px !important;
+  }
+  body .profile,
+  body:not(.sidebar-collapsed) .profile { padding: 0 0 10px !important; justify-content: center !important; }
+  .sidebar-toggle { display: none; }
+  .online-authenticated .online-logout-button { width: 44px; margin: 8px auto; padding: 8px 0; display: grid; place-items: center; }
+  .online-logout-button span { display: none; }
+  .online-logout-button::before { content: "⏻"; font-size: 16px; }
+  .topbar { min-height: 56px; padding-block: 8px; }
+  .brand span, .clock { display: none; }
+  .heading-date { display: none; }
+}
+
+/* Inventory: tabs get their own scrollable row on narrow screens. */
+@media (max-width: 900px) {
+  .inv-tabs-row { flex-direction: column; flex-wrap: nowrap; align-items: stretch; }
+  .inv-tabs { flex: none; }
+  .inv-tab { flex: 0 0 auto; }
+  .inv-quick { justify-content: stretch; }
+  .inv-quick .button { flex: 1 1 0; }
+}
+
+/* Agenda: appointment cards wrap (based on the agenda's own width, whatever the sidebar
+   state) so status, edit and delete stay reachable. */
+.agenda { container-type: inline-size; }
+@container (max-width: 620px) {
+  .agenda .appointment {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .agenda .appointment > div:first-child { flex: 1 1 100%; min-width: 0; }
+  .agenda .appointment > [data-stop-propagation] { flex: 1 1 100%; justify-content: flex-end; flex-wrap: wrap; }
+  .agenda .appointment-status-select { flex: 1 1 140px; }
+}
+@media (max-width: 700px) {
+  .agenda-row { grid-template-columns: 52px 1fr; }
+  .agenda-time { padding: 10px 6px; }
+  .audit-search-box, #auditSearchInput { max-width: 100%; min-width: 0; width: 100%; }
+}
+
+.audit-search-box {
+  position: relative;
+  flex: 1 1 240px;
+  min-width: 0;
+  max-width: 360px;
+}
+.audit-search-input {
+  width: 100%;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 13px;
+  background: #fff;
+}
+.audit-search-input:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+@media (max-width: 700px) {
+  .card { padding: 16px 12px; border-radius: 14px; }
+  .audit-search-box { max-width: none; flex-basis: 100%; }
+  .audit-search-input { font-size: 16px; }
+}
+
+/* HR: tabs keep their natural width and scroll on narrow screens. */
+@media (max-width: 700px) {
+  .hr-tab { flex: 0 0 auto; }
+}

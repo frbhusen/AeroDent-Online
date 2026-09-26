@@ -104,7 +104,7 @@ async function loadOnlineDashboard() {
 
 function _appointmentStatusBadge(status) {
   const s = String(status || "").toLowerCase();
-  const label = t(`status${s.charAt(0).toUpperCase() + s.slice(1)}`) || t(s) || s;
+  const label = t(`status${s.charAt(0).toUpperCase() + s.slice(1)}`) || t(s) || esc(s);
   if (s === "completed") return `<span class="badge badge-green">✓ ${label}</span>`;
   if (s === "in_chair" || s === "chair") return `<span class="badge badge-purple">🪑 ${label}</span>`;
   if (s === "arrived") return `<span class="badge badge-amber">📍 ${label}</span>`;

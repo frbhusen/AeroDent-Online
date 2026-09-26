@@ -267,13 +267,13 @@ function renderAuditLogs() {
                     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                         ${categoryChips}
                     </div>
-                    <div style="min-width:240px;position:relative;">
+                    <div class="audit-search-box">
                         <input
                             type="search"
                             id="auditSearchInput"
+                            class="audit-search-input"
                             placeholder="${t("auditSearchPlaceholder")}"
                             value="${esc(state.auditSearchQuery || "")}"
-                            style="width:100%;padding:7px 14px;border-radius:8px;border:1px solid #cbd5e1;font-size:13px;outline:none;background:#fff;"
                         />
                     </div>
                 </div>

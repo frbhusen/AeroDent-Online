@@ -141,8 +141,6 @@ function renderOdontogram() {
     const primary = state.toothMode === "primary";
     const patient = state.selectedPatient;
     const patientOptions = state.patients.map((item) => `<option value="${item.id}" ${item.id === patient?.id ? "selected" : ""}>${esc(item.name)} · ${esc(item.phone || "")}</option>`).join("");
-    const upperCount = primary ? 10 : 16;
-    const lowerCount = primary ? 10 : 16;
     const status = !patient
         ? `<p class="muted">${t("noPatient")}</p>`
         : state.odontogramLoading
@@ -150,7 +148,29 @@ function renderOdontogram() {
             : state.odontogramError
                 ? `<p class="login-error">${esc(state.odontogramError)}</p>`
                 : "";
-    return `<section class="card workspace-card"><div class="workspace-toolbar"><div><div class="eyebrow">${t("odontogram")}</div><h2>${patient ? esc(patient.name) : t("selectPatient")}</h2><div class="field odontogram-patient-picker"><label>${t("patient")}</label><select id="odontogramPatientSelect"><option value="">${t("selectPatient")}</option>${patientOptions}</select></div></div><div class="segmented"><button class="${!primary ? "active" : ""}" data-mode="permanent">${t("permanent")}</button><button class="${primary ? "active" : ""}" data-mode="primary">${t("primary")}</button></div></div><div class="odontogram-wrap ${primary ? "primary-odontogram" : ""}">${status}<div class="arch-title">${t("maxillary")}</div><div class="odontogram-direction-labels"><span class="right">${t("right")}</span><span class="left">${t("left")}</span></div><div class="teeth-row">${Array.from({ length: upperCount }, (_, index) => tooth(index + 1, index, upperCount)).join("")}</div><div class="arch-title" style="margin-top:26px">${t("mandibular")}</div><div class="teeth-row">${Array.from({ length: lowerCount }, (_, index) => tooth(primary ? index + 11 : index + 17, index, lowerCount)).join("")}</div><div class="legend">${[["healthy", "healthy"], ["decay", "decay"], ["filling", "filling"], ["crown", "crown"], ["rct", "rct"], ["extract", "extract"], ["implant", "implant"]].map(([color, key]) => `<span><i style="background:var(--${color === "healthy" ? "surface" : color})"></i>${t(key)}</span>`).join("")}</div></div></section>`;
+    return `<section class="card workspace-card"><div class="workspace-toolbar"><div><div class="eyebrow">${t("odontogram")}</div><h2>${patient ? esc(patient.name) : t("selectPatient")}</h2><div class="field odontogram-patient-picker"><label>${t("patient")}</label><select id="odontogramPatientSelect"><option value="">${t("selectPatient")}</option>${patientOptions}</select></div></div><div class="segmented"><button class="${!primary ? "active" : ""}" data-mode="permanent">${t("permanent")}</button><button class="${primary ? "active" : ""}" data-mode="primary">${t("primary")}</button></div></div><div class="odontogram-wrap ${primary ? "primary-odontogram" : ""}">${status}<div class="arch-title">${t("maxillary")}</div><div class="odontogram-direction-labels"><span class="right">${t("right")}</span><span class="left">${t("left")}</span></div>${archRow(upperNumbers(primary), t("right"), t("left"))}<div class="arch-title" style="margin-top:26px">${t("mandibular")}</div>${archRow(lowerNumbers(primary), t("right"), t("left"))}<div class="legend">${[["healthy", "healthy"], ["decay", "decay"], ["filling", "filling"], ["crown", "crown"], ["rct", "rct"], ["extract", "extract"], ["implant", "implant"]].map(([color, key]) => `<span><i style="background:var(--${color === "healthy" ? "surface" : color})"></i>${t(key)}</span>`).join("")}</div></div></section>`;
+}
+
+// Universal numbering viewed facing the patient: the patient's right is on the screen's left.
+// Upper arch 1 -> 16 (A -> J); lower arch 32 -> 17 (T -> K), so tooth 32 sits under tooth 1.
+function upperNumbers(primary) {
+    return Array.from({ length: primary ? 10 : 16 }, (_, index) => index + 1);
+}
+
+function lowerNumbers(primary) {
+    return primary
+        ? Array.from({ length: 10 }, (_, index) => 20 - index)
+        : Array.from({ length: 16 }, (_, index) => 32 - index);
+}
+
+// One arch as two quadrants. Desktop shows them side by side; phones stack them.
+function archRow(numbers, rightLabel, leftLabel) {
+    const half = numbers.length / 2;
+    const render = (slice, offset) => slice.map((number, index) => tooth(number, index + offset, numbers.length)).join("");
+    return `<div class="teeth-row">
+        <div class="teeth-quadrant" data-side="${esc(rightLabel)}">${render(numbers.slice(0, half), 0)}</div>
+        <div class="teeth-quadrant" data-side="${esc(leftLabel)}">${render(numbers.slice(half), half)}</div>
+    </div>`;
 }
 
 function tooth(number, positionIndex, rowLength) {

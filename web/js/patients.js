@@ -102,7 +102,7 @@ function patientRow(patient) {
 
     return `
       <div class="patient-row" data-patient-id="${patient.id}">
-        <div class="patient-row-avatar">${initials}</div>
+        <div class="patient-row-avatar">${esc(initials)}</div>
         <div class="patient-row-info">
           <b>${esc(patient.name)}</b>
           <small><bdi dir="ltr">${esc(patient.phone || t("noPhone"))}</bdi></small>
