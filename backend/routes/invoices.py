@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from backend.auth import login_required, require_permission
 from backend.extensions import db
 from backend.models import Invoice, Patient, Treatment
+from backend.services.audit import log_activity
 
 
 invoices_blueprint = Blueprint("invoices", __name__, url_prefix="/api/invoices")
@@ -224,6 +225,13 @@ def create_invoice():
     )
     db.session.add(invoice)
     try:
+        db.session.flush()
+        log_activity(
+            action="invoice_created",
+            resource_type="invoice",
+            resource_id=invoice.id,
+            details={"patient_id": invoice.patient_id, "amount": float(invoice.amount)},
+        )
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
@@ -257,6 +265,12 @@ def update_invoice(invoice_id):
     for field, value in financial.items():
         setattr(invoice, field, value)
     try:
+        log_activity(
+            action="invoice_updated",
+            resource_type="invoice",
+            resource_id=invoice.id,
+            details={"amount": float(invoice.amount), "status": invoice.status},
+        )
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
@@ -271,8 +285,17 @@ def delete_invoice(invoice_id):
     invoice = _scoped_invoice(invoice_id)
     if invoice is None:
         return _error("Invoice not found.", 404)
+    deleted_patient_id = invoice.patient_id
+    deleted_amount = float(invoice.amount)
+
     db.session.delete(invoice)
     try:
+        log_activity(
+            action="invoice_deleted",
+            resource_type="invoice",
+            resource_id=invoice_id,
+            details={"patient_id": deleted_patient_id, "amount": deleted_amount},
+        )
         db.session.commit()
     except IntegrityError:
         db.session.rollback()

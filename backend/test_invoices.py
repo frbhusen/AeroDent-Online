@@ -13,6 +13,7 @@ from backend.app import app
 from backend.auth.service import hash_password
 from backend.extensions import db
 from backend.models import Clinic, Invoice, Patient, Treatment, User
+from backend.models.audit_log import AuditLog
 
 
 TEST_PASSWORD = "Correct Invoice Password!"
@@ -286,9 +287,27 @@ def run_invoice_tests():
                 )
                 assert response.status_code == 201
                 head_invoice_id = response.json["data"]["id"]
+
+                created_log = db.session.scalar(
+                    db.select(AuditLog).where(
+                        AuditLog.action == "invoice_created",
+                        AuditLog.resource_id == str(head_invoice_id),
+                    )
+                )
+                assert created_log is not None, "Expected an invoice_created audit log entry."
+
                 assert client.delete(f"/api/invoices/{head_invoice_id}").status_code == 204
                 assert db.session.get(Invoice, head_invoice_id) is None
+
+                deleted_log = db.session.scalar(
+                    db.select(AuditLog).where(
+                        AuditLog.action == "invoice_deleted",
+                        AuditLog.resource_id == str(head_invoice_id),
+                    )
+                )
+                assert deleted_log is not None, "Expected an invoice_deleted audit log entry."
                 print("PASS: Head doctor can delete invoices without deleting clinical records.")
+                print("PASS: Invoice creation and deletion are audit-logged.")
         finally:
             db.session.delete(clinic_a)
             db.session.delete(clinic_b)

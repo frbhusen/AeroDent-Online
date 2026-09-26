@@ -58,10 +58,12 @@ def list_invoice_payments(invoice_id):
 @require_permission("invoices.update")
 def add_invoice_payment(invoice_id):
     invoice = db.session.scalar(
-        db.select(Invoice).where(
+        db.select(Invoice)
+        .where(
             Invoice.id == invoice_id,
             Invoice.clinic_id == g.current_clinic.id,
         )
+        .with_for_update()
     )
     if not invoice:
         return jsonify({"error": "Invoice not found."}), 404
@@ -80,16 +82,21 @@ def add_invoice_payment(invoice_id):
     if amount > Decimal("99999999.99"):
         return jsonify({"error": "Payment amount exceeds maximum allowable limit."}), 422
 
+    payable = invoice.amount - invoice.discount
+    new_paid = (invoice.paid_amount or Decimal("0.00")) + amount
+    if new_paid > payable:
+        return jsonify({"error": "Payment amount exceeds the invoice's remaining payable amount."}), 422
+
     payment_method = data.get("payment_method", "cash")
     if payment_method not in {"cash", "card", "bank_transfer", "other"}:
-        payment_method = "cash"
+        return jsonify({"error": "Invalid payment method."}), 422
 
     payment_date_val = date.today()
     if data.get("payment_date"):
         try:
             payment_date_val = datetime.strptime(data["payment_date"][:10], "%Y-%m-%d").date()
         except Exception:
-            payment_date_val = date.today()
+            return jsonify({"error": "payment_date must be YYYY-MM-DD."}), 422
 
     notes = data.get("notes")
 
@@ -105,10 +112,9 @@ def add_invoice_payment(invoice_id):
     )
     db.session.add(payment)
 
-    # Recalculate invoice totals
-    new_paid = (invoice.paid_amount or Decimal("0.00")) + amount
+    # Recalculate invoice totals (new_paid/payable already validated above)
     invoice.paid_amount = new_paid
-    invoice.balance = max(Decimal("0.00"), invoice.amount - invoice.discount - new_paid)
+    invoice.balance = payable - new_paid
 
     if invoice.balance <= 0:
         invoice.status = "paid"
@@ -163,6 +169,11 @@ def delete_payment(payment_id):
     )
     if not payment:
         return jsonify({"error": "Payment not found."}), 404
+
+    if payment.invoice_id:
+        db.session.scalar(
+            db.select(Invoice).where(Invoice.id == payment.invoice_id).with_for_update()
+        )
 
     invoice = payment.invoice
     amount = payment.amount

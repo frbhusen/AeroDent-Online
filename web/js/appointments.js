@@ -2,13 +2,14 @@ let onlineAppointmentRequest = 0;
 
 function mapApiAppointment(item) {
     const patient = state.patients.find((p) => p.id === item.patient_id);
+    const doctor = (state.doctorsList || []).find((d) => d.id === item.doctor_id);
     return {
         ...item,
         clinicId: item.clinic_id,
         patientId: item.patient_id,
-        patientName: patient ? patient.name : (item.patient_name || `Patient #${item.patient_id}`),
+        patientName: item.patient_name || (patient ? patient.name : `Patient #${item.patient_id}`),
         doctorId: item.doctor_id,
-        doctorName: item.doctor_name || "",
+        doctorName: item.doctor_name || (doctor ? doctor.name : ""),
         startTime: item.start_time,
         duration: item.duration,
         status: item.status || "booked",
@@ -62,7 +63,18 @@ async function loadOnlineAppointments() {
             loadOnlineWaitlist(),
         ]);
         if (requestId !== onlineAppointmentRequest) return;
-        state.appointments = (apptRes.data || []).map(mapApiAppointment);
+
+        let allAppointments = apptRes.data || [];
+        const totalPages = apptRes.meta && apptRes.meta.pages ? apptRes.meta.pages : 1;
+        for (let page = 2; page <= totalPages; page += 1) {
+            const nextRes = await window.AERODENT_API.get(
+                `/api/appointments?start_date=${startDate}&end_date=${endDate}&per_page=100&page=${page}`
+            );
+            if (requestId !== onlineAppointmentRequest) return;
+            allAppointments = allAppointments.concat(nextRes.data || []);
+        }
+
+        state.appointments = allAppointments.map(mapApiAppointment);
     } catch (error) {
         if (requestId !== onlineAppointmentRequest) return;
         state.appointmentError = error.message;
@@ -373,7 +385,7 @@ async function editAppointment(id) {
                 <select name="status">
                     <option value="booked" ${appointment.status === "booked" ? "selected" : ""}>${t("booked")}</option>
                     <option value="arrived" ${appointment.status === "arrived" ? "selected" : ""}>${t("arrived")}</option>
-                    <option value="chair" ${appointment.status === "chair" || appointment.status === "in_chair" ? "selected" : ""}>${t("chair")}</option>
+                    <option value="in_chair" ${appointment.status === "chair" || appointment.status === "in_chair" ? "selected" : ""}>${t("chair")}</option>
                     <option value="completed" ${appointment.status === "completed" ? "selected" : ""}>${t("completed")}</option>
                     <option value="cancelled" ${appointment.status === "cancelled" ? "selected" : ""}>${t("cancelled")}</option>
                 </select>

@@ -1,3 +1,5 @@
+let onlinePatientRequest = 0;
+
 function mapApiPatient(patient) {
     return {
         ...patient,
@@ -32,6 +34,7 @@ function patientApiPayload(data) {
 }
 
 async function refreshOnlinePatients(preserveEmptySelection = false) {
+    const requestId = ++onlinePatientRequest;
     state.patientLoading = true;
     state.patientError = "";
     render();
@@ -42,6 +45,7 @@ async function refreshOnlinePatients(preserveEmptySelection = false) {
         });
         if (state.patientSearch.trim()) params.set("q", state.patientSearch.trim());
         const response = await window.AERODENT_API.get(`/api/patients?${params}`);
+        if (requestId !== onlinePatientRequest) return;
         state.patients = (response.data || []).map(mapApiPatient);
         state.patientTotal = response.meta?.total || 0;
         state.patientPages = response.meta?.pages || 0;
@@ -56,10 +60,13 @@ async function refreshOnlinePatients(preserveEmptySelection = false) {
             state.prescriptionPatientId ??= state.selectedPatient.id;
         }
     } catch (error) {
+        if (requestId !== onlinePatientRequest) return;
         state.patientError = error.message;
     } finally {
-        state.patientLoading = false;
-        render();
+        if (requestId === onlinePatientRequest) {
+            state.patientLoading = false;
+            render();
+        }
     }
 }
 

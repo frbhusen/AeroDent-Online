@@ -55,6 +55,11 @@ def run_hr_tests():
             db.session.add(assistant)
             db.session.commit()
 
+        # Clean up any shifts left over from a previous (possibly interrupted) test run,
+        # since this fixture is idempotent by fixed email/name rather than per-run unique.
+        StaffShift.query.filter_by(user_id=assistant.id).delete()
+        db.session.commit()
+
         with app.test_client() as client:
             # Login as Head Doctor
             client.post("/api/auth/login", json={"email": "hr_head@clinic.local", "password": "DoctorPass123!"})
@@ -78,6 +83,31 @@ def run_hr_tests():
             update_shift = client.patch(f"/api/hr/shifts/{shift_id}", json={"status": "completed"})
             assert update_shift.status_code == 200
             assert update_shift.get_json()["data"]["status"] == "completed"
+
+            # 1b. Updating a shift to invert start/end time is rejected
+            inverted_res = client.patch(f"/api/hr/shifts/{shift_id}", json={"start_time": "17:00"})
+            assert inverted_res.status_code == 422, f"Expected 422, got {inverted_res.status_code}"
+
+            # 1c. Creating an overlapping shift for the same staff member/date is rejected
+            overlap_res = client.post("/api/hr/shifts", json={
+                "user_id": assistant.id,
+                "date": "2026-10-01",
+                "start_time": "09:00",
+                "end_time": "10:00",
+            })
+            assert overlap_res.status_code == 409, f"Expected 409, got {overlap_res.status_code}"
+
+            # 1d. An adjacent (non-overlapping) shift for the same staff member/date is allowed
+            adjacent_res = client.post("/api/hr/shifts", json={
+                "user_id": assistant.id,
+                "date": "2026-10-01",
+                "start_time": "16:30",
+                "end_time": "18:00",
+            })
+            assert adjacent_res.status_code == 201, f"Expected 201, got {adjacent_res.status_code}: {adjacent_res.data}"
+            adjacent_shift_id = adjacent_res.get_json()["data"]["id"]
+            client.delete(f"/api/hr/shifts/{adjacent_shift_id}")
+            print("PASS: Shift time-ordering and overlap validation enforced correctly.")
 
             # 2. Time Clock (Punch in / Punch out)
             status_res = client.get("/api/hr/time-clock/status")

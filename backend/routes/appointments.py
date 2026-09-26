@@ -154,7 +154,9 @@ def _serialize_appointment(appointment):
         "id": appointment.id,
         "clinic_id": appointment.clinic_id,
         "patient_id": appointment.patient_id,
+        "patient_name": appointment.patient.name if appointment.patient else None,
         "doctor_id": appointment.doctor_id,
+        "doctor_name": appointment.doctor.name if appointment.doctor else None,
         "date": appointment.date.isoformat(),
         "start_time": appointment.start_time.strftime("%H:%M"),
         "duration": appointment.duration,
@@ -275,7 +277,11 @@ def list_appointments():
     )
     pages = (total + per_page - 1) // per_page if total else 0
     appointments = db.session.scalars(
-        query.order_by(Appointment.date, Appointment.start_time, Appointment.id)
+        query.options(
+            db.selectinload(Appointment.patient),
+            db.selectinload(Appointment.doctor),
+        )
+        .order_by(Appointment.date, Appointment.start_time, Appointment.id)
         .offset((page - 1) * per_page)
         .limit(per_page)
     ).all()

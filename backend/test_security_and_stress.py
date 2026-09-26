@@ -205,6 +205,24 @@ def run_security_and_stress_tests():
                 assert blocked, "Rate limiter failed to block brute force attempts"
                 print("PASS: Rate limiter successfully protects against credential brute-forcing.")
 
+            # 6b. Spoofing X-Forwarded-For must not reset the per-client rate-limit bucket
+            # unless the app is explicitly configured to trust a reverse proxy for it.
+            with app.test_client() as client:
+                still_blocked_after_spoofing = False
+                for i in range(30):
+                    resp = client.post(
+                        "/api/auth/login",
+                        json={"email": clinic_email, "password": "WrongPassword!"},
+                        headers={"X-Forwarded-For": f"10.0.0.{i % 250}"},
+                    )
+                    if resp.status_code == 429:
+                        still_blocked_after_spoofing = True
+                        break
+                assert still_blocked_after_spoofing, (
+                    "A spoofed X-Forwarded-For header bypassed the login rate limiter"
+                )
+                print("PASS: Spoofed X-Forwarded-For does not bypass the rate limiter.")
+
         finally:
             # Clean up
             db.session.rollback()

@@ -15,6 +15,7 @@ from backend.app import app
 from backend.auth.service import hash_password
 from backend.extensions import db
 from backend.models import Clinic, User
+from backend.models.audit_log import AuditLog
 
 
 TEST_PASSWORD = "TestPassword123!"
@@ -281,6 +282,16 @@ def run_super_admin_tests():
                 created_head_email = f"created-head-{suffix}@aerodent.local"
                 print("PASS: Super admin can create new clinics and their initial head doctor.")
 
+                # 10b. The clinic-creation itself is audit-logged
+                creation_log = db.session.scalar(
+                    db.select(AuditLog).where(
+                        AuditLog.action == "admin_clinic_created",
+                        AuditLog.clinic_id == created_clinic_id,
+                    )
+                )
+                assert creation_log is not None, "Expected an admin_clinic_created audit log entry."
+                print("PASS: Super admin clinic creation is audit-logged.")
+
                 # 11. Super Admin delete clinic (cascade deletes all staff and records)
                 res_del_clinic = admin_client.delete(f"/api/admin/clinics/{created_clinic_id}")
                 assert res_del_clinic.status_code == 204
@@ -295,6 +306,18 @@ def run_super_admin_tests():
                 assert db.session.get(Clinic, clinic_a_id) is not None
                 assert db.session.get(Clinic, clinic_b_id) is not None
                 print("PASS: Super admin can delete clinic and all its staff are deleted too.")
+
+                # 11b. The clinic-deletion is audit-logged as a platform-level (clinic_id=None)
+                # record, since the deleted clinic's own scoped audit logs are purged with it.
+                deletion_log = db.session.scalar(
+                    db.select(AuditLog).where(
+                        AuditLog.action == "admin_clinic_deleted",
+                        AuditLog.resource_id == str(created_clinic_id),
+                    )
+                )
+                assert deletion_log is not None, "Expected an admin_clinic_deleted audit log entry."
+                assert deletion_log.clinic_id is None
+                print("PASS: Super admin clinic deletion is audit-logged at the platform level.")
 
             print("\n==========================================")
             print("ALL SUPER ADMIN & SUBSCRIPTION TESTS PASSED")

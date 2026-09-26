@@ -164,6 +164,24 @@ def run_xray_tests():
                     assert updated.uploaded_by == doctor_a.id
                     print("PASS: Doctor can update metadata only.")
 
+                    oversized_notes_res = client.patch(
+                        f"/api/x-rays/{xray_id}",
+                        json={"notes": "x" * 2001},
+                    )
+                    assert oversized_notes_res.status_code == 422, (
+                        f"Expected 422, got {oversized_notes_res.status_code}"
+                    )
+                    oversized_tag_res = client.patch(
+                        f"/api/x-rays/{xray_id}",
+                        json={"tooth_tag": "x" * 101},
+                    )
+                    assert oversized_tag_res.status_code == 422, (
+                        f"Expected 422, got {oversized_tag_res.status_code}"
+                    )
+                    unchanged = db.session.get(XRay, xray_id)
+                    assert unchanged.notes == "Updated"
+                    print("PASS: Oversized X-ray metadata fields are rejected.")
+
                     assert client.patch(
                         f"/api/x-rays/{xray_id}",
                         json={"storage_key": "../../secret.txt"},

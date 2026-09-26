@@ -131,7 +131,6 @@ ROLE_PERMISSIONS = {
             "patients.read",
             "patients.create",
             "patients.update",
-            "patients.delete",
             "odontogram.read",
             "treatments.read",
             "treatment_plans.read",

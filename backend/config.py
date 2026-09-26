@@ -37,6 +37,12 @@ class Config:
     PERMANENT_SESSION_LIFETIME = timedelta(hours=8)
     SESSION_REFRESH_EACH_REQUEST = True
 
+    # Only trust the X-Forwarded-For header when actually deployed behind a reverse proxy
+    # that itself strips/overwrites any client-supplied X-Forwarded-For. Left False, the
+    # rate limiter and audit log always use the direct socket peer address, which a client
+    # cannot spoof.
+    TRUST_PROXY_HEADERS = os.getenv("TRUST_PROXY_HEADERS", "False").lower() == "true"
+
     AERODENT_STORAGE_PATH = os.getenv(
         "AERODENT_STORAGE_PATH",
         os.path.join(os.path.dirname(os.path.dirname(__file__)), "storage"),

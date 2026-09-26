@@ -9,7 +9,7 @@ from sqlalchemy import func
 from backend.extensions import db
 from backend.models import User, Clinic
 from backend.auth.service import verify_password, hash_password
-from backend.services.audit import log_activity
+from backend.services.audit import log_activity, get_client_ip
 
 
 auth_blueprint = Blueprint("auth", __name__, url_prefix="/api/auth")
@@ -174,7 +174,7 @@ def protect_state_changing_requests():
 
 @auth_blueprint.post("/login")
 def login():
-    ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+    ip = get_client_ip()
     if not _check_rate_limit(f"login_{ip}", max_attempts=20, window_seconds=60):
         return jsonify({"error": "Too many login attempts. Please wait a minute before trying again."}), 429
 
@@ -224,7 +224,7 @@ def login():
 
 @auth_blueprint.post("/register")
 def register_clinic():
-    ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+    ip = get_client_ip()
     if not _check_rate_limit(f"reg_{ip}", max_attempts=5, window_seconds=60):
         return jsonify({"error": "Too many registration attempts. Please wait a moment."}), 429
 

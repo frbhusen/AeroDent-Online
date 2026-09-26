@@ -24,10 +24,19 @@ XRAY_INTERNAL_FIELDS = frozenset(
 )
 MAX_IMAGE_DIMENSION = 1600
 ALLOWED_IMAGE_FORMATS = frozenset({"JPEG", "PNG", "WEBP", "GIF", "BMP", "TIFF"})
+MAX_METADATA_LENGTHS = {"filename": 255, "tooth_tag": 100, "type": 100, "notes": 2000}
 
 
 def _error(message, status):
     return jsonify({"error": message}), status
+
+
+def _validate_metadata_lengths(data):
+    for field, max_len in MAX_METADATA_LENGTHS.items():
+        value = data.get(field)
+        if isinstance(value, str) and len(value) > max_len:
+            return _error(f"{field} must be at most {max_len} characters.", 422)
+    return None
 
 
 def _storage():
@@ -158,6 +167,10 @@ def _metadata_from_form(form):
         if raw_time not in ("", None) and _parse_time(raw_time) is None:
             return None, _error("time must use HH:MM format.", 422)
         data["time"] = _parse_time(raw_time)
+
+    length_error = _validate_metadata_lengths(data)
+    if length_error:
+        return None, length_error
 
     return data, None
 
@@ -322,6 +335,10 @@ def update_xray(xray_id):
             data["filename"] = secure_filename(data["filename"])
             if not data["filename"]:
                 return _error("filename is invalid.", 422)
+
+        length_error = _validate_metadata_lengths(data)
+        if length_error:
+            return length_error
 
     for field, value in data.items():
         setattr(xray, field, value)

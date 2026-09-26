@@ -38,6 +38,19 @@ def _scoped_credential(credential_id):
     )
 
 
+def _shift_overlaps(clinic_id, user_id, shift_date, start_time, end_time, exclude_id=None):
+    query = db.select(StaffShift.id).where(
+        StaffShift.clinic_id == clinic_id,
+        StaffShift.user_id == user_id,
+        StaffShift.date == shift_date,
+        StaffShift.start_time < end_time,
+        StaffShift.end_time > start_time,
+    )
+    if exclude_id is not None:
+        query = query.where(StaffShift.id != exclude_id)
+    return db.session.scalar(query) is not None
+
+
 def _serialize_shift(item):
     return {
         "id": item.id,
@@ -147,8 +160,8 @@ def list_shifts():
 @hr_blueprint.post("/shifts")
 @login_required
 def create_shift():
-    if g.current_user.role not in {"head_doctor", "super_admin"}:
-        return _error("Only head doctors or administrators can create staff shifts.", 403)
+    if g.current_user.role != "head_doctor":
+        return _error("Only head doctors can create staff shifts.", 403)
 
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
@@ -181,6 +194,9 @@ def create_shift():
     if status not in VALID_SHIFT_STATUSES:
         return _error("Invalid shift status.", 422)
 
+    if _shift_overlaps(g.current_user.clinic_id, user_id, shift_date, start_time, end_time):
+        return _error("This staff member already has an overlapping shift.", 409)
+
     shift = StaffShift(
         clinic_id=g.current_user.clinic_id,
         user_id=user_id,
@@ -210,8 +226,8 @@ def create_shift():
 @hr_blueprint.patch("/shifts/<int:shift_id>")
 @login_required
 def update_shift(shift_id):
-    if g.current_user.role not in {"head_doctor", "super_admin"}:
-        return _error("Only head doctors or administrators can update staff shifts.", 403)
+    if g.current_user.role != "head_doctor":
+        return _error("Only head doctors can update staff shifts.", 403)
 
     shift = _scoped_shift(shift_id)
     if not shift:
@@ -222,18 +238,21 @@ def update_shift(shift_id):
         try:
             shift.date = date.fromisoformat(data["date"])
         except ValueError:
+            db.session.rollback()
             return _error("date must be an ISO date.", 422)
 
     if "start_time" in data:
         try:
             shift.start_time = datetime.strptime(data["start_time"], "%H:%M").time()
         except ValueError:
+            db.session.rollback()
             return _error("start_time must be HH:MM.", 422)
 
     if "end_time" in data:
         try:
             shift.end_time = datetime.strptime(data["end_time"], "%H:%M").time()
         except ValueError:
+            db.session.rollback()
             return _error("end_time must be HH:MM.", 422)
 
     if "shift_type" in data:
@@ -241,11 +260,22 @@ def update_shift(shift_id):
 
     if "status" in data:
         if data["status"] not in VALID_SHIFT_STATUSES:
+            db.session.rollback()
             return _error("Invalid shift status.", 422)
         shift.status = data["status"]
 
     if "notes" in data:
         shift.notes = str(data["notes"] or "").strip() or None
+
+    if shift.start_time >= shift.end_time:
+        db.session.rollback()
+        return _error("start_time must be earlier than end_time.", 422)
+
+    if _shift_overlaps(
+        shift.clinic_id, shift.user_id, shift.date, shift.start_time, shift.end_time, exclude_id=shift.id
+    ):
+        db.session.rollback()
+        return _error("This staff member already has an overlapping shift.", 409)
 
     log_activity(
         action="shift_updated",
@@ -262,8 +292,8 @@ def update_shift(shift_id):
 @hr_blueprint.delete("/shifts/<int:shift_id>")
 @login_required
 def delete_shift(shift_id):
-    if g.current_user.role not in {"head_doctor", "super_admin"}:
-        return _error("Only head doctors or administrators can delete staff shifts.", 403)
+    if g.current_user.role != "head_doctor":
+        return _error("Only head doctors can delete staff shifts.", 403)
 
     shift = _scoped_shift(shift_id)
     if not shift:
@@ -490,8 +520,8 @@ def credentials_summary():
 @hr_blueprint.post("/credentials")
 @login_required
 def create_credential():
-    if g.current_user.role not in {"head_doctor", "super_admin"}:
-        return _error("Only head doctors or administrators can register staff credentials.", 403)
+    if g.current_user.role != "head_doctor":
+        return _error("Only head doctors can register staff credentials.", 403)
 
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
@@ -557,8 +587,8 @@ def create_credential():
 @hr_blueprint.patch("/credentials/<int:credential_id>")
 @login_required
 def update_credential(credential_id):
-    if g.current_user.role not in {"head_doctor", "super_admin"}:
-        return _error("Only head doctors or administrators can update staff credentials.", 403)
+    if g.current_user.role != "head_doctor":
+        return _error("Only head doctors can update staff credentials.", 403)
 
     credential = _scoped_credential(credential_id)
     if not credential:
@@ -605,8 +635,8 @@ def update_credential(credential_id):
 @hr_blueprint.delete("/credentials/<int:credential_id>")
 @login_required
 def delete_credential(credential_id):
-    if g.current_user.role not in {"head_doctor", "super_admin"}:
-        return _error("Only head doctors or administrators can delete staff credentials.", 403)
+    if g.current_user.role != "head_doctor":
+        return _error("Only head doctors can delete staff credentials.", 403)
 
     credential = _scoped_credential(credential_id)
     if not credential:

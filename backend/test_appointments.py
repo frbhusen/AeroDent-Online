@@ -157,6 +157,12 @@ def run_appointment_tests():
                     item["clinic_id"] == clinic_a_id
                     for item in response.json["data"]
                 )
+                for item in response.json["data"]:
+                    if item["patient_id"] == patient_a_id:
+                        assert item["patient_name"] == patient_a.name
+                    if item["doctor_id"] == doctor_a.id:
+                        assert item["doctor_name"] == doctor_a.name
+                print("PASS: Appointment list includes server-provided patient/doctor names.")
                 response = client.get(
                     "/api/appointments",
                     query_string={"date": "2026-09-20", "doctor_id": doctor_a.id},
