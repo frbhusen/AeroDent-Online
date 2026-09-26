@@ -26,6 +26,12 @@ function setText() {
             )),
     );
 
+    const logoutBtn = $("#onlineLogoutBtn");
+    if (logoutBtn) {
+        logoutBtn.setAttribute("aria-label", t("logout"));
+        logoutBtn.title = t("logout");
+    }
+
     $("#langBtn").textContent =
         currentLanguage === "ar"
             ? "English"
@@ -159,62 +165,74 @@ function renderNav() {
 
     $$(".nav-item").forEach(
         (button) => {
-            button.onclick = async () => {
-                state.view = button.dataset.view;
-                if (window.AERODENT_ONLINE) {
-                    if (isSuperAdmin) {
-                        if (state.view === "admin_overview") {
-                            await loadAdminMetrics();
-                            await loadAdminClinics();
-                        } else if (state.view === "admin_clinics") {
-                            await loadAdminClinics();
-                        } else if (state.view === "admin_users") {
-                            await loadAdminClinics();
-                            await loadAdminUsers();
-                        }
-                    } else {
-                        if (state.view === "dashboard") {
-                            await loadOnlineDashboard();
-                        } else if (state.view === "treatments" && state.selectedPatient) {
-                            state.treatmentPage = 1;
-                            state.treatmentError = "";
-                            state.invoicePage = 1;
-                            state.invoiceError = "";
-                            await loadOnlineTreatments();
-                            await loadOnlineInvoices();
-                        } else if (state.view === "treatmentPlan" && state.selectedPatient) {
-                            state.treatmentPlanPage = 1;
-                            state.treatmentPlanError = "";
-                            await loadOnlineTreatmentPlans();
-                        } else if (state.view === "appointments") {
-                            await loadOnlineAppointments();
-                        } else if (state.view === "prescriptions" && state.selectedPatient) {
-                            state.prescriptionPage = 1;
-                            state.prescriptionError = "";
-                            await loadOnlinePrescriptions();
-                        } else if (state.view === "xrays" && state.selectedPatient) {
-                            state.xrayPage = 1;
-                            state.xrayError = "";
-                            await loadOnlineXrays();
-                        } else if (state.view === "settings") {
-                            if (hasPermission("clinic_settings.read")) await loadOnlineSettings();
-                            if (hasPermission("staff.read")) await loadOnlineStaff();
-                        } else if (state.view === "hr") {
-                            if (typeof loadOnlineHRData === "function") await loadOnlineHRData();
-                        } else if (state.view === "inventory") {
-                            if (typeof loadInventoryView === "function") await loadInventoryView();
-                        } else if (state.view === "audit_logs") {
-                            if (typeof loadAuditLogs === "function") await loadAuditLogs();
-                        }
-                    }
-                    if (state.view === "audit_logs" && typeof loadAuditLogs === "function") {
-                        await loadAuditLogs();
-                    }
-                }
-                render();
-            };
+            button.onclick = () => navigateTo(button.dataset.view);
         },
     );
+}
+
+// Single source of truth for "which data does this view need". Every navigation path
+// (sidebar, dashboard shortcuts, command palette) goes through here so no view is shown stale.
+async function loadViewData(view) {
+    if (!window.AERODENT_ONLINE) return;
+    if (state.auth?.user?.role === "super_admin") {
+        if (view === "admin_overview") {
+            await loadAdminMetrics();
+            await loadAdminClinics();
+        } else if (view === "admin_clinics") {
+            await loadAdminClinics(state.adminSearch, state.adminStatusFilter);
+        } else if (view === "admin_users") {
+            await loadAdminClinics();
+            await loadAdminUsers(
+                state.adminUserClinicFilter !== "all" ? state.adminUserClinicFilter : null,
+                state.adminUserRoleFilter,
+                state.adminUserSearch,
+            );
+        } else if (view === "audit_logs" && typeof loadAuditLogs === "function") {
+            await loadAuditLogs();
+        }
+        return;
+    }
+    if (view === "dashboard") {
+        await loadOnlineDashboard();
+    } else if (view === "treatments" && state.selectedPatient) {
+        state.treatmentPage = 1;
+        state.treatmentError = "";
+        state.invoicePage = 1;
+        state.invoiceError = "";
+        await loadOnlineTreatments();
+        await loadOnlineInvoices();
+    } else if (view === "treatmentPlan" && state.selectedPatient) {
+        state.treatmentPlanPage = 1;
+        state.treatmentPlanError = "";
+        await loadOnlineTreatmentPlans();
+    } else if (view === "appointments") {
+        await loadOnlineAppointments();
+    } else if (view === "prescriptions" && state.selectedPatient) {
+        state.prescriptionPage = 1;
+        state.prescriptionError = "";
+        await loadOnlinePrescriptions();
+    } else if (view === "xrays" && state.selectedPatient) {
+        state.xrayPage = 1;
+        state.xrayError = "";
+        await loadOnlineXrays();
+    } else if (view === "odontogram" && state.selectedPatient) {
+        await loadOnlineOdontogram();
+    } else if (view === "settings") {
+        if (hasPermission("clinic_settings.read")) await loadOnlineSettings();
+        if (hasPermission("staff.read")) await loadOnlineStaff();
+    } else if (view === "hr") {
+        if (typeof loadOnlineHRData === "function") await loadOnlineHRData();
+    } else if (view === "inventory") {
+        if (typeof loadInventoryView === "function") await loadInventoryView();
+    } else if (view === "audit_logs") {
+        if (typeof loadAuditLogs === "function") await loadAuditLogs();
+    }
+}
+
+async function navigateTo(view) {
+    state.view = view;
+    await loadViewData(view);
+    render();
 }
 
 function render() {
@@ -222,7 +240,8 @@ function render() {
     renderNav();
     const isSuperAdmin = state.auth?.user?.role === "super_admin";
     const activeNavList = isSuperAdmin ? SUPER_ADMIN_NAV : NAV;
-    const section = activeNavList.find((item) => item[0] === state.view);
+    const section = activeNavList.find((item) => item[0] === state.view)
+        || (state.view === "audit_logs" ? ["audit_logs", "📜", "auditLogs"] : null);
     $("#currentSection").textContent = section
         ? t(section[2]).toUpperCase()
         : isSuperAdmin ? "ADMIN" : "OVERVIEW";

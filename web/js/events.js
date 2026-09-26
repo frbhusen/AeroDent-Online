@@ -896,55 +896,7 @@ function bindFormEvents() {
 function bindNavigationEvents() {
     $$("[data-view]").forEach(
         (element) => {
-            element.onclick = async () => {
-                state.view =
-                    element.dataset.view;
-
-                if (window.AERODENT_ONLINE) {
-                    if (state.view === "dashboard") {
-                        await loadOnlineDashboard();
-                    } else if (state.view === "treatments" && state.selectedPatient) {
-                        state.treatmentPage = 1;
-                        state.treatmentError = "";
-                        state.invoicePage = 1;
-                        state.invoiceError = "";
-                        await loadOnlineTreatments();
-                        await loadOnlineInvoices();
-                    } else if (state.view === "treatmentPlan" && state.selectedPatient) {
-                        state.treatmentPlanPage = 1;
-                        state.treatmentPlanError = "";
-                        await loadOnlineTreatmentPlans();
-                    } else if (state.view === "appointments") {
-                        await loadOnlineAppointments();
-                    } else if (state.view === "prescriptions" && state.selectedPatient) {
-                        state.prescriptionPage = 1;
-                        state.prescriptionError = "";
-                        await loadOnlinePrescriptions();
-                    } else if (state.view === "xrays" && state.selectedPatient) {
-                        state.xrayPage = 1;
-                        state.xrayError = "";
-                        await loadOnlineXrays();
-                    } else if (state.view === "odontogram" && state.selectedPatient) {
-                        await loadOnlineOdontogram();
-                    } else if (state.view === "settings") {
-                        if (hasPermission("clinic_settings.read")) await loadOnlineSettings();
-                        if (hasPermission("staff.read")) await loadOnlineStaff();
-                    } else if (state.view === "admin_overview") {
-                        await loadAdminMetrics();
-                        await loadAdminClinics();
-                    } else if (state.view === "admin_clinics") {
-                        await loadAdminClinics(state.adminSearch, state.adminStatusFilter);
-                    } else if (state.view === "admin_users") {
-                        await loadAdminUsers(
-                            state.adminUserClinicFilter !== "all" ? state.adminUserClinicFilter : null,
-                            state.adminUserRoleFilter,
-                            state.adminUserSearch
-                        );
-                    }
-                }
-
-                render();
-            };
+            element.onclick = () => navigateTo(element.dataset.view);
         }
     );
 

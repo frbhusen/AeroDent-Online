@@ -460,12 +460,12 @@ function openTrialRegistrationModal() {
             </div>
             <div class="field full-span">
                 <label>${t("password") || "Password"} (min 8 chars)</label>
-                <input name="password" type="password" minlength="8" required placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢">
+                <input name="password" type="password" minlength="8" required placeholder="••••••••">
             </div>
             <p id="trialRegisterError" class="login-error full-span" style="color:#b91c1c;font-size:12px;margin:4px 0 0;"></p>
             <div class="form-actions full-span" style="margin-top:10px;">
                 <button class="button button-primary full" id="trialSubmitBtn" type="submit">
-                    âœ¨ ${t("startFreeTrial") || "Start 14-Day Free Trial"}
+                    ✨ ${t("startFreeTrial") || "Start 14-Day Free Trial"}
                 </button>
             </div>
         </form>

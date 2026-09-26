@@ -122,7 +122,7 @@ function renderKeyboardShortcutsCard() {
       <div class="shortcuts-grid">
         <div class="shortcut-item">
           <div class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>K</kbd></div>
-          <span class="shortcut-label">${t("search")}</span>
+          <span class="shortcut-label">${t("shortcutSearch")}</span>
         </div>
         <div class="shortcut-item">
           <div class="shortcut-keys"><kbd>N</kbd></div>
@@ -592,9 +592,9 @@ function renderSettings() {
         const statusLabel = user.is_active ? `<span class="badge badge-green">${t("active")}</span>` : `<span class="badge badge-gray">${t("inactive")}</span>`;
         const actions = [];
         if (!isSelf) {
-          actions.push(`<button type="button" class="button button-ghost" data-toggle-staff-active="${user.id}" data-active="${user.is_active}">${user.is_active ? t("inactive") : t("active")}</button>`);
+          actions.push(`<button type="button" class="button button-ghost" data-toggle-staff-active="${user.id}" data-active="${user.is_active}">${user.is_active ? t("deactivate") : t("activate")}</button>`);
           actions.push(`<button type="button" class="button button-ghost" data-edit-staff="${user.id}">${t("edit")}</button>`);
-          actions.push(`<button type="button" class="button" data-delete-staff="${user.id}">×</button>`);
+          actions.push(`<button type="button" class="button btn-danger-ghost" data-delete-staff="${user.id}" title="${t("delete")}" aria-label="${t("delete")}">×</button>`);
         }
         return `<tr>
           <td>${esc(user.name)}</td>

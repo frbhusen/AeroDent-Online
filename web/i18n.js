@@ -1602,6 +1602,31 @@ I18N.ar.invUnit_roll = "لفافة";
 I18N.en.invUnit_kit = "kit";
 I18N.ar.invUnit_kit = "طقم";
 
+I18N.en.cmdPatients = "Patients";
+I18N.ar.cmdPatients = "المرضى";
+I18N.en.cmdQuickActions = "Quick actions";
+I18N.ar.cmdQuickActions = "إجراءات سريعة";
+I18N.en.cmdSelect = "Select →";
+I18N.ar.cmdSelect = "اختيار ←";
+I18N.en.cmdNoResults = "No results found for";
+I18N.ar.cmdNoResults = "لا توجد نتائج لـ";
+
+I18N.en.deactivate = "Deactivate";
+I18N.ar.deactivate = "إيقاف";
+I18N.en.activate = "Activate";
+I18N.ar.activate = "تفعيل";
+
+I18N.en.adminSearchClinics = "Search clinics…";
+I18N.ar.adminSearchClinics = "ابحث عن عيادة…";
+I18N.en.adminSearchUsers = "Search name or email…";
+I18N.ar.adminSearchUsers = "ابحث بالاسم أو البريد…";
+
+I18N.en.auditSearchPlaceholder = "Search user, action or details…";
+I18N.ar.auditSearchPlaceholder = "ابحث بالمستخدم أو الإجراء أو التفاصيل…";
+
+I18N.en.shortcutSearch = "Search";
+I18N.ar.shortcutSearch = "بحث";
+
 function t(key) {
   return I18N[currentLanguage]?.[key] || I18N.en?.[key] || key;
 }

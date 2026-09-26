@@ -144,7 +144,7 @@ function renderXrays() {
             <div class="card-heading">
                 <div>
                     <h2>${t("xrays")}</h2>
-                    <p class="muted">${images.length} ${t("saved")}</p>
+                    <p class="muted">${images.length} ${window.AERODENT_ONLINE ? t("savedOnline") : t("saved")}</p>
                 </div>
             </div>
 

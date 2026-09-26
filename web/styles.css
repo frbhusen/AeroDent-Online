@@ -91,7 +91,7 @@
 
 .online-login-card > .muted {
   text-align: center;
-  color: #64748b;
+  color: #5b6b80;
   font-size: 13px;
   margin: 0;
 }
@@ -101,7 +101,7 @@
   font-size: 10px;
   letter-spacing: 2px;
   font-weight: 700;
-  color: #0284c7;
+  color: #0369a1;
   background: #e0f2fe;
   padding: 4px 12px;
   border-radius: 99px;
@@ -133,7 +133,7 @@
 }
 
 .online-login-card input:focus {
-  border-color: #0284c7;
+  border-color: #0369a1;
   background: #fff;
   box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
   outline: none;
@@ -145,7 +145,7 @@
   font-size: 15px;
   font-weight: 700;
   border-radius: 10px;
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
   box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
   transition: transform 0.15s, box-shadow 0.15s;
 }
@@ -180,7 +180,7 @@
   inset-inline-end: 12px;
   background: transparent;
   border: 0;
-  color: #94a3b8;
+  color: #5b6b80;
   font-size: 16px;
   cursor: pointer;
   padding: 4px;
@@ -189,7 +189,7 @@
 }
 
 .toggle-password-btn:hover {
-  color: #0284c7;
+  color: #0369a1;
 }
 
 .login-error {
@@ -314,8 +314,8 @@
   background: #f0f9ff;
 }
 .calendar-day.active {
-  background: #0284c7;
-  border-color: #0284c7;
+  background: #0369a1;
+  border-color: #0369a1;
   color: #e0f2fe;
   box-shadow: 0 5px 12px rgba(2, 132, 199, 0.2);
 }
@@ -583,8 +583,11 @@
   .top-actions {
     justify-content: stretch;
   }
-  .top-actions .button-ghost {
+  .top-actions .button-ghost:not(#langBtn) {
     display: none;
+  }
+  .top-actions #langBtn {
+    padding: 8px 10px;
   }
   .top-actions .icon-button {
     display: grid;
@@ -995,7 +998,7 @@
 
   .prescription-print header {
     text-align: center;
-    border-bottom: 2px solid #0284c7;
+    border-bottom: 2px solid #0369a1;
     padding-bottom: 12px;
   }
 
@@ -1220,9 +1223,9 @@ html[dir="rtl"] body.drawer-open .context-drawer {
   --canvas: #f7f2e8;
   --surface: #fff;
   --ink: #0f172a;
-  --muted: #64748b;
+  --muted: #5b6b80;
   --line: #e2e8f0;
-  --primary: #0284c7;
+  --primary: #0369a1;
   --sky: #0ea5e9;
   --navy: #0b2942;
   --danger: #dc2626;
@@ -1334,9 +1337,8 @@ select:focus-visible {
   letter-spacing: 0.2px;
 }
 
-.brand span,
 .profile small {
-  color: #94a3b8;
+  color: #5b6b80;
   font-size: 11px;
   margin-top: 2px;
 }
@@ -1351,7 +1353,7 @@ select:focus-visible {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #94a3b8;
+  color: #a9b8cc;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 10px;
@@ -1376,7 +1378,7 @@ select:focus-visible {
 }
 
 .search input::placeholder {
-  color: #94a3b8;
+  color: #a9b8cc;
 }
 
 .button {
@@ -1384,6 +1386,10 @@ select:focus-visible {
   padding: 9px 14px;
   font-size: 13px;
   font-weight: 600;
+  /* Never fall back to the browser's grey button: variants below override these. */
+  background: #ffffff;
+  color: var(--ink);
+  border: 1px solid #cbd5e1;
   transition: transform 0.15s, background 0.15s, box-shadow 0.15s;
   display: inline-flex;
   align-items: center;
@@ -1396,40 +1402,50 @@ select:focus-visible {
 }
 
 .button-primary {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
   color: #fff;
   box-shadow: 0 3px 10px rgba(2, 132, 199, 0.35);
 }
 
 .button-primary:hover {
-  background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%);
+  background: linear-gradient(135deg, #075985 0%, #0369a1 100%);
   box-shadow: 0 5px 14px rgba(2, 132, 199, 0.45);
 }
 
 .button-ghost {
-  background: rgba(255, 255, 255, 0.06);
-  color: #e2e8f0;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-}
-
-.button-ghost:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.35);
-  color: #fff;
-}
-
-.main .button-ghost,
-.modal-card .button-ghost {
   background: #ffffff;
   color: #334155;
   border: 1px solid #cbd5e1;
 }
 
-.main .button-ghost:hover,
-.modal-card .button-ghost:hover {
+.button-ghost:hover {
   background: #f8fafc;
   border-color: #94a3b8;
   color: #0f172a;
+}
+
+.brand span {
+  display: block;
+  color: #a9b8cc;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.search > span {
+  color: #a9b8cc;
+}
+
+/* The top bar is dark navy, so its ghost buttons use the translucent light-on-dark style. */
+.topbar .button-ghost {
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.topbar .button-ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #fff;
 }
 
 .icon-button {
@@ -1482,7 +1498,7 @@ select:focus-visible {
 }
 
 .avatar {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
   color: #fff;
   font-weight: 700;
   border-radius: 12px;
@@ -1597,7 +1613,7 @@ html[dir="rtl"] .nav-item.active::before {
 
 .sidebar-foot {
   margin-top: auto;
-  color: #94a3b8;
+  color: #5b6b80;
   font-size: 11px;
   display: flex;
   align-items: center;
@@ -1630,7 +1646,7 @@ html[dir="rtl"] .nav-item.active::before {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.2px;
-  color: #94a3b8;
+  color: #5b6b80;
   margin: 0 0 7px;
   text-transform: uppercase;
 }
@@ -1869,7 +1885,7 @@ html[dir="rtl"] .nav-item.active::before {
 
 .appointment-meta {
   font-size: 12px;
-  color: #64748b;
+  color: #5b6b80;
   margin-top: 2px;
   display: flex;
   gap: 6px;
@@ -1954,7 +1970,7 @@ html[dir="rtl"] .nav-item.active::before {
 }
 
 .patient-row-info small {
-  color: #64748b;
+  color: #5b6b80;
   font-size: 12px;
 }
 
@@ -2000,7 +2016,7 @@ html[dir="rtl"] .nav-item.active::before {
 
 .shortcuts-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px 12px;
 }
 
@@ -2033,7 +2049,7 @@ html[dir="rtl"] .nav-item.active::before {
   align-items: center;
   gap: 4px;
   font-size: 10px;
-  color: #64748b;
+  color: #5b6b80;
   flex-shrink: 0;
 }
 
@@ -2054,9 +2070,9 @@ html[dir="rtl"] .nav-item.active::before {
   font-size: 12px;
   font-weight: 500;
   color: #475569;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-width: 0;
+  text-align: end;
+  line-height: 1.35;
 }
 
 .muted {
@@ -2078,7 +2094,7 @@ html[dir="rtl"] .nav-item.active::before {
 
 .badge-danger {
   background: var(--danger-bg);
-  color: var(--danger);
+  color: #b91c1c;
   border: 1px solid #fca5a5;
 }
 
@@ -2284,7 +2300,7 @@ html[dir="rtl"] .nav-item.active::before {
   align-items: center;
   gap: 2px;
   padding: 0;
-  color: #64748b;
+  color: #5b6b80;
   cursor: pointer;
   transition: transform 0.15s, filter 0.15s;
 }
@@ -2438,7 +2454,7 @@ html[dir="rtl"] .nav-item.active::before {
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #94a3b8;
+  color: #5b6b80;
 }
 
 .form-grid {
@@ -2523,7 +2539,7 @@ textarea {
   gap: 12px;
   background: #f0f9ff;
   border: 1px solid #bae6fd;
-  border-inline-start: 4px solid #0284c7;
+  border-inline-start: 4px solid #0369a1;
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
   user-select: none;
   cursor: grab;
@@ -2555,7 +2571,7 @@ textarea {
 .appointment.status-booked {
   background: #f0f9ff;
   border: 1px solid #bae6fd;
-  border-inline-start: 4px solid #0284c7;
+  border-inline-start: 4px solid #0369a1;
   color: #0c4a6e;
 }
 
@@ -2585,14 +2601,14 @@ textarea {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-inline-start: 4px solid #94a3b8;
-  color: #64748b;
+  color: #5b6b80;
   opacity: 0.75;
 }
 
 .appointment.status-cancelled b,
 .appointment.is-cancelled b {
   text-decoration: line-through;
-  color: #94a3b8;
+  color: #5b6b80;
 }
 
 /* Drag-and-drop Drop Target Highlights */
@@ -2605,13 +2621,13 @@ textarea {
 
 .agenda-slot-target.is-slot-dragover {
   background: #e0f2fe !important;
-  outline: 2px dashed #0284c7 !important;
+  outline: 2px dashed #0369a1 !important;
   outline-offset: -2px;
   box-shadow: 0 0 12px rgba(2, 132, 199, 0.25) inset;
 }
 
 .calendar-day.is-day-dragover {
-  background: #0284c7 !important;
+  background: #0369a1 !important;
   color: #ffffff !important;
   transform: scale(1.05);
   box-shadow: 0 0 14px rgba(2, 132, 199, 0.4);
@@ -2852,7 +2868,7 @@ textarea {
 }
 .xray-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 12px;
 }
 
@@ -2869,15 +2885,22 @@ textarea {
   background: #0f172a;
 }
 
-.xray-item div {
-  padding: 9px;
-  font-size: 11px;
+.xray-item > .xray-info {
+  padding: 10px 12px;
+  font-size: 12px;
 }
 .xray-info {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
+}
+.xray-info > div {
+  min-width: 0;
+}
+.xray-info b {
+  display: block;
+  overflow-wrap: anywhere;
 }
 
 .xray-delete-button {
@@ -3419,32 +3442,32 @@ textarea {
 }
 .badge-blue {
   background: #e0f2fe;
-  color: #0284c7;
+  color: #0369a1;
   border-color: #bae6fd;
 }
 .badge-green {
   background: #dcfce7;
-  color: #16a34a;
+  color: #15803d;
   border-color: #bbf7d0;
 }
 .badge-amber {
   background: #fef3c7;
-  color: #d97706;
+  color: #b45309;
   border-color: #fde68a;
 }
 .badge-gray {
   background: #f1f5f9;
-  color: #64748b;
+  color: #475569;
   border-color: #e2e8f0;
 }
 .badge-danger {
   background: #fee2e2;
-  color: #dc2626;
+  color: #b91c1c;
   border-color: #fecaca;
 }
 .badge-red {
   background: #fee2e2;
-  color: #dc2626;
+  color: #b91c1c;
   border-color: #fecaca;
 }
 .badge-purple {
@@ -3514,7 +3537,7 @@ body.is-super-admin .main {
   left: 0;
   right: 0;
   height: 3px;
-  background: var(--stat-accent, #0284c7);
+  background: var(--stat-accent, #0369a1);
 }
 
 .admin-stat-icon {
@@ -3526,7 +3549,7 @@ body.is-super-admin .main {
   font-size: 20px;
   flex-shrink: 0;
   background: var(--stat-bg, #f0f9ff);
-  color: var(--stat-accent, #0284c7);
+  color: var(--stat-accent, #0369a1);
 }
 
 .admin-stat-info {
@@ -3537,7 +3560,7 @@ body.is-super-admin .main {
 
 .admin-stat-title {
   font-size: 12px;
-  color: #64748b;
+  color: #5b6b80;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -3554,7 +3577,7 @@ body.is-super-admin .main {
 
 .admin-stat-sub {
   font-size: 11px;
-  color: #94a3b8;
+  color: #5b6b80;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3594,7 +3617,7 @@ body.is-super-admin .main {
 .admin-card-header p {
   margin: 3px 0 0;
   font-size: 12px;
-  color: #64748b;
+  color: #5b6b80;
 }
 
 /* Filter Controls Bar */
@@ -3627,7 +3650,7 @@ body.is-super-admin .main {
 }
 
 .admin-search-box:focus-within {
-  border-color: #0284c7;
+  border-color: #0369a1;
   background: #ffffff;
   box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
 }
@@ -3662,20 +3685,21 @@ body.is-super-admin .main {
 }
 
 .admin-filter-chip.active {
-  background: #0284c7;
+  background: #0369a1;
   color: #ffffff;
-  border-color: #0284c7;
+  border-color: #0369a1;
 }
 
 .admin-filter-chip .chip-count {
   background: rgba(0, 0, 0, 0.08);
+  color: inherit;
   padding: 1px 6px;
   border-radius: 10px;
   font-size: 11px;
 }
 
 .admin-filter-chip.active .chip-count {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.2);
   color: #ffffff;
 }
 
@@ -3775,7 +3799,7 @@ body.is-super-admin .main {
   color: #0369a1;
 }
 .status-trial .dot {
-  background: #0284c7;
+  background: #0369a1;
 }
 
 /* Compact Table Action Buttons */
@@ -3808,8 +3832,8 @@ body.is-super-admin .main {
 }
 
 .btn-admin-primary {
-  background: #0284c7;
-  border-color: #0284c7;
+  background: #0369a1;
+  border-color: #0369a1;
   color: #ffffff;
 }
 
@@ -3981,7 +4005,7 @@ body.is-super-admin .main {
   .prescription-print h2 {
     font-size: 14pt !important;
     margin: 12px 0 !important;
-    color: #0284c7 !important;
+    color: #0369a1 !important;
   }
 
   .prescription-medication {
@@ -4007,7 +4031,7 @@ body.is-super-admin .main {
     justify-content: space-between;
     align-items: flex-end;
     font-size: 10pt;
-    color: #64748b;
+    color: #5b6b80;
   }
 
   /* Specific Invoice Print Mode */
@@ -4183,7 +4207,7 @@ body.is-super-admin .main {
 .hr-table th {
   text-align: start;
   padding: 10px 12px;
-  color: #94a3b8;
+  color: #5b6b80;
   font-weight: 600;
   font-size: 11px;
   text-transform: uppercase;
@@ -4522,3 +4546,76 @@ body.is-super-admin .main {
   grid-column: 1 / -1;
 }
 .inv-form-actions { margin-top: 6px; }
+
+.delete-patient-button,
+.form-actions .button {
+  white-space: nowrap;
+}
+
+/* Phones: always use the compact icon rail. The ≤900px "expanded unless collapsed" rule
+   above made the 248px sidebar consume most of a phone screen and squeeze every page. */
+@media (max-width: 700px) {
+  body .sidebar,
+  body:not(.sidebar-collapsed) .sidebar {
+    width: 60px !important;
+    padding: 14px 6px !important;
+  }
+  body .profile,
+  body:not(.sidebar-collapsed) .profile {
+    padding: 0 0 14px !important;
+    justify-content: center !important;
+  }
+  body .profile > div:last-child,
+  body .sidebar-foot span:last-child,
+  body .nav-item span:last-child,
+  body:not(.sidebar-collapsed) .profile > div:last-child,
+  body:not(.sidebar-collapsed) .sidebar-foot span:last-child,
+  body:not(.sidebar-collapsed) .nav-item span:last-child {
+    display: none !important;
+  }
+  body .nav-item,
+  body:not(.sidebar-collapsed) .nav-item {
+    justify-content: center !important;
+    padding: 11px 4px !important;
+  }
+  .sidebar-toggle { display: none; }
+  .avatar { width: 40px; height: 40px; font-size: 13px; }
+  .online-authenticated .online-logout-button {
+    width: 44px;
+    margin: 10px auto;
+    padding: 8px 0;
+    display: grid;
+    place-items: center;
+  }
+  .online-logout-button span { display: none; }
+  .online-logout-button::before { content: "⏻"; font-size: 16px; }
+  .main { padding: 18px 12px; min-width: 0; }
+  .workspace { min-width: 0; }
+}
+
+/* HR tables use .table-wrapper; give it the same horizontal scroll as .table-wrap */
+.table-wrapper {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+@media (max-width: 700px) {
+  .dashboard-appointment {
+    flex-wrap: wrap;
+  }
+  .dashboard-appointment .appointment-body {
+    flex: 1 1 60%;
+    min-width: 0;
+  }
+  .dashboard-appointment .appointment-actions {
+    margin-inline-start: auto;
+  }
+}
+
+/* Primary buttons have no visible border; on the navy top bar a faint sky outline keeps them defined. */
+.button-primary {
+  border-color: transparent;
+}
+.topbar .button-primary {
+  border-color: rgba(125, 211, 252, 0.45);
+}

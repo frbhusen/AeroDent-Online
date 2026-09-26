@@ -97,7 +97,7 @@ function treatmentRows(items, editable) {
     if (state.treatmentLoading) return `<tr><td colspan="6" class="muted">${t("loading")}</td></tr>`;
     if (state.treatmentError) return `<tr><td colspan="6" class="login-error">${esc(state.treatmentError)}</td></tr>`;
     if (!items.length) return `<tr><td colspan="6" class="muted">${t("noTreatments")}</td></tr>`;
-    return items.map((item) => `<tr><td>#${item.toothNumber || "—"}</td><td>${esc(item.description)}</td><td>${esc(item.date)}</td><td>${money(item.fee)}</td><td>${editable ? `<select class="treatment-status-select" data-treatment-status="${item.id}"><option value="planned" ${item.status === "planned" ? "selected" : ""}>${t("planned")}</option><option value="accepted" ${item.status === "accepted" ? "selected" : ""}>${t("accepted")}</option><option value="scheduled" ${item.status === "scheduled" ? "selected" : ""}>${t("scheduled")}</option><option value="in-progress" ${item.status === "in-progress" ? "selected" : ""}>${t("inProgress")}</option><option value="completed" ${item.status === "completed" ? "selected" : ""}>${t("completed")}</option><option value="cancelled" ${item.status === "cancelled" ? "selected" : ""}>${t("cancelled")}</option></select>` : esc(t(item.status || "planned"))}</td><td>${editable ? `<button type="button" class="button button-ghost" data-edit-treatment="${item.id}">${t("edit")}</button><button type="button" class="button" data-delete-treatment="${item.id}">×</button>` : ""}</td></tr>`).join("");
+    return items.map((item) => `<tr><td>#${item.toothNumber || "—"}</td><td>${esc(item.description)}</td><td>${esc(item.date)}</td><td>${money(item.fee)}</td><td>${editable ? `<select class="treatment-status-select" data-treatment-status="${item.id}"><option value="planned" ${item.status === "planned" ? "selected" : ""}>${t("planned")}</option><option value="accepted" ${item.status === "accepted" ? "selected" : ""}>${t("accepted")}</option><option value="scheduled" ${item.status === "scheduled" ? "selected" : ""}>${t("scheduled")}</option><option value="in-progress" ${item.status === "in-progress" ? "selected" : ""}>${t("inProgress")}</option><option value="completed" ${item.status === "completed" ? "selected" : ""}>${t("completed")}</option><option value="cancelled" ${item.status === "cancelled" ? "selected" : ""}>${t("cancelled")}</option></select>` : esc(t(item.status || "planned"))}</td><td>${editable ? `<button type="button" class="button button-ghost" data-edit-treatment="${item.id}">${t("edit")}</button><button type="button" class="button btn-danger-ghost" data-delete-treatment="${item.id}" title="${t("delete")}" aria-label="${t("delete")}">×</button>` : ""}</td></tr>`).join("");
 }
 
 function invoiceRows(items) {
@@ -116,7 +116,7 @@ function invoiceRows(items) {
             actions.push(`<button type="button" class="button button-sm button-primary" data-add-payment="${item.id}" title="${t("addPayment")}">+ ${t("addPayment")}</button>`);
         }
         if (canEdit) actions.push(`<button type="button" class="button button-ghost button-sm" data-edit-invoice="${item.id}">${t("edit")}</button>`);
-        if (canDelete) actions.push(`<button type="button" class="button button-sm" style="color:var(--danger);" data-delete-invoice="${item.id}">×</button>`);
+        if (canDelete) actions.push(`<button type="button" class="button button-sm btn-danger-ghost" data-delete-invoice="${item.id}" title="${t("delete")}" aria-label="${t("delete")}">×</button>`);
 
         return `<tr>
             <td>${esc(dateStr)}</td>

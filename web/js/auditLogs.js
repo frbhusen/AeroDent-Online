@@ -103,7 +103,7 @@ function _formatAuditDetails(detailsStr) {
                     }
                     return `<span style="display:inline-block;margin:1px 4px 1px 0;"><b>${label}</b>: <span style="color:#0f172a;font-weight:500;">${esc(valDisplay)}</span></span>`;
                 })
-                .join("<span style=\"color:#cbd5e1;margin:0 6px;\">·</span>");
+                .join("<span style=\"color:#94a3b8;margin:0 6px;\" aria-hidden=\"true\">·</span>");
         }
         return esc(String(parsed));
     } catch {
@@ -226,7 +226,7 @@ function renderAuditLogs() {
     const categoryChips = categories.map((cat) => {
         const isActive = activeCategory === cat.id;
         const activeStyle = isActive
-            ? "background:#0284c7;color:#fff;border-color:#0284c7;font-weight:600;"
+            ? "background:#0369a1;color:#fff;border-color:#0369a1;font-weight:600;"
             : "background:#f8fafc;color:#475569;border-color:#e2e8f0;";
         return `
             <button
@@ -271,7 +271,7 @@ function renderAuditLogs() {
                         <input
                             type="search"
                             id="auditSearchInput"
-                            placeholder="${t("search") || "Search audit logs..."}"
+                            placeholder="${t("auditSearchPlaceholder")}"
                             value="${esc(state.auditSearchQuery || "")}"
                             style="width:100%;padding:7px 14px;border-radius:8px;border:1px solid #cbd5e1;font-size:13px;outline:none;background:#fff;"
                         />

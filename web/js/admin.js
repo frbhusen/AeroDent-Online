@@ -167,7 +167,7 @@ function renderAdminOverview() {
             </div>
 
             <div class="admin-stats-grid">
-                <div class="admin-stat-card" style="--stat-accent:#0284c7;--stat-bg:#f0f9ff;">
+                <div class="admin-stat-card" style="--stat-accent:#0369a1;--stat-bg:#f0f9ff;">
                     <div class="admin-stat-icon">🏥</div>
                     <div class="admin-stat-info">
                         <span class="admin-stat-title">${t("totalClinics")}</span>
@@ -271,7 +271,7 @@ function renderAdminClinics() {
                 <td>${_formatExpiration(c.subscription_expires_at)}</td>
                 <td>
                     <button class="btn-admin-action ${isActive ? "" : "btn-admin-primary"}" data-admin-toggle-clinic="${c.id}" data-active="${isActive}">
-                        ${isActive ? t("filterInactive") : t("filterActive")}
+                        ${isActive ? t("deactivate") : t("activate")}
                     </button>
                 </td>
                 <td style="text-align:end;">
@@ -318,7 +318,7 @@ function renderAdminClinics() {
 
                     <div class="admin-search-box">
                         <span style="color:#94a3b8;margin-right:6px;font-size:13px;">🔍</span>
-                        <input type="text" id="adminClinicSearch" placeholder="${t("search")}" value="${esc(searchVal)}">
+                        <input type="text" id="adminClinicSearch" placeholder="${t("adminSearchClinics")}" value="${esc(searchVal)}">
                     </div>
                 </div>
 
@@ -375,7 +375,7 @@ function renderAdminUsers() {
                 <td>
                     ${!isSelf ? `
                         <button class="btn-admin-action ${u.is_active ? "" : "btn-admin-primary"}" data-admin-toggle-user="${u.id}" data-role="${u.role}" data-active="${u.is_active}" title="${isHead ? t("cascadeDeactivateWarning") : ""}">
-                            ${u.is_active ? t("filterInactive") : t("filterActive")}
+                            ${u.is_active ? t("deactivate") : t("activate")}
                         </button>
                     ` : `<small class="muted">(You)</small>`}
                 </td>
@@ -406,7 +406,7 @@ function renderAdminUsers() {
                     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
                         <div class="admin-search-box">
                             <span style="color:#94a3b8;margin-right:6px;font-size:13px;">🔍</span>
-                            <input type="text" id="adminUserSearch" placeholder="${t("search")}" value="${esc(searchVal)}">
+                            <input type="text" id="adminUserSearch" placeholder="${t("adminSearchUsers")}" value="${esc(searchVal)}">
                         </div>
                         <select id="adminUserRoleFilter" style="max-width:180px;height:38px;padding:0 10px;border-radius:9px;border:1px solid #cbd5e1;">
                             <option value="all" ${roleVal === "all" ? "selected" : ""}>${t("filterAll")} (${t("assignRole")})</option>

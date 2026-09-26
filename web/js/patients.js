@@ -79,14 +79,26 @@ function patientPagination() {
     return `<div class="patient-pagination"><button class="button button-ghost" data-patient-page="previous" ${state.patientPage <= 1 ? "disabled" : ""}>${t("previous")}</button><span>${state.patientPage} / ${state.patientPages}</span><button class="button button-ghost" data-patient-page="next" ${state.patientPage >= state.patientPages ? "disabled" : ""}>${t("next")}</button></div>`;
 }
 
+// Free-text clinical fields often hold "None" / "No known allergies"; those are not alerts.
+const NO_ALERT_VALUES = new Set([
+    "", "-", "—", "no", "none", "nil", "n/a", "na", "nka", "nkda", "healthy",
+    "no known allergies", "no allergies", "no known drug allergies",
+    "لا", "لا يوجد", "لا شيء", "لايوجد", "سليم",
+]);
+
+function isClinicalAlert(value) {
+    return !NO_ALERT_VALUES.has(String(value ?? "").trim().toLowerCase().replace(/[.!]+$/, ""));
+}
+
 function patientRow(patient) {
     const rawName = (patient.name || "").trim();
     const parts = rawName.split(/\s+/);
     const initials = parts.length > 1
         ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
         : (parts[0] ? parts[0].slice(0, 2).toUpperCase() : "PT");
-    const hasAlert = !!(patient.allergies || patient.medicalFlags || patient.medical_flags);
-    const alertText = patient.allergies || patient.medicalFlags || patient.medical_flags || "";
+    const alerts = [patient.allergies, patient.medicalFlags ?? patient.medical_flags].filter(isClinicalAlert);
+    const hasAlert = alerts.length > 0;
+    const alertText = alerts.join(" · ");
 
     return `
       <div class="patient-row" data-patient-id="${patient.id}">
@@ -125,16 +137,16 @@ function renderPatients() {
 }
 function patientForm(patient, canDelete = true) {
     const clinicalFields = !window.AERODENT_ONLINE || onlinePatientClinicalFieldsAllowed();
-    return `<div class="card-heading"><h2>${esc(patient.name)}</h2><span class="badge ${patient.allergies ? "badge-danger" : ""}">${patient.allergies ? "! " + esc(patient.allergies) : t("healthy")}</span></div>${patient.medicalFlags ? `<div class="alert-banner">⚠ ${esc(patient.medicalFlags)}</div>` : ""}<form id="patientForm" class="form-grid"><div class="field"><label>${t("patient")}</label><input name="name" value="${esc(patient.name)}" required></div><div class="field"><label>${t("phone")}</label><input name="phone" value="${esc(patient.phone)}"></div><div class="field"><label>${t("location")}</label><input name="location" value="${esc(patient.location)}"></div><div class="field"><label>${t("workStudy")}</label><input name="workStudy" value="${esc(patient.workStudy)}"></div><div class="field"><label>${t("dob")}</label><input type="date" name="dob" value="${esc(patient.dob)}"></div><div class="field"><label>${t("gender")}</label><select name="gender"><option
+    return `<div class="card-heading"><h2>${esc(patient.name)}</h2><span class="badge ${isClinicalAlert(patient.allergies) ? "badge-danger" : "badge-success"}">${isClinicalAlert(patient.allergies) ? "! " + esc(patient.allergies) : "✓ " + t("healthy")}</span></div>${isClinicalAlert(patient.medicalFlags) ? `<div class="alert-banner">⚠ ${esc(patient.medicalFlags)}</div>` : ""}<form id="patientForm" class="form-grid"><div class="field"><label>${t("patient")}</label><input name="name" value="${esc(patient.name)}" required></div><div class="field"><label>${t("phone")}</label><input name="phone" value="${esc(patient.phone)}"></div><div class="field"><label>${t("location")}</label><input name="location" value="${esc(patient.location)}"></div><div class="field"><label>${t("workStudy")}</label><input name="workStudy" value="${esc(patient.workStudy)}"></div><div class="field"><label>${t("dob")}</label><input type="date" name="dob" value="${esc(patient.dob)}"></div><div class="field"><label>${t("gender")}</label><select name="gender"><option
     value="Female"
-    ${patient.gender === "Female" || !patient.gender ? "selected" : ""}
+    ${String(patient.gender || "").toLowerCase() !== "male" ? "selected" : ""}
 >
     ${t("female")}
 </option>
 
 <option
     value="Male"
-    ${patient.gender === "Male" ? "selected" : ""}
+    ${String(patient.gender || "").toLowerCase() === "male" ? "selected" : ""}
 >
     ${t("male")}
 </option></select></div>${clinicalFields ? `<div class="field"><label>${t("allergies")}</label><input name="allergies" value="${esc(patient.allergies)}"></div><div class="field full-span"><label>${t("medicalFlags")}</label><input name="medicalFlags" value="${esc(patient.medicalFlags)}"></div><div class="field full-span"><label>${t("notes")}</label><textarea name="notes" rows="3">${esc(patient.notes)}</textarea></div>` : ""}<div class="form-actions full-span"><button type="submit" class="button button-primary">${t("save")}</button>${canDelete ? `<button type="button" class="button delete-patient-button" data-delete-patient="${patient.id}">${t("deletePatient")}</button>` : ""}</div></form><div

@@ -14,7 +14,7 @@ function openCommandPalette() {
                 <div style="display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0;padding-bottom:12px;">
                     <span style="font-size:18px;color:#94a3b8;">🔍</span>
                     <input type="text" id="cmdPaletteInput" placeholder="${t("searchPatientsPrompt") || "Search patients or actions (Ctrl + K)..."}" autocomplete="off" style="border:none;outline:none;font-size:15px;width:100%;background:transparent;color:#0f172a;">
-                    <span style="font-size:10px;padding:3px 7px;border-radius:5px;background:#f1f5f9;color:#64748b;font-weight:600;border:1px solid #e2e8f0;">ESC</span>
+                    <span style="font-size:10px;padding:3px 7px;border-radius:5px;background:#f1f5f9;color:#475569;font-weight:600;border:1px solid #e2e8f0;">ESC</span>
                 </div>
                 <div id="cmdPaletteResults" style="max-height:360px;overflow-y:auto;margin-top:10px;"></div>
             </div>
@@ -112,7 +112,7 @@ function renderCommandPaletteResults(query = "") {
     let html = "";
 
     if (matchedPatients.length > 0) {
-        html += `<div style="font-size:11px;font-weight:700;color:#94a3b8;padding:6px 8px;text-transform:uppercase;letter-spacing:0.5px;">Patients</div>`;
+        html += `<div style="font-size:11px;font-weight:700;color:var(--muted);padding:6px 8px;text-transform:uppercase;letter-spacing:0.5px;">${t("cmdPatients")}</div>`;
         matchedPatients.forEach((p) => {
             html += `
                 <div class="cmd-item" data-cmd-patient="${p.id}" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;cursor:pointer;margin-bottom:2px;transition:background 0.1s ease;">
@@ -120,17 +120,17 @@ function renderCommandPaletteResults(query = "") {
                         <span style="font-size:16px;">👤</span>
                         <div>
                             <div style="font-weight:600;font-size:13px;color:#0f172a;">${esc(p.name)} <small style="color:#64748b;font-weight:normal;">#${p.id}</small></div>
-                            <small style="color:#94a3b8;">${esc(p.phone || "No phone")} ${p.dob ? "· " + esc(p.dob) : ""}</small>
+                            <small style="color:var(--muted);">${esc(p.phone || t("noPhone"))} ${p.dob ? "· " + esc(p.dob) : ""}</small>
                         </div>
                     </div>
-                    <span style="font-size:11px;color:#0284c7;font-weight:500;">Select →</span>
+                    <span style="font-size:11px;color:var(--primary);font-weight:600;">${t("cmdSelect")}</span>
                 </div>
             `;
         });
     }
 
     if (filteredActions.length > 0) {
-        html += `<div style="font-size:11px;font-weight:700;color:#94a3b8;padding:8px 8px 6px;text-transform:uppercase;letter-spacing:0.5px;">Quick Actions</div>`;
+        html += `<div style="font-size:11px;font-weight:700;color:var(--muted);padding:8px 8px 6px;text-transform:uppercase;letter-spacing:0.5px;">${t("cmdQuickActions")}</div>`;
         filteredActions.forEach((a, idx) => {
             html += `
                 <div class="cmd-item" data-cmd-action-idx="${idx}" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;cursor:pointer;margin-bottom:2px;transition:background 0.1s ease;">
@@ -142,7 +142,7 @@ function renderCommandPaletteResults(query = "") {
     }
 
     if (!html) {
-        html = `<div style="text-align:center;padding:24px;color:#94a3b8;font-size:13px;">No results found for "${esc(query)}"</div>`;
+        html = `<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">${t("cmdNoResults")} "${esc(query)}"</div>`;
     }
 
     resultsContainer.innerHTML = html;

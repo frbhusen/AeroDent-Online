@@ -74,7 +74,7 @@ async function exportData() {
                 }
 
                 h2 {
-                    background: #0284c7;
+                    background: #0369a1;
                     color: #fff;
                     padding: 8px;
                 }
