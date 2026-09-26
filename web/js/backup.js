@@ -1,4 +1,20 @@
 async function exportData() {
+    if (window.AERODENT_ONLINE) {
+        try {
+            const response = await window.AERODENT_API.get("/api/clinic/export");
+            const clinic = response.data?.clinic;
+            const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: "application/json" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `aerodent_clinic_${clinic?.id || "export"}_${today()}.json`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+            toast(t("exported") || "Clinic data exported");
+        } catch (error) {
+            toast(error.message || "Failed to export clinic data");
+        }
+        return;
+    }
     const data = await dbExport();
 
     const sheets = Object.entries(data)

@@ -14,6 +14,35 @@
 
 <body>
 
+    <div id="onlineLoginScreen" class="online-login-screen hidden" aria-live="polite">
+        <form id="onlineLoginForm" class="online-login-card">
+            <div class="brand-mark"><img src="icons/icon-192.png" alt="AeroDent Logo"></div>
+            <p class="eyebrow">AERODENT ONLINE</p>
+            <h1 data-i18n="onlineLoginTitle">Sign in to AeroDent</h1>
+            <p class="muted" data-i18n="onlineLoginMessage">Use your clinic account to continue.</p>
+            <label class="field">
+                <span data-i18n="email">Email</span>
+                <input id="onlineEmail" name="email" type="email" autocomplete="username" required>
+            </label>
+            <div class="field">
+                <label for="onlinePassword" data-i18n="password">Password</label>
+                <div class="password-field-wrap">
+                    <input id="onlinePassword" name="password" type="password" autocomplete="current-password" required>
+                    <button type="button" class="toggle-password-btn" id="togglePasswordBtn" aria-label="Show password" tabindex="-1">👁</button>
+                </div>
+            </div>
+            <p id="onlineLoginError" class="login-error" role="alert"></p>
+            <button id="onlineLoginButton" class="button button-primary full" type="submit">
+                <span data-i18n="login">Sign in</span>
+            </button>
+            <div style="margin-top:6px;text-align:center;">
+                <button type="button" id="startTrialBtn" class="button button-ghost full" style="font-size:13px;color:var(--primary);border-color:var(--primary);border-radius:10px;padding:11px;">
+                    ✨ <span data-i18n="startFreeTrial">Start 14-Day Free Trial</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
     <!-- PIN LOCK SCREEN -->
     <div id="lockScreen" class="lock-screen hidden">
         <div class="lock-card">
@@ -81,6 +110,7 @@
 
                     <input id="globalSearch" data-i18n-placeholder="search"
                         placeholder="Search patients by name or phone" />
+                    <kbd class="kbd-shortcut">Ctrl K</kbd>
                 </label>
 
                 <button class="button button-primary" id="newPatientBtn">
@@ -126,6 +156,10 @@
 
                 </div>
 
+                <button class="button button-ghost online-logout-button" id="onlineLogoutBtn" type="button">
+                    <span data-i18n="logout">Sign out</span>
+                </button>
+
                 <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-expanded="true"
                     aria-label="Collapse sidebar">
                     ‹
@@ -137,7 +171,7 @@
 
                     <span class="status-dot"></span>
 
-                    <span data-i18n="saved">
+                    <span id="statusMode" data-i18n="saved">
                         Saved locally
                     </span>
 
@@ -277,6 +311,7 @@
     <input type="file" id="importInput" accept=".xls,.html,text/html,application/vnd.ms-excel" hidden />
 
     <script src="i18n.js"></script>
+    <script src="js/api.js"></script>
     <script src="db.js"></script>
 
     <script src="js/state.js"></script>
@@ -293,6 +328,10 @@
     <script src="js/xrays.js"></script>
     <script src="js/timeline.js"></script>
     <script src="js/backup.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/auditLogs.js"></script>
+    <script src="js/commandPalette.js"></script>
+    <script src="js/hr.js"></script>
 
     <script src="js/events.js"></script>
     <script src="js/app.js"></script>

@@ -1,4 +1,4 @@
-async function hashPIN(pin) {
+﻿async function hashPIN(pin) {
     const encoder = new TextEncoder();
     const data = encoder.encode(pin);
 
@@ -35,6 +35,7 @@ async function derivePINHash(pin, existingSaltHex) {
 }
 
 function lockApp() {
+    if (window.AERODENT_ONLINE) return;
     const lockScreen = $("#lockScreen");
 
     if (!lockScreen) {
@@ -64,6 +65,7 @@ function lockApp() {
 }
 
 function unlockApp() {
+    if (window.AERODENT_ONLINE) return;
     document.querySelector(".app-shell").classList.remove("app-locked");
 
     $("#lockScreen").classList.add("hidden");
@@ -75,6 +77,7 @@ function unlockApp() {
 }
 
 function showPINSetup() {
+    if (window.AERODENT_ONLINE) return;
     const lockScreen = $("#lockScreen");
 
     if (!lockScreen) {
@@ -256,4 +259,258 @@ function checkInactivity() {
         checkInactivity,
         INACTIVITY_LIMIT - inactiveFor
     );
+}
+
+function showOnlineLogin() {
+    const loginScreen = $("#onlineLoginScreen");
+    const appShell = $(".app-shell");
+    if (!loginScreen) return;
+    loginScreen.classList.remove("hidden");
+    appShell?.classList.add("online-auth-hidden");
+    $("#onlineEmail")?.focus();
+}
+
+function hideOnlineLogin() {
+    $("#onlineLoginScreen")?.classList.add("hidden");
+    $(".app-shell")?.classList.remove("online-auth-hidden");
+}
+
+function clearOnlineClinicState() {
+    state.patients = [];
+    state.selectedPatient = null;
+    state.appointments = [];
+    state.treatments = [];
+    state.treatmentPlans = [];
+    state.invoices = [];
+    state.prescriptions = [];
+    state.xrays = [];
+    state.odontograms = [];
+    state.staffList = [];
+    state.doctorsList = [];
+    state.dashboardData = null;
+    state.timelineData = null;
+    state.settings = {};
+}
+
+function setOnlineUser(user) {
+    state.auth.authenticated = Boolean(user);
+    state.auth.loading = false;
+    state.auth.user = user || null;
+    document.body.classList.toggle("online-authenticated", Boolean(user));
+    document.body.classList.toggle("online-unauthenticated", !user);
+    const isSuperAdmin = user?.role === "super_admin";
+    document.body.classList.toggle("is-super-admin", isSuperAdmin);
+    if (user) {
+        if (isSuperAdmin) {
+            state.view = "admin_overview";
+        }
+        state.settings = {
+            ...state.settings,
+            doctorName: user.name,
+            clinicName: user.clinic_id ? `Clinic #${user.clinic_id}` : "AeroDent Platform Admin",
+        };
+        hideOnlineLogin();
+        setText();
+    } else {
+        clearOnlineClinicState();
+        showOnlineLogin();
+    }
+}
+
+function handleOnlineUnauthorized() {
+    if (!window.AERODENT_ONLINE || !state.auth.authenticated) return;
+    setOnlineUser(null);
+}
+
+window.handleOnlineUnauthorized = handleOnlineUnauthorized;
+
+async function initializeOnlineAuth() {
+    state.auth.loading = true;
+    try {
+        const response = await window.AERODENT_API.get("/api/auth/me");
+        setOnlineUser(response.user);
+        return true;
+    } catch (error) {
+        if (error.status === 401) {
+            setOnlineUser(null);
+            return false;
+        }
+        state.auth.loading = false;
+        document.body.classList.add("online-unauthenticated");
+        showOnlineLogin();
+        const errorEl = $("#onlineLoginError");
+        if (errorEl) errorEl.textContent = error.message;
+        return false;
+    }
+}
+
+async function loginOnline(event) {
+    event.preventDefault();
+    const button = $("#onlineLoginButton");
+    const errorNode = $("#onlineLoginError");
+    const email = $("#onlineEmail").value.trim();
+    const password = $("#onlinePassword").value;
+    button.disabled = true;
+    button.classList.add("is-loading");
+    if (errorNode) errorNode.textContent = "";
+    try {
+        const response = await window.AERODENT_API.post("/api/auth/login", { email, password });
+        $("#onlinePassword").value = "";
+        setOnlineUser(response.user);
+        if (typeof window.refreshOnlineWorkspace === "function") {
+            await window.refreshOnlineWorkspace();
+        }
+    } catch (error) {
+        if (errorNode) {
+            errorNode.textContent = error.message || "Unable to sign in right now.";
+        }
+    } finally {
+        button.disabled = false;
+        button.classList.remove("is-loading");
+    }
+}
+
+async function logoutOnline() {
+    try {
+        await window.AERODENT_API.post("/api/auth/logout", {});
+    } catch (error) {
+        if (error.status !== 401) toast(error.message);
+    }
+    setOnlineUser(null);
+    render();
+}
+
+function hasRole(...roles) {
+    return roles.includes(state.auth.user?.role);
+}
+
+function hasPermission(permission) {
+    const role = state.auth.user?.role;
+    const permissions = {
+        super_admin: [
+            "admin.read",
+            "admin.clinics.read", "admin.clinics.create", "admin.clinics.update", "admin.clinics.delete",
+            "admin.users.read", "admin.users.create", "admin.users.update", "admin.users.delete",
+            "admin.subscriptions.manage",
+        ],
+        head_doctor: [
+            "dashboard.read",
+            "patients.read", "patients.create", "patients.update", "patients.delete",
+            "odontogram.read", "odontogram.update",
+            "treatments.read", "treatments.create", "treatments.update", "treatments.delete",
+            "treatment_plans.read", "treatment_plans.create", "treatment_plans.update", "treatment_plans.delete",
+            "appointments.read", "appointments.create", "appointments.update", "appointments.delete",
+            "prescriptions.read", "prescriptions.create", "prescriptions.update", "prescriptions.delete",
+            "xrays.read", "xrays.create", "xrays.update", "xrays.delete",
+            "invoices.read", "invoices.create", "invoices.update", "invoices.delete",
+            "clinic_settings.read", "clinic_settings.update",
+            "staff.read", "staff.create", "staff.update", "staff.deactivate", "staff.delete",
+        ],
+        doctor: [
+            "dashboard.read",
+            "patients.read", "patients.create", "patients.update", "patients.delete",
+            "odontogram.read", "odontogram.update",
+            "treatments.read", "treatments.create", "treatments.update", "treatments.delete",
+            "treatment_plans.read", "treatment_plans.create", "treatment_plans.update", "treatment_plans.delete",
+            "appointments.read", "appointments.create", "appointments.update", "appointments.delete",
+            "prescriptions.read", "prescriptions.create", "prescriptions.update", "prescriptions.delete",
+            "xrays.read", "xrays.create", "xrays.update", "xrays.delete",
+            "invoices.read", "invoices.create", "invoices.update",
+            "clinic_settings.read",
+        ],
+        secretary: [
+            "dashboard.read",
+            "patients.read", "patients.create", "patients.update",
+            "odontogram.read",
+            "treatments.read",
+            "treatment_plans.read",
+            "appointments.read", "appointments.create", "appointments.update", "appointments.delete",
+            "prescriptions.read",
+            "xrays.read",
+            "invoices.read", "invoices.create", "invoices.update",
+        ],
+    };
+    return permissions[role]?.includes(permission) || false;
+}
+
+function openTrialRegistrationModal() {
+    modal(t("trialRegistration") || "Register New Clinic (14-Day Trial)", `
+        <form id="trialRegisterForm" class="form-grid">
+            <div class="field full-span">
+                <label>${t("clinicNameLabel") || "Clinic Name"}</label>
+                <input name="clinic_name" required placeholder="e.g. Al-Nour Dental Center">
+            </div>
+            <div class="field full-span">
+                <label>${t("headDoctorNameLabel") || "Head Doctor Name"}</label>
+                <input name="head_doctor_name" required placeholder="Dr. First Last">
+            </div>
+            <div class="field">
+                <label>${t("email") || "Email Address"}</label>
+                <input name="email" type="email" required placeholder="doctor@clinic.com">
+            </div>
+            <div class="field">
+                <label>${t("phone") || "Phone Number"}</label>
+                <input name="phone" placeholder="+963 ...">
+            </div>
+            <div class="field full-span">
+                <label>${t("password") || "Password"} (min 8 chars)</label>
+                <input name="password" type="password" minlength="8" required placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢">
+            </div>
+            <p id="trialRegisterError" class="login-error full-span" style="color:#b91c1c;font-size:12px;margin:4px 0 0;"></p>
+            <div class="form-actions full-span" style="margin-top:10px;">
+                <button class="button button-primary full" id="trialSubmitBtn" type="submit">
+                    âœ¨ ${t("startFreeTrial") || "Start 14-Day Free Trial"}
+                </button>
+            </div>
+        </form>
+    `);
+
+    $("#trialRegisterForm").onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = $("#trialSubmitBtn");
+        const errEl = $("#trialRegisterError");
+        errEl.textContent = "";
+        btn.disabled = true;
+        btn.classList.add("is-loading");
+
+        const data = Object.fromEntries(new FormData(e.target));
+        try {
+            const res = await window.AERODENT_API.post("/api/auth/register", data);
+            $("#modal")?.classList.remove("show");
+            toast(t("trialStarted") || "Welcome! Your 14-day free trial has been activated.");
+            setOnlineUser(res.user);
+            if (typeof window.refreshOnlineWorkspace === "function") {
+                await window.refreshOnlineWorkspace();
+            }
+        } catch (err) {
+            errEl.textContent = err.message || "Registration failed. Please check inputs.";
+        } finally {
+            btn.disabled = false;
+            btn.classList.remove("is-loading");
+        }
+    };
+}
+
+function bindOnlineAuthControls() {
+    $("#onlineLoginForm")?.addEventListener("submit", loginOnline);
+    $("#onlineLogoutBtn")?.addEventListener("click", logoutOnline);
+    $("#startTrialBtn")?.addEventListener("click", openTrialRegistrationModal);
+
+    // Password visibility toggle
+    const toggleBtn = $("#togglePasswordBtn");
+    const pwdInput = $("#onlinePassword");
+    if (toggleBtn && pwdInput) {
+        toggleBtn.addEventListener("click", () => {
+            const isHidden = pwdInput.type === "password";
+            pwdInput.type = isHidden ? "text" : "password";
+            toggleBtn.textContent = isHidden ? "🙈" : "👁️";
+            toggleBtn.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
+        });
+    }
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindOnlineAuthControls, { once: true });
+} else {
+    bindOnlineAuthControls();
 }

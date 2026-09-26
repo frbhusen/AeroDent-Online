@@ -1,0 +1,11 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "extraPaths": ["."],
+  "reportMissingImports": "warning",
+  "reportAttributeAccessIssue": false,
+  "reportOperatorIssue": false,
+  "reportOptionalMemberAccess": false,
+  "reportOptionalSubscript": false,
+  "reportCallIssue": false
+}

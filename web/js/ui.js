@@ -31,13 +31,67 @@ function setText() {
             ? "English"
             : "العربية";
 
-    $("#doctorName").textContent =
-        state.settings.doctorName ||
-        "Dr. Hussein";
+    const isSuperAdmin = state.auth?.user?.role === "super_admin";
+    document.body.classList.toggle("is-super-admin", isSuperAdmin);
 
-    $("#clinicName").textContent =
-        state.settings.clinicName ||
-        t("appName");
+    const userName = state.auth?.user?.name || state.settings.doctorName || "Dr. Hussein";
+    $("#doctorName").textContent = userName;
+
+    // Show actual clinic name from settings (loaded after login), fallback to Clinic #ID only while loading
+    const rawClinicName = state.settings?.clinicName || "";
+    const isPlaceholder = !rawClinicName
+        || rawClinicName === "------ Dental Clinic"
+        || /^Clinic #\d+$/.test(rawClinicName);
+    $("#clinicName").textContent = isSuperAdmin
+        ? t("superAdminPlatform")
+        : (!isPlaceholder ? rawClinicName : (state.auth?.user ? `Clinic #${state.auth.user.clinic_id}` : "")) || t("appName");
+
+    // Dynamic avatar initials
+    const avatarEl = $(".avatar");
+    if (avatarEl) {
+        if (isSuperAdmin) {
+            avatarEl.textContent = "SA";
+            avatarEl.title = t("superAdminRole");
+        } else {
+            const parts = userName.trim().split(/\s+/);
+            const initials = parts.length > 1
+                ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+                : (parts[0].slice(0, 2)).toUpperCase();
+            avatarEl.textContent = initials || "DR";
+            avatarEl.title = userName;
+        }
+    }
+
+    // Role badge under clinic name
+    let roleBadgeEl = $("#userRoleBadge");
+    if (!roleBadgeEl) {
+        roleBadgeEl = document.createElement("span");
+        roleBadgeEl.id = "userRoleBadge";
+        roleBadgeEl.className = "user-role-badge";
+        const profileBox = $("#doctorName")?.parentElement;
+        if (profileBox) {
+            profileBox.appendChild(roleBadgeEl);
+        }
+    }
+    if (roleBadgeEl) {
+        const userRole = state.auth?.user?.role;
+        if (isSuperAdmin) {
+            roleBadgeEl.textContent = `👑 ${t("superAdminRole")}`;
+            roleBadgeEl.className = "user-role-badge badge-role-admin";
+        } else if (userRole === "head_doctor") {
+            roleBadgeEl.textContent = `🩺 ${t("headDoctorRole")}`;
+            roleBadgeEl.className = "user-role-badge badge-role-head";
+        } else if (userRole === "doctor") {
+            roleBadgeEl.textContent = `👨‍⚕️ ${t("doctorRole")}`;
+            roleBadgeEl.className = "user-role-badge badge-role-doctor";
+        } else if (userRole === "secretary") {
+            roleBadgeEl.textContent = `📋 ${t("secretaryRole")}`;
+            roleBadgeEl.className = "user-role-badge badge-role-secretary";
+        } else {
+            roleBadgeEl.textContent = `👨‍⚕️ ${t("doctorRole")}`;
+            roleBadgeEl.className = "user-role-badge badge-role-doctor";
+        }
+    }
 
     const collapsed =
         document.body.classList.contains(
@@ -55,11 +109,36 @@ function setText() {
         "aria-expanded",
         String(!collapsed),
     );
+
+    // Update status indicator based on online/offline mode
+    const statusMode = $("#statusMode");
+    if (statusMode) {
+        statusMode.textContent = isSuperAdmin
+            ? t("superAdminRole")
+            : window.AERODENT_ONLINE ? t("savedOnline") : t("savedLocal");
+    }
 }
 
 function renderNav() {
+    const isSuperAdmin = state.auth?.user?.role === "super_admin";
+    let navItems;
+
+    if (isSuperAdmin) {
+        navItems = SUPER_ADMIN_NAV;
+    } else {
+        navItems = NAV.filter(([id]) => {
+            if (window.AERODENT_ONLINE && id === "settings" && !hasPermission("clinic_settings.read")) {
+                return false;
+            }
+            return true;
+        });
+        if (state.auth?.user?.role === "head_doctor") {
+            navItems.push(["audit_logs", "📜", "auditLogs"]);
+        }
+    }
+
     $("#nav").innerHTML =
-        NAV.map(
+        navItems.map(
             ([id, icon, key]) =>
                 `<button class="nav-item ${state.view === id
                     ? "active"
@@ -76,10 +155,56 @@ function renderNav() {
 
     $$(".nav-item").forEach(
         (button) => {
-            button.onclick = () => {
-                state.view =
-                    button.dataset.view;
-
+            button.onclick = async () => {
+                state.view = button.dataset.view;
+                if (window.AERODENT_ONLINE) {
+                    if (isSuperAdmin) {
+                        if (state.view === "admin_overview") {
+                            await loadAdminMetrics();
+                            await loadAdminClinics();
+                        } else if (state.view === "admin_clinics") {
+                            await loadAdminClinics();
+                        } else if (state.view === "admin_users") {
+                            await loadAdminClinics();
+                            await loadAdminUsers();
+                        }
+                    } else {
+                        if (state.view === "dashboard") {
+                            await loadOnlineDashboard();
+                        } else if (state.view === "treatments" && state.selectedPatient) {
+                            state.treatmentPage = 1;
+                            state.treatmentError = "";
+                            state.invoicePage = 1;
+                            state.invoiceError = "";
+                            await loadOnlineTreatments();
+                            await loadOnlineInvoices();
+                        } else if (state.view === "treatmentPlan" && state.selectedPatient) {
+                            state.treatmentPlanPage = 1;
+                            state.treatmentPlanError = "";
+                            await loadOnlineTreatmentPlans();
+                        } else if (state.view === "appointments") {
+                            await loadOnlineAppointments();
+                        } else if (state.view === "prescriptions" && state.selectedPatient) {
+                            state.prescriptionPage = 1;
+                            state.prescriptionError = "";
+                            await loadOnlinePrescriptions();
+                        } else if (state.view === "xrays" && state.selectedPatient) {
+                            state.xrayPage = 1;
+                            state.xrayError = "";
+                            await loadOnlineXrays();
+                        } else if (state.view === "settings") {
+                            if (hasPermission("clinic_settings.read")) await loadOnlineSettings();
+                            if (hasPermission("staff.read")) await loadOnlineStaff();
+                        } else if (state.view === "hr") {
+                            if (typeof loadOnlineHRData === "function") await loadOnlineHRData();
+                        } else if (state.view === "audit_logs") {
+                            if (typeof loadAuditLogs === "function") await loadAuditLogs();
+                        }
+                    }
+                    if (state.view === "audit_logs" && typeof loadAuditLogs === "function") {
+                        await loadAuditLogs();
+                    }
+                }
                 render();
             };
         },
@@ -89,15 +214,17 @@ function renderNav() {
 function render() {
     setText();
     renderNav();
-    const section = NAV.find((item) => item[0] === state.view);
+    const isSuperAdmin = state.auth?.user?.role === "super_admin";
+    const activeNavList = isSuperAdmin ? SUPER_ADMIN_NAV : NAV;
+    const section = activeNavList.find((item) => item[0] === state.view);
     $("#currentSection").textContent = section
         ? t(section[2]).toUpperCase()
-        : "OVERVIEW";
+        : isSuperAdmin ? "ADMIN" : "OVERVIEW";
     $("#selectedPatientLabel").textContent =
-        state.view === "appointments"
+        (isSuperAdmin || state.view === "appointments" || state.view === "dashboard" || state.view === "settings" || state.view === "audit_logs" || state.view === "hr")
             ? ""
             : state.selectedPatient?.name || t("selectPatient");
-    $(".page-heading h1").textContent = section ? t(section[2]) : t("dashboard");
+    $(".page-heading h1").textContent = section ? t(section[2]) : isSuperAdmin ? t("adminOverview") : t("dashboard");
     const views = {
         dashboard: renderDashboard,
         odontogram: renderOdontogram,
@@ -108,8 +235,14 @@ function render() {
         prescriptions: renderPrescriptions,
         xrays: renderXrays,
         settings: renderSettings,
+        hr: typeof renderHR === "function" ? renderHR : () => "<div>HR</div>",
+        admin_overview: renderAdminOverview,
+        admin_clinics: renderAdminClinics,
+        admin_users: renderAdminUsers,
+        audit_logs: typeof renderAuditLogs === "function" ? renderAuditLogs : () => "<div>Audit Logs</div>",
     };
-    $("#view").innerHTML = (views[state.view] || renderDashboard)();
+    const defaultView = isSuperAdmin ? renderAdminOverview : renderDashboard;
+    $("#view").innerHTML = (views[state.view] || defaultView)();
     bindView();
 }
 function modal(title, body) {
@@ -174,3 +307,12 @@ function showUndo(message, action) {
         node.remove();
     }, 5000);
 }
+
+
+
+
+
+
+
+
+
