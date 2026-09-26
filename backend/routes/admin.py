@@ -8,6 +8,7 @@ from backend.auth.routes import get_current_user
 from backend.auth.service import hash_password
 from backend.extensions import db
 from backend.models import Clinic, User
+from backend.services.audit import log_activity
 
 
 admin_blueprint = Blueprint("admin", __name__, url_prefix="/api/admin")
@@ -298,6 +299,13 @@ def create_clinic():
     db.session.add(head_doctor)
 
     try:
+        log_activity(
+            action="admin_clinic_created",
+            resource_type="clinic",
+            resource_id=clinic.id,
+            clinic_id=clinic.id,
+            details={"name": clinic.name, "head_doctor_email": head_email},
+        )
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
@@ -383,6 +391,13 @@ def update_clinic(clinic_id):
             return _error("extend_days must be an integer.", 422)
 
     try:
+        log_activity(
+            action="admin_clinic_updated",
+            resource_type="clinic",
+            resource_id=clinic.id,
+            clinic_id=clinic.id,
+            details=data,
+        )
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
@@ -460,8 +475,25 @@ def delete_clinic(clinic_id):
     if clinic is None:
         return _error("Clinic not found.", 404)
 
+    clinic_name = clinic.name
+
     try:
         purge_clinic_data(clinic_id)
+        # clinic_id=None (platform-level record): purge_clinic_data already deleted this
+        # clinic's own audit logs and the clinic row itself cascades that deletion, so a
+        # clinic-scoped entry here would vanish immediately. Force clinic_id back to None
+        # after the call since log_activity falls back to g.current_clinic/g.current_user's
+        # clinic when given clinic_id=None, and g.current_clinic may still hold a stale value
+        # from an unrelated earlier request in a long-lived app/request context.
+        entry = log_activity(
+            action="admin_clinic_deleted",
+            resource_type="clinic",
+            resource_id=clinic_id,
+            clinic_id=None,
+            details={"name": clinic_name},
+        )
+        if entry is not None:
+            entry.clinic_id = None
         db.session.commit()
         return "", 204
     except Exception as e:
@@ -549,6 +581,14 @@ def create_user():
     )
     db.session.add(user)
     try:
+        db.session.flush()
+        log_activity(
+            action="admin_user_created",
+            resource_type="user",
+            resource_id=user.id,
+            clinic_id=user.clinic_id,
+            details={"email": user.email, "role": user.role},
+        )
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
@@ -643,6 +683,13 @@ def update_user(user_id):
         user.clinic_id = new_cid
 
     try:
+        log_activity(
+            action="admin_user_updated",
+            resource_type="user",
+            resource_id=user.id,
+            clinic_id=user.clinic_id,
+            details={k: v for k, v in data.items() if k != "password"},
+        )
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
@@ -671,8 +718,19 @@ def delete_user(user_id):
         if super_count == 0:
             return _error("Cannot delete the only active Super Admin.", 422)
 
+    deleted_email = user.email
+    deleted_role = user.role
+    deleted_clinic_id = user.clinic_id
+
     db.session.delete(user)
     try:
+        log_activity(
+            action="admin_user_deleted",
+            resource_type="user",
+            resource_id=user_id,
+            clinic_id=deleted_clinic_id,
+            details={"email": deleted_email, "role": deleted_role},
+        )
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
