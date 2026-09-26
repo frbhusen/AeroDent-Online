@@ -1699,6 +1699,27 @@ I18N.ar.xrayLossless = "بدون فقدان للجودة";
 I18N.en.xrayLegacyImage = "Legacy compressed copy";
 I18N.ar.xrayLegacyImage = "نسخة قديمة مضغوطة";
 
+I18N.en.connectionLost = "You're offline. Changes can't be saved until the connection returns.";
+I18N.ar.connectionLost = "أنت غير متصل. لا يمكن حفظ التغييرات حتى يعود الاتصال.";
+I18N.en.connectionRestored = "Connection restored.";
+I18N.ar.connectionRestored = "عاد الاتصال.";
+I18N.en.serverUnreachable = "Unable to reach the AeroDent server. Check your connection and try again.";
+I18N.ar.serverUnreachable = "تعذّر الوصول إلى خادم AeroDent. تحقق من الاتصال وحاول مجدداً.";
+I18N.en.fileSavedToDownloads = "Saved to Downloads.";
+I18N.ar.fileSavedToDownloads = "تم الحفظ في مجلد التنزيلات.";
+I18N.en.fileSaveFailed = "The file could not be saved.";
+I18N.ar.fileSaveFailed = "تعذّر حفظ الملف.";
+I18N.en.printFailed = "Printing is not available right now.";
+I18N.ar.printFailed = "الطباعة غير متاحة حالياً.";
+I18N.en.mobileOfflineTitle = "No connection";
+I18N.ar.mobileOfflineTitle = "لا يوجد اتصال";
+I18N.en.mobileOfflineMessage = "AeroDent needs an internet connection to reach your clinic's server. Your data is safe on the server; nothing was lost.";
+I18N.ar.mobileOfflineMessage = "يحتاج AeroDent إلى اتصال بالإنترنت للوصول إلى خادم عيادتك. بياناتك محفوظة على الخادم ولم يُفقد شيء.";
+I18N.en.mobileOfflineWaiting = "We'll reconnect automatically when the connection returns.";
+I18N.ar.mobileOfflineWaiting = "سنعيد الاتصال تلقائياً عند عودة الشبكة.";
+I18N.en.mobileRetry = "Try again";
+I18N.ar.mobileRetry = "إعادة المحاولة";
+
 function t(key) {
   return I18N[currentLanguage]?.[key] || I18N.en?.[key] || key;
 }

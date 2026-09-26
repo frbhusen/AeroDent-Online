@@ -39,6 +39,18 @@ IndexedDB + Web Crypto API (PBKDF2 Local PIN Auth)
   runs as a browser-based PWA only; there is no `src-tauri/` project or packaging step in
   this repository.
 
+### Android App
+
+```text
+Android WebView shell (mobile/android)
+    ↓ HTTPS, same HttpOnly session cookie as the browser
+Online platform (Flask + PostgreSQL)
+```
+
+A lightweight app that hosts the online platform; the backend stays on the server. Build it with
+`cd mobile/android && ./gradlew assembleRelease -PaerodentServerUrl=https://your-server`. See
+[docs/MOBILE.md](docs/MOBILE.md).
+
 *Critical Mode Principle*: Online mode never falls back to IndexedDB on network failures, and offline mode never contacts the API without explicit mode selection (`?mode=online`).
 
 ---
@@ -78,6 +90,8 @@ IndexedDB + Web Crypto API (PBKDF2 Local PIN Auth)
 │   ├── seed.py               # Database seeder for demo clinics and accounts
 │   └── test_*.py             # Automated backend & integration test suites
 ├── migrations/               # Alembic database migrations
+├── mobile/android/           # Android app: WebView shell around the online platform (docs/MOBILE.md)
+├── docs/                     # Security, caching, X-ray storage and mobile documentation
 ├── web/                      # Vanilla JS frontend application
 │   ├── index.html            # Main application shell
 │   ├── styles.css            # Responsive styles (LTR & RTL supported)
@@ -89,6 +103,7 @@ IndexedDB + Web Crypto API (PBKDF2 Local PIN Auth)
 │       ├── state.js          # Shared state manager
 │       ├── core.js           # Utilities & helpers
 │       ├── ui.js             # View rendering, navigation, and modals
+│       ├── nativeBridge.js   # Android app integration (downloads, print, Back); inert in browsers
 │       ├── auth.js           # Session auth & permission helpers
 │       ├── patients.js       # Patient management
 │       ├── odontogram.js     # Dental odontogram (FDI / Universal)
@@ -258,13 +273,24 @@ The **Super Admin** role (`super_admin`) is the global platform owner who contro
   configured to strip/overwrite any client-supplied `X-Forwarded-For` header, otherwise leave
   it `False` (the default) so the login/registration rate limiter cannot be bypassed by a
   spoofed header.
-- Ensure the `AERODENT_STORAGE_PATH` directory (X-ray files, default `storage/` under the
-  project root) has appropriate read/write permissions for the application user and is backed
-  up regularly.
+- Set `SECRET_KEY` to a random value of at least 32 characters (enforced in production).
+- Run `flask --app backend.app db upgrade` on every deploy. X-ray images are stored in
+  PostgreSQL (`xray_images`), so a normal database backup covers them. Deployments that still
+  have X-rays from the old file storage can import them once with
+  `flask --app backend.app xrays import-legacy` (see [docs/XRAY_STORAGE.md](docs/XRAY_STORAGE.md)).
 - Protect database connection strings and secret keys using environment secrets.
-- The login/registration rate limiter is an in-process counter; it does not coordinate across
-  multiple worker processes or instances. A multi-worker/multi-instance deployment that needs
-  a shared rate limit requires an external store (e.g. Redis), which is not implemented here.
+- Login throttling, rate limits and sessions are stored in PostgreSQL, so they hold across all
+  worker processes and instances without an extra store.
+- Optional settings: `AERODENT_SESSION_IDLE_MINUTES` (default 120),
+  `AERODENT_SESSION_MAX_HOURS` (default 12), `AERODENT_ALLOW_SELF_REGISTRATION` (default
+  `false`), `AERODENT_XRAY_MAX_MB` (default 25).
+
+Further documentation:
+
+- [docs/SECURITY.md](docs/SECURITY.md): authentication, sessions, brute-force limits, headers.
+- [docs/CACHING.md](docs/CACHING.md): what is cached where, and why clinic data never is.
+- [docs/XRAY_STORAGE.md](docs/XRAY_STORAGE.md): lossless, integrity-checked X-ray storage.
+- [docs/MOBILE.md](docs/MOBILE.md): the Android app.
 
 ---
 

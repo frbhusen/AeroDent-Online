@@ -475,10 +475,16 @@ function printPrescription(id) {
     state.printPrescriptionId = id;
     document.body.classList.add("printing-prescription");
     render();
-    setTimeout(() => window.print(), 50);
-    window.onafterprint = () => {
+    const finish = () => {
+        window.onafterprint = null;
         document.body.classList.remove("printing-prescription");
         state.printPrescriptionId = null;
         render();
     };
+    if (NativeShell.available) {
+        setTimeout(() => printPage(t("prescriptions")).then(finish), 50);
+        return;
+    }
+    window.onafterprint = finish;
+    setTimeout(() => window.print(), 50);
 }

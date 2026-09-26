@@ -18,6 +18,7 @@ const SHELL = [
   "./js/state.js",
   "./js/core.js",
   "./js/ui.js",
+  "./js/nativeBridge.js",
   "./js/auth.js",
   "./js/patients.js",
   "./js/odontogram.js",

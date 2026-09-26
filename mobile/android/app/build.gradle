@@ -1,0 +1,116 @@
+plugins {
+    id "com.android.application"
+}
+
+// The AeroDent server this app talks to. The app is only a shell: every page, API call and
+// session lives on this server. Set it per build:
+//   ./gradlew assembleRelease -PaerodentServerUrl=https://clinic.example.com
+// or with the AERODENT_SERVER_URL environment variable. See docs/MOBILE.md.
+def configuredServerUrl = (project.findProperty("aerodentServerUrl") ?: System.getenv("AERODENT_SERVER_URL") ?: "")
+        .toString().trim().replaceAll('/+$', "")
+// Debug builds default to the Flask dev server on the host machine as seen from the emulator.
+def debugServerUrl = configuredServerUrl ?: "http://10.0.2.2:5000"
+
+def validateOrigin = { String url, boolean requireHttps ->
+    def matcher = url =~ /^(https?):\/\/([A-Za-z0-9.-]+|\[[0-9A-Fa-f:]+\])(:\d{1,5})?$/
+    if (!matcher.matches()) {
+        throw new GradleException("aerodentServerUrl must be an origin like https://clinic.example.com (no path), got '${url}'.")
+    }
+    if (requireHttps && matcher.group(1) != "https") {
+        throw new GradleException("Release builds must use an https:// aerodentServerUrl (got '${url}').")
+    }
+}
+
+android {
+    namespace = "com.aerodent.app"
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId = "com.aerodent.app"
+        minSdk = 29
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0.0"
+    }
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    signingConfigs {
+        release {
+            // Supplied at build time; keystores are never committed. See docs/MOBILE.md.
+            def storePath = System.getenv("AERODENT_KEYSTORE_FILE")
+            if (storePath) {
+                storeFile = file(storePath)
+                storePassword = System.getenv("AERODENT_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("AERODENT_KEY_ALIAS")
+                keyPassword = System.getenv("AERODENT_KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            buildConfigField "String", "SERVER_URL", "\"${debugServerUrl}\""
+        }
+        release {
+            minifyEnabled = true
+            shrinkResources = true
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+            buildConfigField "String", "SERVER_URL", "\"${configuredServerUrl}\""
+            if (System.getenv("AERODENT_KEYSTORE_FILE")) {
+                signingConfig = signingConfigs.release
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+
+    sourceSets {
+        main {
+            assets.srcDir(layout.buildDirectory.dir("generated/aerodentAssets"))
+        }
+    }
+}
+
+// The "no connection" page reuses the web app's English/Arabic strings (web/i18n.js) and icon,
+// copied at build time so the two never drift apart.
+def webDir = rootProject.file("../../web")
+def copyWebResources = tasks.register("copyWebResources", Copy) {
+    from(new File(webDir, "i18n.js"))
+    from(new File(webDir, "icons/icon-192.png")) { rename { "icon.png" } }
+    into(layout.buildDirectory.dir("generated/aerodentAssets/offline"))
+}
+tasks.named("preBuild") { dependsOn(copyWebResources) }
+
+gradle.taskGraph.whenReady { graph ->
+    validateOrigin(debugServerUrl, false)
+    if (graph.allTasks.any { it.project == project && it.name.toLowerCase().contains("release") }) {
+        if (!configuredServerUrl) {
+            throw new GradleException("Set -PaerodentServerUrl=https://your-server (or AERODENT_SERVER_URL) for release builds.")
+        }
+        validateOrigin(configuredServerUrl, true)
+    }
+}
+
+dependencies {
+    implementation "androidx.activity:activity:1.9.3"
+    implementation "androidx.core:core:1.13.1"
+    implementation "androidx.webkit:webkit:1.12.1"
+    testImplementation "junit:junit:4.13.2"
+    constraints {
+        // Align old transitive Kotlin stdlib artifacts with the one AndroidX uses.
+        implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22"
+        implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22"
+    }
+}

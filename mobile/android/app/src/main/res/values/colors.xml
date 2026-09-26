@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches the web app's top bar so the status-bar area blends in. -->
+    <color name="shell_background">#FF0B2942</color>
+</resources>

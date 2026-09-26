@@ -721,10 +721,11 @@ function openAddPaymentModal(invoiceId) {
 function printInvoices() {
     document.body.classList.add("printing-invoice");
     setTimeout(() => {
-        window.print();
-        setTimeout(() => {
-            document.body.classList.remove("printing-invoice");
-        }, 500);
+        printPage(t("invoice")).then(() => {
+            setTimeout(() => {
+                document.body.classList.remove("printing-invoice");
+            }, 500);
+        });
     }, 50);
 }
 

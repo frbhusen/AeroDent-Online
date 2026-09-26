@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+  <title>AeroDent</title>
+  <link rel="stylesheet" href="offline.css">
+</head>
+<body>
+  <!-- Bundled with the Android app and shown when the AeroDent server cannot be reached.
+       Text comes from the web app's i18n.js (copied in at build time). -->
+  <main class="offline-card" aria-live="polite">
+    <img src="icon.png" alt="" width="72" height="72">
+    <h1 data-i18n="mobileOfflineTitle"></h1>
+    <p data-i18n="mobileOfflineMessage"></p>
+    <p class="muted" data-i18n="mobileOfflineWaiting"></p>
+    <button id="retry" type="button" data-i18n="mobileRetry"></button>
+  </main>
+  <script src="i18n.js"></script>
+  <script src="offline.js"></script>
+</body>
+</html>

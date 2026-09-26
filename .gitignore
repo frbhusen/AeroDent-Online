@@ -42,3 +42,11 @@ helper.txt
 capacitor.config.*
 android/
 
+
+# Android shell (mobile/android) is source-controlled; only local/build files are ignored.
+!/mobile/android/
+/mobile/android/.gradle/
+/mobile/android/.kotlin/
+/mobile/android/local.properties
+*.jks
+*.keystore
