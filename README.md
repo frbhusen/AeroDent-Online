@@ -23,10 +23,10 @@ PostgreSQL Database + Protected Local File Storage (X-rays)
 - **Multi-Tenancy**: Strict clinic-level data isolation enforced via foreign keys and composite constraints (`clinic_id`), parameterized SQLAlchemy queries, and 404 responses for cross-tenant resource lookups.
 - **X-Ray Storage**: Secure filesystem storage outside web roots, streaming image bytes through authenticated, clinic-scoped endpoints (`/api/x-rays/<id>/file`).
 
-### Offline Mode (Local-First Desktop/PWA)
+### Offline Mode (Local-First PWA)
 
 ```text
-Browser / Tauri Desktop Wrapper
+Browser
     ↓
 IndexedDB + Web Crypto API (PBKDF2 Local PIN Auth)
 ```
@@ -34,7 +34,10 @@ IndexedDB + Web Crypto API (PBKDF2 Local PIN Auth)
 - Zero backend dependency.
 - Stores clinical records directly in the browser's IndexedDB.
 - Protected by local PIN with PBKDF2 hashing and automatic inactivity timeout lock.
-- Supports Excel/HTML backups and Tauri Windows packaging.
+- Supports Excel/HTML backups.
+- **Not currently implemented**: a native desktop wrapper (e.g. Tauri). Offline mode today
+  runs as a browser-based PWA only; there is no `src-tauri/` project or packaging step in
+  this repository.
 
 *Critical Mode Principle*: Online mode never falls back to IndexedDB on network failures, and offline mode never contacts the API without explicit mode selection (`?mode=online`).
 
@@ -107,7 +110,8 @@ IndexedDB + Web Crypto API (PBKDF2 Local PIN Auth)
 
 - Python 3.11+
 - PostgreSQL database
-- Node.js (for Tauri desktop packaging or PWA tooling)
+- Node.js (optional; only used to run `node --check` for frontend JS syntax validation, see
+  the Testing section below — there is no frontend build step or bundler)
 
 ### 1. Environment Configuration
 
@@ -123,10 +127,11 @@ Set your database credentials and secret key in `.env`:
 DATABASE_URL=postgresql+psycopg://postgres:password@localhost:5432/aerodent
 AERODENT_ENV=development
 SECRET_KEY=generate-a-secure-random-secret-key-32-chars-minimum
-STORAGE_BACKEND=local
-LOCAL_STORAGE_PATH=storage/xrays
-SESSION_COOKIE_SECURE=False
+AERODENT_STORAGE_PATH=storage
 ```
+
+The session cookie's `Secure` flag is enabled automatically whenever `AERODENT_ENV=production`;
+it is not independently configurable via an environment variable.
 
 ### 2. Backend Installation & Database Setup
 
@@ -213,11 +218,20 @@ The **Super Admin** role (`super_admin`) is the global platform owner who contro
 
 ## 7. Production Deployment Readiness
 
-- Ensure `AERODENT_ENV=production`.
-- Set `SESSION_COOKIE_SECURE=True` to enforce HTTPS cookies.
+- Ensure `AERODENT_ENV=production` — this automatically enforces HTTPS-only (`Secure`) session
+  cookies; there is no separate `SESSION_COOKIE_SECURE` environment variable to set.
 - Deploy Flask behind a production WSGI server (such as Gunicorn or Waitress) behind Nginx reverse proxy.
-- Ensure the `storage/xrays` directory has appropriate read/write permissions for the application user and is backed up regularly.
+- If deployed behind a reverse proxy, set `TRUST_PROXY_HEADERS=True` only once that proxy is
+  configured to strip/overwrite any client-supplied `X-Forwarded-For` header, otherwise leave
+  it `False` (the default) so the login/registration rate limiter cannot be bypassed by a
+  spoofed header.
+- Ensure the `AERODENT_STORAGE_PATH` directory (X-ray files, default `storage/` under the
+  project root) has appropriate read/write permissions for the application user and is backed
+  up regularly.
 - Protect database connection strings and secret keys using environment secrets.
+- The login/registration rate limiter is an in-process counter; it does not coordinate across
+  multiple worker processes or instances. A multi-worker/multi-instance deployment that needs
+  a shared rate limit requires an external store (e.g. Redis), which is not implemented here.
 
 ---
 
@@ -228,4 +242,6 @@ The **Super Admin** role (`super_admin`) is the global platform owner who contro
 - **Clinical Flow & Scheduler Statuses**: Real-time appointment status progression (`booked`, `arrived`, `in_chair`, `completed`, `cancelled`) with instant calendar dropdowns.
 - **Spotlight Command Palette (`Ctrl + K`)**: High-speed patient lookup by name, phone, or chart ID, with keyboard navigation and quick action execution.
 - **Self-Service Trial Onboarding**: 14-day free trial self-registration (`POST /api/auth/register`) with automatic clinic and head doctor account provisioning.
-- **Pluggable Cloud Storage**: Out-of-the-box support for AWS S3, Cloudflare R2, MinIO, or local disk via `AERODENT_STORAGE_BACKEND`.
+- **X-Ray File Storage**: Private, authenticated local-disk storage outside the web root
+  (`AERODENT_STORAGE_PATH`), served only through clinic-scoped API endpoints. There is currently
+  no pluggable cloud storage backend (S3, R2, MinIO) wired into the upload/download routes.
