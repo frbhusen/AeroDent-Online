@@ -96,6 +96,46 @@ def run_tests():
             assert pay_data2["invoice"]["status"] == "paid"
             print("PASS: Final installment paid in full, status updated to paid.")
 
+            # 6b. Attempting to overpay a fully-paid invoice is rejected and leaves it unchanged
+            overpay_res = client.post(f"/api/invoices/{invoice_id}/payments", json={
+                "amount": 0.01,
+                "payment_method": "cash",
+            })
+            assert overpay_res.status_code == 422, f"Expected 422, got {overpay_res.status_code}: {overpay_res.data}"
+            db.session.expire_all()
+            refreshed_invoice = db.session.get(Invoice, invoice_id)
+            assert refreshed_invoice.paid_amount == Decimal("450.00")
+            assert refreshed_invoice.balance == Decimal("0.00")
+            print("PASS: Overpayment beyond the payable amount is rejected and invoice is unchanged.")
+
+            # 6c. Invalid payment_method / payment_date are rejected, not silently coerced
+            validation_invoice = Invoice(
+                clinic_id=clinic_id,
+                patient_id=patient_id,
+                amount=Decimal("100.00"),
+                discount=Decimal("0.00"),
+                paid_amount=Decimal("0.00"),
+                balance=Decimal("100.00"),
+                status="unpaid",
+            )
+            db.session.add(validation_invoice)
+            db.session.commit()
+            validation_invoice_id = validation_invoice.id
+
+            bad_method_res = client.post(f"/api/invoices/{validation_invoice_id}/payments", json={
+                "amount": 10.00,
+                "payment_method": "bogus",
+            })
+            assert bad_method_res.status_code == 422, f"Expected 422, got {bad_method_res.status_code}"
+
+            bad_date_res = client.post(f"/api/invoices/{validation_invoice_id}/payments", json={
+                "amount": 10.00,
+                "payment_method": "cash",
+                "payment_date": "not-a-date",
+            })
+            assert bad_date_res.status_code == 422, f"Expected 422, got {bad_date_res.status_code}"
+            print("PASS: Invalid payment_method and payment_date are rejected instead of silently replaced.")
+
             # 7. List payments for invoice
             list_res = client.get(f"/api/invoices/{invoice_id}/payments")
             assert list_res.status_code == 200
