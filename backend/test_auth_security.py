@@ -158,6 +158,23 @@ def run_auth_security_tests():
         assert victim_client.get("/api/auth/me").status_code == 401
         print("PASS: Sessions expire after the idle timeout and at the absolute limit.")
 
+        # 10b. The session-status poll never extends an idle session --------------------
+        poller = _client("10.3.0.2")
+        assert _login(poller, victim.email).status_code == 200
+        record = db.session.scalar(db.select(UserSession).where(UserSession.user_id == victim.id, UserSession.revoked_at.is_(None)).order_by(UserSession.id.desc()))
+        stale = datetime.now(timezone.utc) - timedelta(minutes=30)
+        record.last_seen_at = stale
+        db.session.commit()
+        status = poller.get("/api/auth/session-status").get_json()
+        assert status["active"] is True and 0 < status["expires_in"] <= app.config["SESSION_IDLE_TIMEOUT"].total_seconds()
+        db.session.refresh(record)
+        assert abs((record.last_seen_at - stale).total_seconds()) < 1, "status poll must not count as activity"
+        record.revoked_at = datetime.now(timezone.utc)
+        db.session.commit()
+        assert poller.get("/api/auth/session-status").get_json() == {"active": False}
+        assert _client("10.3.0.3").get("/api/auth/session-status").get_json() == {"active": False}
+        print("PASS: Session-status reports expiry without extending the idle timeout.")
+
         # 11. Legacy cookie without a server-side session is rejected ------------------
         legacy = _client("10.8.0.1")
         with legacy.session_transaction() as sess:

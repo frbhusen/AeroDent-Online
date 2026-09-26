@@ -270,8 +270,12 @@ def start_session(user, ip):
     session["sid"] = token
 
 
-def current_session_record(user_id):
-    """Returns the live UserSession for the cookie, or None if missing/expired/revoked."""
+def current_session_record(user_id, *, touch=True):
+    """
+    Returns the live UserSession for the cookie, or None if missing/expired/revoked.
+    ``touch=False`` checks validity without counting as activity (used by the status poll,
+    which must not keep an idle session alive).
+    """
     token = session.get("sid")
     if not isinstance(token, str) or not token:
         return None
@@ -289,7 +293,7 @@ def current_session_record(user_id):
         or record.last_seen_at + _idle_timeout() <= now
     ):
         return None
-    if now - record.last_seen_at > timedelta(seconds=60):
+    if touch and now - record.last_seen_at > timedelta(seconds=60):
         record.last_seen_at = now
         db.session.commit()
     return record
@@ -314,3 +318,10 @@ def revoke_user_sessions(user_id, *, keep_current=False):
         if current_hash and record.token_hash == current_hash:
             continue
         record.revoked_at = now
+
+
+def session_seconds_remaining(record):
+    now = _now()
+    idle_left = (record.last_seen_at + _idle_timeout() - now).total_seconds()
+    absolute_left = (record.expires_at - now).total_seconds()
+    return max(0, int(min(idle_left, absolute_left)))

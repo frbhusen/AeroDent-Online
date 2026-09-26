@@ -21,6 +21,7 @@ from backend.services.auth_security import (
     record_login_success,
     revoke_current_session,
     revoke_user_sessions,
+    session_seconds_remaining,
     start_session,
     validate_new_password,
 )
@@ -338,6 +339,17 @@ def register_clinic():
 @login_required
 def current_user():
     return jsonify({"user": _user_response(g.current_user)})
+
+
+@auth_blueprint.get("/session-status")
+def session_status():
+    """Lets an open tab notice expiry without extending the session (no activity recorded)."""
+    user_id = session.get("user_id")
+    record = current_session_record(user_id, touch=False) if isinstance(user_id, int) else None
+    user = db.session.get(User, user_id) if record is not None else None
+    if record is None or user is None or not evaluate_user_access(user)[0]:
+        return jsonify({"active": False})
+    return jsonify({"active": True, "expires_in": session_seconds_remaining(record)})
 
 
 @auth_blueprint.post("/logout")

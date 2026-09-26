@@ -312,6 +312,7 @@ function setOnlineUser(user) {
         };
         hideOnlineLogin();
         setText();
+        startSessionWatch();
     } else {
         clearOnlineClinicState();
         showOnlineLogin();
@@ -327,6 +328,29 @@ function resetOnlineSession(reason) {
     } catch (_) { /* storage unavailable: the notice is optional */ }
     clearOnlineClinicState();
     window.location.replace(`${window.location.pathname}${window.location.search}`);
+}
+
+// Checks every minute whether the server-side session is still alive, without counting as
+// activity. When the idle/absolute timeout passes (or the session is revoked elsewhere), the
+// screen is cleared instead of leaving patient data visible on an unattended workstation.
+let sessionWatchTimer = null;
+
+function startSessionWatch() {
+    if (!window.AERODENT_ONLINE || sessionWatchTimer) return;
+    sessionWatchTimer = setInterval(async () => {
+        if (!state.auth.authenticated || document.hidden) return;
+        try {
+            const status = await window.AERODENT_API.get("/api/auth/session-status");
+            if (status && status.active === false) handleOnlineUnauthorized();
+        } catch (_) { /* network hiccup: try again next minute */ }
+    }, 60 * 1000);
+    document.addEventListener("visibilitychange", () => {
+        if (!document.hidden && state.auth.authenticated) {
+            window.AERODENT_API.get("/api/auth/session-status")
+                .then((status) => { if (status && status.active === false) handleOnlineUnauthorized(); })
+                .catch(() => {});
+        }
+    });
 }
 
 function handleOnlineUnauthorized() {
