@@ -293,6 +293,7 @@ function renderDashboard() {
                   ${_appointmentStatusBadge(item.status)}
                 </div>
                 <div class="appointment-actions">
+                  ${typeof appointmentWhatsappButton === "function" ? appointmentWhatsappButton(item) : ""}
                   <button class="button button-ghost button-sm" data-edit-appointment="${item.id}">${t("edit")}</button>
                   <button class="appointment-delete" data-delete-appointment="${item.id}" title="${t("deleteAppointment")}" aria-label="${t("deleteAppointment")}">×</button>
                 </div>
@@ -306,6 +307,7 @@ function renderDashboard() {
         </section>
 
         <div class="dashboard-side-column">
+          ${typeof renderRecallCard === "function" ? renderRecallCard() : ""}
           <section class="card dashboard-card">
             <div class="card-heading">
               <div class="card-title-group">
@@ -519,8 +521,10 @@ function renderSettings() {
         </form>
       </div>`;
 
+    const sessionsCard = typeof renderActiveSessionsCard === "function" ? renderActiveSessionsCard() : "";
+
     if (!canReadClinic) {
-      return `<section class="content-grid">${securityCard}</section>`;
+      return `<section class="content-grid">${securityCard}${sessionsCard}</section>`;
     }
 
     const clinicForm = `
@@ -630,7 +634,7 @@ function renderSettings() {
         </div>`;
     }
 
-    return `<section class="content-grid">${clinicForm}${securityCard}${backupCard}${staffCard}</section>`;
+    return `<section class="content-grid">${clinicForm}${securityCard}${sessionsCard}${backupCard}${staffCard}</section>`;
   }
 
   const s = state.settings;
@@ -918,26 +922,8 @@ async function refreshOnlineWorkspace() {
   await loadOnlineDoctors();
   await refreshOnlinePatients(false);
 
-  if (state.view === "dashboard") {
-    await loadOnlineDashboard();
-  } else if (state.view === "treatments") {
-    await loadOnlineTreatments();
-    await loadOnlineInvoices();
-  } else if (state.view === "treatmentPlan") {
-    await loadOnlineTreatmentPlans();
-  } else if (state.view === "appointments") {
-    await loadOnlineAppointments();
-  } else if (state.view === "prescriptions") {
-    await loadOnlinePrescriptions();
-  } else if (state.view === "xrays") {
-    await loadOnlineXrays();
-  } else if (state.view === "settings") {
-    if (hasPermission("staff.read")) {
-      await loadOnlineStaff();
-    }
-  } else if (state.view === "inventory") {
-    await loadInventoryView();
-  }
+  // Same per-view loading as navigation, so the two can never drift apart.
+  await loadViewData(state.view);
   render();
 }
 window.refreshOnlineWorkspace = refreshOnlineWorkspace;

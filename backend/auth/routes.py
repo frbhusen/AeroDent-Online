@@ -1,11 +1,14 @@
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 
+import ipaddress
+import re
+
 from flask import Blueprint, current_app, g, jsonify, request, session
 from sqlalchemy import func
 
 from backend.extensions import db
-from backend.models import User, Clinic
+from backend.models import User, Clinic, UserSession
 from backend.auth.service import verify_password, hash_password
 from backend.services.audit import log_activity, get_client_ip
 from backend.services.auth_security import (
@@ -13,6 +16,8 @@ from backend.services.auth_security import (
     clear_failures,
     current_session_record,
     failure_lock_wait,
+    is_current_session,
+    live_sessions,
     login_retry_after,
     normalize_email,
     rate_limited,
@@ -424,3 +429,96 @@ def change_password():
     db.session.commit()
 
     return jsonify({"message": "Password changed successfully."})
+
+
+# ---------------------------------------------------------------------------
+# Active sessions ("where am I signed in?")
+# ---------------------------------------------------------------------------
+
+_BROWSERS = (("Edg/", "Edge"), ("OPR/", "Opera"), ("Firefox/", "Firefox"), ("Chrome/", "Chrome"), ("Safari/", "Safari"))
+_SYSTEMS = (
+    (r"Android", "Android"),
+    (r"iPhone|iPad|iPod", "iOS"),
+    (r"Windows", "Windows"),
+    (r"Mac OS X|Macintosh", "macOS"),
+    (r"CrOS", "ChromeOS"),
+    (r"Linux", "Linux"),
+)
+
+
+def _describe_device(user_agent):
+    user_agent = user_agent or ""
+    browser = next((name for marker, name in _BROWSERS if marker in user_agent), None)
+    system = next((name for pattern, name in _SYSTEMS if re.search(pattern, user_agent)), None)
+    return {"browser": browser, "os": system, "app": "AeroDentAndroid/" in user_agent}
+
+
+def _mask_ip(value):
+    """Enough to recognise a location, not enough to identify a subscriber."""
+    try:
+        address = ipaddress.ip_address(value or "")
+    except ValueError:
+        return None
+    if address.version == 4:
+        return ".".join(str(address).split(".")[:3] + ["x"])
+    return ":".join(address.exploded.split(":")[:3]) + "::x"
+
+
+def _session_response(record):
+    return {
+        "id": record.id,
+        "current": is_current_session(record),
+        "device": _describe_device(record.user_agent),
+        "ip": _mask_ip(record.ip_address),
+        "created_at": record.created_at.isoformat(),
+        "last_seen_at": record.last_seen_at.isoformat(),
+    }
+
+
+@auth_blueprint.get("/sessions")
+@login_required
+def list_sessions():
+    return jsonify({"sessions": [_session_response(record) for record in live_sessions(g.current_user.id)]})
+
+
+@auth_blueprint.post("/sessions/<int:session_id>/revoke")
+@login_required
+def revoke_session(session_id):
+    user = g.current_user
+    record = db.session.scalar(
+        db.select(UserSession).where(
+            UserSession.id == session_id,
+            UserSession.user_id == user.id,
+            UserSession.revoked_at.is_(None),
+        )
+    )
+    # Someone else's session is indistinguishable from one that does not exist.
+    if record is None:
+        return jsonify({"error": "Session not found."}), 404
+    if is_current_session(record):
+        return jsonify({"error": "Use Sign out to end the session on this device."}), 400
+    record.revoked_at = datetime.now(timezone.utc)
+    log_activity(
+        action="session_revoked",
+        resource_type="auth",
+        resource_id=user.id,
+        details={"session_id": record.id},
+    )
+    db.session.commit()
+    return jsonify({"message": "Session signed out."})
+
+
+@auth_blueprint.post("/sessions/revoke-others")
+@login_required
+def revoke_other_sessions():
+    user = g.current_user
+    others = [record for record in live_sessions(user.id) if not is_current_session(record)]
+    revoke_user_sessions(user.id, keep_current=True)
+    log_activity(
+        action="sessions_revoked_others",
+        resource_type="auth",
+        resource_id=user.id,
+        details={"count": len(others)},
+    )
+    db.session.commit()
+    return jsonify({"message": "Signed out of all other sessions.", "revoked": len(others)})

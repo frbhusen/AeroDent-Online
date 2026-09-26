@@ -954,6 +954,8 @@ function bindView() {
     bindNavigationEvents();
     bindAdminEvents();
     bindHREvents();
+    if (typeof bindOutreachEvents === "function") bindOutreachEvents();
+    if (typeof bindActiveSessionEvents === "function") bindActiveSessionEvents();
 
     const refreshAuditBtn = $("#refreshAuditBtn");
     if (refreshAuditBtn) {

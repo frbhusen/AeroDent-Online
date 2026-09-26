@@ -145,9 +145,8 @@ function renderNav() {
         navItems = SUPER_ADMIN_NAV;
     } else {
         navItems = NAV.filter(([id]) => {
-            if (window.AERODENT_ONLINE && id === "settings" && !hasPermission("clinic_settings.read")) {
-                return false;
-            }
+            // Settings is shown to every clinic role: users without clinic-settings access still
+            // get their own security section there (password, active sessions).
             // Inventory is an online, server-authoritative module; offline mode has no inventory store.
             if (id === "inventory" && (!window.AERODENT_ONLINE || !hasPermission("inventory.read"))) {
                 return false;
@@ -205,7 +204,10 @@ async function loadViewData(view) {
         return;
     }
     if (view === "dashboard") {
-        await loadOnlineDashboard();
+        await Promise.all([
+            loadOnlineDashboard(),
+            typeof loadRecallList === "function" ? loadRecallList() : null,
+        ]);
     } else if (view === "treatments" && state.selectedPatient) {
         state.treatmentPage = 1;
         state.treatmentError = "";
@@ -232,6 +234,7 @@ async function loadViewData(view) {
     } else if (view === "settings") {
         if (hasPermission("clinic_settings.read")) await loadOnlineSettings();
         if (hasPermission("staff.read")) await loadOnlineStaff();
+        if (typeof loadActiveSessions === "function") await loadActiveSessions();
     } else if (view === "hr") {
         if (typeof loadOnlineHRData === "function") await loadOnlineHRData();
     } else if (view === "inventory") {

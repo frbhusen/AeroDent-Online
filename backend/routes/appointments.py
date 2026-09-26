@@ -156,6 +156,7 @@ def _serialize_appointment(appointment):
         "clinic_id": appointment.clinic_id,
         "patient_id": appointment.patient_id,
         "patient_name": appointment.patient.name if appointment.patient else None,
+        "patient_phone": appointment.patient.phone if appointment.patient else None,
         "doctor_id": appointment.doctor_id,
         "doctor_name": appointment.doctor.name if appointment.doctor else None,
         "date": appointment.date.isoformat(),
