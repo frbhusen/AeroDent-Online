@@ -268,7 +268,10 @@ The **Super Admin** role (`super_admin`) is the global platform owner who contro
 
 - Ensure `AERODENT_ENV=production` — this automatically enforces HTTPS-only (`Secure`) session
   cookies; there is no separate `SESSION_COOKIE_SECURE` environment variable to set.
-- Deploy Flask behind a production WSGI server (such as Gunicorn or Waitress) behind Nginx reverse proxy.
+- Deploy Flask behind a production WSGI server (such as Gunicorn or Waitress) behind Nginx reverse proxy
+  (complete walkthrough: [docs/DEPLOY_UBUNTU.md](docs/DEPLOY_UBUNTU.md)).
+- Create the first platform account with `flask --app backend.app admin create-super-admin`
+  (never run `backend/seed.py` in production: it creates demo accounts with published passwords).
 - If deployed behind a reverse proxy, set `TRUST_PROXY_HEADERS=True` only once that proxy is
   configured to strip/overwrite any client-supplied `X-Forwarded-For` header, otherwise leave
   it `False` (the default) so the login/registration rate limiter cannot be bypassed by a
@@ -288,6 +291,8 @@ The **Super Admin** role (`super_admin`) is the global platform owner who contro
   `/api/clinic/import`).
 
 Further documentation:
+
+- [docs/DEPLOY_UBUNTU.md](docs/DEPLOY_UBUNTU.md): **step-by-step free hosting on your own Ubuntu server** (PostgreSQL, gunicorn, nginx, free HTTPS, backups).
 
 - [docs/SECURITY.md](docs/SECURITY.md): authentication, sessions, brute-force limits, headers.
 - [docs/CACHING.md](docs/CACHING.md): what is cached where, and why clinic data never is.

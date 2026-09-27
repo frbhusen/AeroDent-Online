@@ -74,9 +74,10 @@ def create_app() -> Flask:
     app.register_blueprint(inventory_blueprint)
     app.register_blueprint(trial_blueprint)
 
-    from backend.cli import xrays_cli
+    from backend.cli import admin_cli, xrays_cli
 
     app.cli.add_command(xrays_cli)
+    app.cli.add_command(admin_cli)
 
     from flask import request as req
 

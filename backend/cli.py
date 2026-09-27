@@ -84,3 +84,58 @@ def verify_all():
     click.echo(f"verified={len(ids) - failures} failed={failures}")
     if failures:
         raise SystemExit(1)
+
+
+# ---------------------------------------------------------------------------
+# Accounts: ``flask --app backend.app admin <command>``
+# ---------------------------------------------------------------------------
+
+admin_cli = AppGroup("admin", help="Platform account management (run on the server).")
+
+
+def _prompt_new_password():
+    from backend.services.auth_security import validate_new_password
+
+    while True:
+        password = click.prompt("Password", hide_input=True, confirmation_prompt=True)
+        error = validate_new_password(password)
+        if error is None:
+            return password
+        click.echo(f"  {error}", err=True)
+
+
+@admin_cli.command("create-super-admin")
+@click.option("--email", prompt=True, help="Sign-in e-mail of the platform administrator.")
+@click.option("--name", prompt=True, default="Platform Super Admin", show_default=True)
+def create_super_admin(email, name):
+    """Creates the platform Super Admin (the account that creates clinics)."""
+    from backend.auth.service import hash_password
+    from backend.models import User
+
+    email = email.strip().lower()
+    if "@" not in email or len(email) > 255:
+        raise click.ClickException("Enter a valid e-mail address.")
+    if db.session.scalar(db.select(User.id).where(db.func.lower(User.email) == email)) is not None:
+        raise click.ClickException("An account with this e-mail already exists (use `admin reset-password`).")
+    password = _prompt_new_password()
+    db.session.add(User(clinic_id=None, name=name.strip()[:120] or "Platform Super Admin", email=email,
+                        password_hash=hash_password(password), role="super_admin", is_active=True))
+    db.session.commit()
+    click.echo(f"Super Admin {email} created. Sign in at your site's address.")
+
+
+@admin_cli.command("reset-password")
+@click.option("--email", prompt=True, help="E-mail of the account to reset.")
+def reset_password(email):
+    """Sets a new password for any account and signs it out everywhere (account recovery)."""
+    from backend.auth.service import hash_password
+    from backend.models import User
+    from backend.services.auth_security import revoke_user_sessions
+
+    user = db.session.scalar(db.select(User).where(db.func.lower(User.email) == email.strip().lower()))
+    if user is None:
+        raise click.ClickException("No account with this e-mail.")
+    user.password_hash = hash_password(_prompt_new_password())
+    revoke_user_sessions(user.id)
+    db.session.commit()
+    click.echo(f"Password for {user.email} updated; all of its sessions were signed out.")
