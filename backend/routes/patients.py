@@ -1,12 +1,13 @@
+import calendar
 from datetime import date
 
 from flask import Blueprint, g, jsonify, request
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 
 from backend.auth import login_required, require_permission, validate_patient_update
 from backend.extensions import db
-from backend.models import Patient
+from backend.models import Appointment, Patient, Treatment
 from backend.services.audit import log_activity
 from backend.services.validation import query_int, query_page
 
@@ -166,6 +167,108 @@ def list_patients():
                 "per_page": per_page,
                 "total": total,
                 "pages": pages,
+            },
+        }
+    )
+
+
+RECALL_DEFAULT_MONTHS = 6
+RECALL_MAX_MONTHS = 36
+UPCOMING_APPOINTMENT_STATUSES = ("booked", "arrived", "in_chair")
+
+
+def _months_before(day, months):
+    """The same calendar day `months` earlier, clamped to the end of shorter months."""
+    month_index = day.year * 12 + (day.month - 1) - months
+    year, month = divmod(month_index, 12)
+    month += 1
+    return date(year, month, min(day.day, calendar.monthrange(year, month)[1]))
+
+
+@patients_blueprint.get("/recall")
+@login_required
+@require_permission("patients.read")
+def list_recall_patients():
+    """
+    Patients due for a recall visit: their last completed visit (a completed appointment or
+    completed treatment) is older than `months`, and nothing is booked for them yet.
+    """
+    try:
+        months = query_int(request.args.get("months", RECALL_DEFAULT_MONTHS), maximum=RECALL_MAX_MONTHS)
+        page = max(query_page(request.args.get("page", 1)), 1)
+        per_page = min(max(query_int(request.args.get("per_page", DEFAULT_PER_PAGE)), 1), MAX_PER_PAGE)
+    except ValueError:
+        return _error(f"months must be between 1 and {RECALL_MAX_MONTHS}; page and per_page must be positive integers.", 400)
+    if months < 1:
+        return _error(f"months must be between 1 and {RECALL_MAX_MONTHS}; page and per_page must be positive integers.", 400)
+
+    clinic_id = g.current_user.clinic_id
+    today = date.today()
+    cutoff = _months_before(today, months)
+
+    last_appointment = (
+        db.select(Appointment.patient_id, func.max(Appointment.date).label("last_date"))
+        .where(
+            Appointment.clinic_id == clinic_id,
+            Appointment.status == "completed",
+            Appointment.date <= today,
+        )
+        .group_by(Appointment.patient_id)
+        .subquery()
+    )
+    last_treatment = (
+        db.select(Treatment.patient_id, func.max(Treatment.date).label("last_date"))
+        .where(
+            Treatment.clinic_id == clinic_id,
+            Treatment.status == "completed",
+            Treatment.date <= today,
+        )
+        .group_by(Treatment.patient_id)
+        .subquery()
+    )
+    # GREATEST ignores NULLs in PostgreSQL, so either source alone counts as a visit.
+    last_visit = func.greatest(last_appointment.c.last_date, last_treatment.c.last_date).label("last_visit")
+    has_upcoming = (
+        db.select(Appointment.id)
+        .where(
+            Appointment.clinic_id == clinic_id,
+            Appointment.patient_id == Patient.id,
+            Appointment.date >= today,
+            Appointment.status.in_(UPCOMING_APPOINTMENT_STATUSES),
+        )
+        .exists()
+    )
+    query = (
+        db.select(Patient, last_visit)
+        .outerjoin(last_appointment, last_appointment.c.patient_id == Patient.id)
+        .outerjoin(last_treatment, last_treatment.c.patient_id == Patient.id)
+        .where(Patient.clinic_id == clinic_id, last_visit.is_not(None), last_visit < cutoff, ~has_upcoming)
+    )
+
+    total = db.session.scalar(db.select(func.count()).select_from(query.subquery()))
+    rows = db.session.execute(
+        query.order_by(last_visit.asc(), Patient.id).offset((page - 1) * per_page).limit(per_page)
+    ).all()
+
+    return jsonify(
+        {
+            "data": [
+                {
+                    "id": patient.id,
+                    "name": patient.name,
+                    "phone": patient.phone,
+                    "last_visit": visit.isoformat(),
+                    "days_since": (today - visit).days,
+                }
+                for patient, visit in rows
+            ],
+            "meta": {
+                "months": months,
+                "cutoff": cutoff.isoformat(),
+                "page": page,
+                "per_page": per_page,
+                "total": total,
+                "pages": (total + per_page - 1) // per_page if total else 0,
             },
         }
     )

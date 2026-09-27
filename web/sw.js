@@ -34,6 +34,8 @@ const SHELL = [
   "./js/commandPalette.js",
   "./js/hr.js",
   "./js/inventory.js",
+  "./js/sessions.js",
+  "./js/outreach.js",
   "./js/events.js",
   "./js/app.js",
 ];

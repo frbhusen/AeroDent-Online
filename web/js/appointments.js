@@ -8,6 +8,7 @@ function mapApiAppointment(item) {
         clinicId: item.clinic_id,
         patientId: item.patient_id,
         patientName: item.patient_name || (patient ? patient.name : `Patient #${item.patient_id}`),
+        patientPhone: item.patient_phone ?? (patient ? patient.phone : null),
         doctorId: item.doctor_id,
         doctorName: item.doctor_name || (doctor ? doctor.name : ""),
         startTime: item.start_time,
@@ -200,6 +201,7 @@ function renderAppointments() {
                                                 <option value="completed" ${item.status === "completed" ? "selected" : ""}>✓ ${t("statusCompleted")}</option>
                                                 <option value="cancelled" ${item.status === "cancelled" ? "selected" : ""}>✕ ${t("statusCancelled")}</option>
                                             </select>
+                                            ${typeof appointmentWhatsappButton === "function" ? appointmentWhatsappButton(item) : ""}
                                             <button class="button button-ghost button-sm" data-edit-appointment="${item.id}">${t("edit")}</button>
                                             <button
                                                 class="appointment-delete"

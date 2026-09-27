@@ -325,3 +325,23 @@ def session_seconds_remaining(record):
     idle_left = (record.last_seen_at + _idle_timeout() - now).total_seconds()
     absolute_left = (record.expires_at - now).total_seconds()
     return max(0, int(min(idle_left, absolute_left)))
+
+
+def live_sessions(user_id):
+    """The user's sessions that are still usable (not revoked, not idle, not past the max age)."""
+    now = _now()
+    return db.session.scalars(
+        select(UserSession)
+        .where(
+            UserSession.user_id == user_id,
+            UserSession.revoked_at.is_(None),
+            UserSession.expires_at > now,
+            UserSession.last_seen_at > now - _idle_timeout(),
+        )
+        .order_by(UserSession.last_seen_at.desc())
+    ).all()
+
+
+def is_current_session(record):
+    token = session.get("sid")
+    return isinstance(token, str) and bool(token) and record.token_hash == _digest("session", token)

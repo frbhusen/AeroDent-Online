@@ -290,6 +290,10 @@ function clearOnlineClinicState() {
     state.dashboardData = null;
     state.timelineData = null;
     state.settings = {};
+    state.recall = null;
+    state.recallError = "";
+    state.activeSessions = [];
+    state.activeSessionsError = "";
     if (typeof resetInventoryState === "function") resetInventoryState();
 }
 
