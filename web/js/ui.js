@@ -35,6 +35,11 @@ function setText() {
             )),
     );
 
+    // Online, the backup (full clinic export) is for head doctors only; the server enforces it.
+    const backupBtn = $("#backupBtn");
+    if (backupBtn) {
+        backupBtn.style.display = window.AERODENT_ONLINE && !hasPermission("clinic_data.export") ? "none" : "";
+    }
     const logoutBtn = $("#onlineLogoutBtn");
     if (logoutBtn) {
         logoutBtn.setAttribute("aria-label", t("logout"));

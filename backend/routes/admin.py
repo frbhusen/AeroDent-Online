@@ -412,70 +412,16 @@ def update_clinic(clinic_id):
 def purge_clinic_data(clinic_id):
     """
     Completely and cleanly purges all data related to a clinic in foreign key safe order.
+    Uses the clinic backup's table list, so every clinic table (HR, waitlist, X-ray images...)
+    is removed before the staff accounts they reference.
     """
-    from backend.models import (
-        Appointment,
-        AuditLog,
-        InventoryBatch,
-        InventoryCategory,
-        InventoryItem,
-        InventoryMovement,
-        InventorySupplier,
-        Invoice,
-        Odontogram,
-        Patient,
-        Payment,
-        Prescription,
-        PrescriptionMedication,
-        Treatment,
-        TreatmentPlan,
-        User,
-        XRay,
-    )
+    from backend.models import AuditLog, User
+    from backend.services.clinic_backup import delete_clinic_data
 
-    # 0. Payments & Audit Logs
-    db.session.query(Payment).filter(Payment.clinic_id == clinic_id).delete(synchronize_session=False)
+    delete_clinic_data(clinic_id)
     db.session.query(AuditLog).filter(AuditLog.clinic_id == clinic_id).delete(synchronize_session=False)
-
-    # 1. Invoices
-    db.session.query(Invoice).filter(Invoice.clinic_id == clinic_id).delete(synchronize_session=False)
-
-    # 2. X-rays
-    db.session.query(XRay).filter(XRay.clinic_id == clinic_id).delete(synchronize_session=False)
-
-    # 3. Prescriptions & Medications
-    prescription_ids = db.session.scalars(
-        db.select(Prescription.id).where(Prescription.clinic_id == clinic_id)
-    ).all()
-    if prescription_ids:
-        db.session.query(PrescriptionMedication).filter(
-            PrescriptionMedication.prescription_id.in_(prescription_ids)
-        ).delete(synchronize_session=False)
-    db.session.query(Prescription).filter(Prescription.clinic_id == clinic_id).delete(synchronize_session=False)
-
-    # 4. Appointments
-    db.session.query(Appointment).filter(Appointment.clinic_id == clinic_id).delete(synchronize_session=False)
-
-    # 5. Treatment Plans
-    db.session.query(TreatmentPlan).filter(TreatmentPlan.clinic_id == clinic_id).delete(synchronize_session=False)
-
-    # 6. Treatments
-    db.session.query(Treatment).filter(Treatment.clinic_id == clinic_id).delete(synchronize_session=False)
-
-    # 7. Odontograms
-    db.session.query(Odontogram).filter(Odontogram.clinic_id == clinic_id).delete(synchronize_session=False)
-
-    # 8. Patients
-    db.session.query(Patient).filter(Patient.clinic_id == clinic_id).delete(synchronize_session=False)
-
-    # 9a. Inventory (movements reference staff, so they must go before users)
-    for model in (InventoryMovement, InventoryBatch, InventoryItem, InventoryCategory, InventorySupplier):
-        db.session.query(model).filter(model.clinic_id == clinic_id).delete(synchronize_session=False)
-
-    # 9. Clinic Staff (all users under this clinic)
     db.session.query(User).filter(User.clinic_id == clinic_id).delete(synchronize_session=False)
 
-    # 10. The Clinic itself
     clinic = db.session.get(Clinic, clinic_id)
     if clinic:
         db.session.delete(clinic)

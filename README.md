@@ -283,7 +283,9 @@ The **Super Admin** role (`super_admin`) is the global platform owner who contro
   worker processes and instances without an extra store.
 - Optional settings: `AERODENT_SESSION_IDLE_MINUTES` (default 120),
   `AERODENT_SESSION_MAX_HOURS` (default 12), `AERODENT_ALLOW_SELF_REGISTRATION` (default
-  `false`), `AERODENT_XRAY_MAX_MB` (default 25).
+  `false`), `AERODENT_XRAY_MAX_MB` (default 25), `AERODENT_IMPORT_MAX_MB` (largest clinic backup that can be
+  imported, default 2048; also raise the reverse proxy's body-size limit for
+  `/api/clinic/import`).
 
 Further documentation:
 
@@ -291,6 +293,7 @@ Further documentation:
 - [docs/CACHING.md](docs/CACHING.md): what is cached where, and why clinic data never is.
 - [docs/XRAY_STORAGE.md](docs/XRAY_STORAGE.md): lossless, integrity-checked X-ray storage.
 - [docs/MOBILE.md](docs/MOBILE.md): the Android app.
+- [docs/CLINIC_BACKUP.md](docs/CLINIC_BACKUP.md): head-doctor clinic export and import.
 
 ---
 

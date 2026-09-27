@@ -10,6 +10,7 @@ from decimal import Decimal
 from uuid import uuid4
 
 from backend.app import app
+from backend.services.clinic_backup import load_backup_bytes
 from backend.auth.service import hash_password
 from backend.extensions import db
 from backend.models import (
@@ -209,9 +210,10 @@ def run_dashboard_settings_staff_timeline_tests():
                 # Export clinic data
                 res_export = client.get("/api/clinic/export")
                 assert res_export.status_code == 200
-                export_data = res_export.get_json()["data"]
-                assert len(export_data["patients"]) == 1
-                assert export_data["patients"][0]["name"] == "Patient A"
+                assert res_export.mimetype == "application/zip"
+                _, export_data = load_backup_bytes(res_export.data)
+                assert len(export_data["tables"]["patients"]) == 1
+                assert export_data["tables"]["patients"][0]["name"] == "Patient A"
                 print("PASS: Head doctor can export tenant-isolated clinic data.")
 
             # 4. Doctors lookup

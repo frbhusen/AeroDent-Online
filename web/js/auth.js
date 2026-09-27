@@ -459,6 +459,7 @@ function hasPermission(permission) {
             "xrays.read", "xrays.create", "xrays.update", "xrays.delete",
             "invoices.read", "invoices.create", "invoices.update", "invoices.delete",
             "clinic_settings.read", "clinic_settings.update",
+            "clinic_data.export", "clinic_data.import",
             "staff.read", "staff.create", "staff.update", "staff.deactivate", "staff.delete",
             "inventory.read", "inventory.create", "inventory.update", "inventory.delete",
             "inventory.stock_in", "inventory.stock_out", "inventory.adjust",

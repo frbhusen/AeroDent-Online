@@ -84,7 +84,7 @@ def run_fuzz_tests():
             nonlocal calls
             calls += 1
             response = client.open(url, method=method, **kwargs)
-            body = response.get_data(as_text=True)
+            body = response.get_data().decode("utf-8", errors="replace")
             # "Invalid input value." is the DataError safety net: reaching it means the route let an
             # invalid value through to PostgreSQL instead of validating it first.
             if response.status_code >= 500 or any(marker in body for marker in LEAK_MARKERS) or "Invalid input value." in body:

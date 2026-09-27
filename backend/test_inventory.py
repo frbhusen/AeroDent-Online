@@ -12,6 +12,7 @@ from decimal import Decimal
 from uuid import uuid4
 
 from backend.app import app
+from backend.services.clinic_backup import load_backup_bytes
 from backend.auth.service import hash_password
 from backend.extensions import db
 from backend.models import (
@@ -519,9 +520,9 @@ def run_inventory_tests():
         lido_detail = _item(client, lido_id)
         assert lido_detail["expiry_status"] == "ok"  # LATE-3 expires in 400 days
         client.patch("/api/settings", json={"inventory_expiry_warning_days": 90})
-        export = client.get("/api/clinic/export").json["data"]
-        assert len(export["inventory"]["items"]) == 3
-        assert len(export["inventory"]["movements"]) > 10
+        export = load_backup_bytes(client.get("/api/clinic/export").data)[1]["tables"]
+        assert len(export["inventory_items"]) == 3
+        assert len(export["inventory_movements"]) > 10
         _logout(client)
         print("PASS: Configurable expiry window and inventory export.")
 

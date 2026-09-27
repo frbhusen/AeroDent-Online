@@ -577,16 +577,7 @@ function renderSettings() {
         </form>
       </div>`;
 
-    const backupCard = `
-      <div class="card">
-        <div class="card-heading">
-          <h2>${t("backup")}</h2>
-        </div>
-        <p class="muted">${t("exportClinicData")}</p>
-        <div class="form-actions" style="justify-content:flex-start">
-          <button class="button button-primary" data-action="export">${t("serverExport")}</button>
-        </div>
-      </div>`;
+    const backupCard = typeof renderClinicBackupCard === "function" ? renderClinicBackupCard() : "";
 
     let staffCard = "";
     if (canManageStaff) {

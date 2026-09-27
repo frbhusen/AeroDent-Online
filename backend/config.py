@@ -66,3 +66,6 @@ class Config:
     # large, so the limit is configurable. The whole request may be slightly larger (form fields).
     XRAY_MAX_UPLOAD_BYTES = int(os.getenv("AERODENT_XRAY_MAX_MB", "25")) * 1024 * 1024
     MAX_CONTENT_LENGTH = XRAY_MAX_UPLOAD_BYTES + 1024 * 1024  # bounds memory use per request
+    # Clinic backup import (a ZIP with every record and X-ray). Only this route accepts bodies
+    # this large; uploads are spooled to a temporary file, not held in memory.
+    CLINIC_IMPORT_MAX_BYTES = int(os.getenv("AERODENT_IMPORT_MAX_MB", "2048")) * 1024 * 1024

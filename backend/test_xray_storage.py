@@ -17,6 +17,7 @@ from uuid import uuid4
 from PIL import Image
 
 from backend.app import app
+from backend.services.clinic_backup import load_backup_bytes
 from backend.auth.service import hash_password
 from backend.extensions import db
 from backend.models import AuthThrottle, Clinic, Patient, User, XRay, XRayImage
@@ -251,9 +252,13 @@ def run_xray_storage_tests():
         head_session = app.test_client()
         head_session.environ_base["REMOTE_ADDR"] = "10.70.0.4"
         head_session.post("/api/auth/login", json={"email": head.email, "password": PASSWORD})
-        exported = head_session.get("/api/clinic/export").get_json()["data"]["xrays"]
-        assert exported and all(x["image"] and len(x["image"]["sha256"]) == 64 for x in exported)
-        print("PASS: Clinic export lists every X-ray with its hashes for backup verification.")
+        manifest, exported = load_backup_bytes(head_session.get("/api/clinic/export").data)
+        images = exported["tables"]["xray_images"]
+        assert images and len(images) == len(exported["tables"]["x_rays"])
+        corrupt = set(manifest["corrupt_images"])
+        assert corrupt, "the image corrupted earlier in this test must be flagged"
+        assert all(manifest["files"].get(f"xrays/{img['id']}/data") == img["sha256"] for img in images if img["id"] not in corrupt)
+        print("PASS: Clinic export carries every X-ray image byte-for-byte, verified by SHA-256.")
     finally:
         db.session.rollback()
         db.session.query(AuthThrottle).delete()

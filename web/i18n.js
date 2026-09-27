@@ -1774,6 +1774,43 @@ I18N.ar.recallMore = "+{count} مرضى آخرون متأخرون";
 
 I18N.en.sessionsMore = "+{count} more sessions";
 I18N.ar.sessionsMore = "+{count} جلسات أخرى";
+I18N.en.backupExportHint = "Download a complete backup of this clinic: patients, treatments, plans, appointments, waitlist, odontograms, prescriptions, invoices, payments, X-ray images (original quality), inventory, HR records, staff list, settings and the activity log.";
+I18N.ar.backupExportHint = "نزّل نسخة احتياطية كاملة لهذه العيادة: المرضى، العلاجات، الخطط، المواعيد، قائمة الانتظار، مخططات الأسنان، الوصفات، الفواتير، الدفعات، صور الأشعة (بجودتها الأصلية)، المخزون، سجلات الموارد البشرية، قائمة الموظفين، الإعدادات وسجل النشاط.";
+I18N.en.backupExportButton = "Export clinic backup (.zip)";
+I18N.ar.backupExportButton = "تصدير نسخة احتياطية للعيادة (.zip)";
+I18N.en.backupExportPreparing = "Preparing the backup… this can take a moment for clinics with many X-rays.";
+I18N.ar.backupExportPreparing = "جارٍ تجهيز النسخة الاحتياطية… قد يستغرق ذلك بعض الوقت للعيادات التي لديها صور أشعة كثيرة.";
+I18N.en.backupExportStarted = "The backup is downloading to Downloads/AeroDent.";
+I18N.ar.backupExportStarted = "يتم تنزيل النسخة الاحتياطية إلى مجلد التنزيلات/AeroDent.";
+I18N.en.backupExportFailed = "The backup could not be exported.";
+I18N.ar.backupExportFailed = "تعذّر تصدير النسخة الاحتياطية.";
+I18N.en.backupImportTitle = "Restore from a backup";
+I18N.ar.backupImportTitle = "الاستعادة من نسخة احتياطية";
+I18N.en.backupImportWarning = "Importing replaces ALL current clinic data (patients, records, X-rays, inventory, HR, settings) with the contents of the backup. Staff accounts and the activity log are kept. Export a backup first if you may need today's data.";
+I18N.ar.backupImportWarning = "يؤدي الاستيراد إلى استبدال جميع بيانات العيادة الحالية (المرضى، السجلات، الأشعة، المخزون، الموارد البشرية، الإعدادات) بمحتوى النسخة الاحتياطية. تبقى حسابات الموظفين وسجل النشاط كما هي. صدّر نسخة احتياطية أولاً إذا كنت قد تحتاج إلى بيانات اليوم.";
+I18N.en.backupImportFile = "Backup file (.zip)";
+I18N.ar.backupImportFile = "ملف النسخة الاحتياطية (.zip)";
+I18N.en.backupImportPassword = "Your password (to confirm)";
+I18N.ar.backupImportPassword = "كلمة المرور الخاصة بك (للتأكيد)";
+I18N.en.backupImportConfirm = "I understand that all current clinic data will be replaced.";
+I18N.ar.backupImportConfirm = "أفهم أن جميع بيانات العيادة الحالية سيتم استبدالها.";
+I18N.en.backupImportButton = "Import and replace clinic data";
+I18N.ar.backupImportButton = "استيراد واستبدال بيانات العيادة";
+I18N.en.backupImporting = "Importing…";
+I18N.ar.backupImporting = "جارٍ الاستيراد…";
+I18N.en.backupImportDone = "Backup imported. The clinic data has been restored.";
+I18N.ar.backupImportDone = "تم استيراد النسخة الاحتياطية واستعادة بيانات العيادة.";
+I18N.en.backupImportFailed = "The backup could not be imported. Nothing was changed.";
+I18N.ar.backupImportFailed = "تعذّر استيراد النسخة الاحتياطية. لم يتم تغيير أي شيء.";
+I18N.en.backupImportedRecords = "{count} records restored.";
+I18N.ar.backupImportedRecords = "تمت استعادة {count} سجلاً.";
+I18N.en.backupSkippedRecords = "{count} HR records were skipped because those staff members have no account in this clinic.";
+I18N.ar.backupSkippedRecords = "تم تخطي {count} من سجلات الموارد البشرية لأن هؤلاء الموظفين ليس لديهم حساب في هذه العيادة.";
+I18N.en.backupUnmatchedStaff = "Staff in the backup without an account here (their records were assigned to you)";
+I18N.ar.backupUnmatchedStaff = "موظفون في النسخة الاحتياطية بدون حساب هنا (نُسبت سجلاتهم إليك)";
+
+I18N.en.backupWrongPassword = "Password is incorrect. Nothing was changed.";
+I18N.ar.backupWrongPassword = "كلمة المرور غير صحيحة. لم يتم تغيير أي شيء.";
 
 function t(key) {
   return I18N[currentLanguage]?.[key] || I18N.en?.[key] || key;

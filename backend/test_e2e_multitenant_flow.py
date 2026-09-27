@@ -11,6 +11,7 @@ from decimal import Decimal
 from uuid import uuid4
 
 from backend.app import app
+from backend.services.clinic_backup import load_backup_bytes
 from backend.auth.service import hash_password
 from backend.extensions import db
 from backend.models import (
@@ -227,8 +228,9 @@ def run_e2e_tests():
         # Clinic Export
         res = client.get("/api/clinic/export")
         assert res.status_code == 200
-        assert "clinic" in res.json["data"]
-        assert len(res.json["data"]["patients"]) >= 1
+        manifest, exported = load_backup_bytes(res.data)
+        assert "clinic" in exported and manifest["clinic"]["id"] == clinic_a_id
+        assert len(exported["tables"]["patients"]) >= 1
 
         print("PASS: Clinic A Head Doctor complete workflow executed.")
 
@@ -373,8 +375,9 @@ def run_e2e_tests():
         # Clinic B export contains zero Clinic A records
         res = client.get("/api/clinic/export")
         assert res.status_code == 200
-        assert res.json["data"]["clinic"]["id"] == clinic_b.id
-        assert len(res.json["data"]["patients"]) == 0
+        manifest, exported = load_backup_bytes(res.data)
+        assert manifest["clinic"]["id"] == clinic_b.id
+        assert len(exported["tables"]["patients"]) == 0
 
         print("PASS: Cross-clinic tenant isolation strictly enforced with 404 and zero data leakage.")
 

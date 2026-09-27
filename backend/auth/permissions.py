@@ -83,6 +83,8 @@ ROLE_PERMISSIONS = {
             "invoices.delete",
             "clinic_settings.read",
             "clinic_settings.update",
+            "clinic_data.export",
+            "clinic_data.import",
             "staff.read",
             "staff.create",
             "staff.update",

@@ -1,14 +1,6 @@
 async function exportData() {
     if (window.AERODENT_ONLINE) {
-        try {
-            const response = await window.AERODENT_API.get("/api/clinic/export");
-            const clinic = response.data?.clinic;
-            const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: "application/json" });
-            await downloadBlob(blob, `aerodent_clinic_${clinic?.id || "export"}_${today()}.json`);
-            if (!NativeShell.available) toast(t("exported") || "Clinic data exported");
-        } catch (error) {
-            toast(error.message || "Failed to export clinic data");
-        }
+        await exportClinicBackup();
         return;
     }
     const data = await dbExport();
@@ -358,4 +350,122 @@ async function importBackup(file) {
     toast(t("restored"));
 
     return true;
+}
+
+// ------------------------------------------------------------------ online clinic backup
+// Head doctors only (the server enforces clinic_data.export / clinic_data.import).
+// The backup is a ZIP with every clinic record, the staff list, the audit log and the X-ray
+// images byte-for-byte; see docs/CLINIC_BACKUP.md.
+
+function backupFilename(response) {
+    const header = response.headers.get("Content-Disposition") || "";
+    const match = /filename="?([^";]+)"?/i.exec(header);
+    return match ? match[1] : `aerodent-clinic-${today()}.zip`;
+}
+
+async function exportClinicBackup() {
+    if (!hasPermission("clinic_data.export")) return;
+    if (NativeShell.available) {
+        // The Android download manager streams the archive straight to Downloads/AeroDent.
+        const link = document.createElement("a");
+        link.href = "/api/clinic/export";
+        link.download = "";
+        document.body.append(link);
+        link.click();
+        link.remove();
+        toast(t("backupExportStarted"));
+        return;
+    }
+    toast(t("backupExportPreparing"));
+    try {
+        const response = await fetch("/api/clinic/export", { credentials: "include" });
+        if (!response.ok) {
+            const payload = await response.json().catch(() => null);
+            throw new Error(payload?.error || t("backupExportFailed"));
+        }
+        await downloadBlob(await response.blob(), backupFilename(response));
+        toast(t("exported"));
+    } catch (error) {
+        toast(error.message || t("backupExportFailed"));
+    }
+}
+
+function renderClinicBackupCard() {
+    const canExport = hasPermission("clinic_data.export");
+    const canImport = hasPermission("clinic_data.import");
+    if (!canExport && !canImport) return "";
+    const result = state.backupImportResult;
+    let resultHtml = "";
+    if (result) {
+        const total = Object.values(result.counts || {}).reduce((sum, value) => sum + value, 0);
+        const skipped = Object.values(result.skipped || {}).reduce((sum, value) => sum + value, 0);
+        resultHtml = `
+          <div class="backup-result" role="status">
+            <b>✅ ${t("backupImportDone")}</b>
+            <span>${t("backupImportedRecords").replace("{count}", total)}</span>
+            ${skipped ? `<span>${t("backupSkippedRecords").replace("{count}", skipped)}</span>` : ""}
+            ${(result.unmatched_staff || []).length ? `<span>${t("backupUnmatchedStaff")}: <bdi dir="ltr">${result.unmatched_staff.map(esc).join(", ")}</bdi></span>` : ""}
+          </div>`;
+    }
+    return `
+      <div class="card backup-card">
+        <div class="card-heading">
+          <h2>💾 ${t("backup")}</h2>
+        </div>
+        ${canExport ? `
+          <p class="muted">${t("backupExportHint")}</p>
+          <div class="form-actions" style="justify-content:flex-start">
+            <button class="button button-primary" type="button" data-action="export">⬇ ${t("backupExportButton")}</button>
+          </div>` : ""}
+        ${canImport ? `
+          <hr class="backup-divider">
+          <h3 class="backup-subtitle">${t("backupImportTitle")}</h3>
+          <p class="backup-warning">⚠️ ${t("backupImportWarning")}</p>
+          <form id="clinicImportForm" class="form-grid" autocomplete="off">
+            <div class="field full-span">
+              <label for="clinicImportFile">${t("backupImportFile")}</label>
+              <input id="clinicImportFile" name="file" type="file" accept=".zip,application/zip" required>
+            </div>
+            <div class="field full-span">
+              <label for="clinicImportPassword">${t("backupImportPassword")}</label>
+              <input id="clinicImportPassword" name="password" type="password" required autocomplete="current-password" placeholder="••••••••">
+            </div>
+            <label class="backup-confirm full-span">
+              <input type="checkbox" name="confirm" required>
+              <span>${t("backupImportConfirm")}</span>
+            </label>
+            <div class="form-actions full-span" style="justify-content:flex-start">
+              <button class="button btn-danger-ghost" type="submit" id="clinicImportButton">⬆ ${t("backupImportButton")}</button>
+            </div>
+          </form>
+          ${resultHtml}` : ""}
+      </div>`;
+}
+
+function bindClinicBackupEvents() {
+    const form = $("#clinicImportForm");
+    if (!form) return;
+    form.onsubmit = async (event) => {
+        event.preventDefault();
+        const button = $("#clinicImportButton");
+        const body = new FormData();
+        const file = form.elements.file.files[0];
+        if (!file) return;
+        body.append("file", file);
+        body.append("password", form.elements.password.value);
+        button.disabled = true;
+        button.textContent = t("backupImporting");
+        try {
+            const response = await window.AERODENT_API.post("/api/clinic/import", body);
+            state.backupImportResult = response.data;
+            toast(t("backupImportDone"));
+            await refreshOnlineWorkspace();
+        } catch (error) {
+            state.backupImportResult = null;
+            toast(error.status === 403 ? t("backupWrongPassword") : (error.message || t("backupImportFailed")));
+            button.disabled = false;
+            button.textContent = `⬆ ${t("backupImportButton")}`;
+            form.elements.password.value = "";
+        }
+    };
 }

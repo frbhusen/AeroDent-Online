@@ -956,6 +956,7 @@ function bindView() {
     bindHREvents();
     if (typeof bindOutreachEvents === "function") bindOutreachEvents();
     if (typeof bindActiveSessionEvents === "function") bindActiveSessionEvents();
+    if (typeof bindClinicBackupEvents === "function") bindClinicBackupEvents();
 
     const refreshAuditBtn = $("#refreshAuditBtn");
     if (refreshAuditBtn) {

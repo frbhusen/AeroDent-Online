@@ -1,29 +1,14 @@
 from datetime import datetime, time
-from flask import Blueprint, g, jsonify, request
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import selectinload
+from flask import Blueprint, current_app, g, jsonify, request, send_file
+from sqlalchemy.exc import DataError, IntegrityError
 
 from backend.auth import login_required, require_permission
 from backend.extensions import db
 from backend.services.audit import log_activity
-from backend.services.auth_security import rate_limited
-from backend.models import (
-    Appointment,
-    Clinic,
-    InventoryBatch,
-    InventoryCategory,
-    InventoryItem,
-    InventoryMovement,
-    InventorySupplier,
-    Invoice,
-    Odontogram,
-    Patient,
-    Prescription,
-    PrescriptionMedication,
-    Treatment,
-    TreatmentPlan,
-    XRay,
-)
+from backend.auth.service import verify_password
+from backend.services.auth_security import clear_failures, failure_lock_wait, rate_limited, record_failure
+from backend.services.clinic_backup import BackupError, export_archive, import_archive, read_archive
+from backend.services.storage import LocalFileStorage
 
 
 settings_blueprint = Blueprint("settings", __name__, url_prefix="/api")
@@ -173,259 +158,106 @@ def update_settings():
     return jsonify({"data": _serialize_settings(clinic)})
 
 
+def _too_many(retry_after, message):
+    response = jsonify({"error": message, "retry_after": retry_after})
+    response.status_code = 429
+    response.headers["Retry-After"] = str(retry_after)
+    return response
+
+
 @settings_blueprint.get("/clinic/export")
 @login_required
-@require_permission("clinic_settings.read")
+@require_permission("clinic_data.export")
 def export_clinic_data():
+    """Full clinic backup (every record, staff list, audit log and X-ray files) as a ZIP."""
     # Full exports read every clinic record; cap them per user to prevent resource exhaustion.
     retry_after = rate_limited("clinic_export_user", g.current_user.id, limit=10, window_seconds=3600)
     db.session.commit()
     if retry_after:
-        response = jsonify({"error": "Export limit reached. Please try again later.", "retry_after": retry_after})
-        response.status_code = 429
-        response.headers["Retry-After"] = str(retry_after)
-        return response
+        return _too_many(retry_after, "Export limit reached. Please try again later.")
 
-    clinic_id = g.current_user.clinic_id
     clinic = g.current_clinic
+    archive, counts = export_archive(clinic, g.current_user)
+    log_activity(
+        action="clinic_data_exported",
+        resource_type="clinic",
+        resource_id=clinic.id,
+        details={"counts": counts},
+    )
+    db.session.commit()
+    filename = f"aerodent-clinic-{clinic.id}-{datetime.now().strftime('%Y%m%d-%H%M')}.zip"
+    return send_file(archive, mimetype="application/zip", as_attachment=True, download_name=filename, max_age=0)
 
-    patients = db.session.scalars(
-        db.select(Patient).where(Patient.clinic_id == clinic_id).order_by(Patient.id)
-    ).all()
-    treatments = db.session.scalars(
-        db.select(Treatment).where(Treatment.clinic_id == clinic_id).order_by(Treatment.id)
-    ).all()
-    treatment_plans = db.session.scalars(
-        db.select(TreatmentPlan).where(TreatmentPlan.clinic_id == clinic_id).order_by(TreatmentPlan.id)
-    ).all()
-    appointments = db.session.scalars(
-        db.select(Appointment).where(Appointment.clinic_id == clinic_id).order_by(Appointment.id)
-    ).all()
-    prescriptions = db.session.scalars(
-        db.select(Prescription).where(Prescription.clinic_id == clinic_id).order_by(Prescription.id)
-    ).all()
-    invoices = db.session.scalars(
-        db.select(Invoice).where(Invoice.clinic_id == clinic_id).order_by(Invoice.id)
-    ).all()
-    odontograms = db.session.scalars(
-        db.select(Odontogram).where(Odontogram.clinic_id == clinic_id).order_by(Odontogram.id)
-    ).all()
-    xrays = db.session.scalars(
-        db.select(XRay).options(selectinload(XRay.image)).where(XRay.clinic_id == clinic_id).order_by(XRay.id)
-    ).all()
 
-    def _clinic_rows(model):
-        return db.session.scalars(
-            db.select(model).where(model.clinic_id == clinic_id).order_by(model.id)
-        ).all()
+@settings_blueprint.post("/clinic/import")
+@login_required
+@require_permission("clinic_data.import")
+def import_clinic_data():
+    """
+    Restores the clinic from a backup ZIP, replacing its current data in one transaction.
+    Requires the head doctor's password, because it overwrites every clinical record.
+    """
+    user = g.current_user
+    # Only this route accepts large bodies (set before the form is parsed).
+    request.max_content_length = current_app.config["CLINIC_IMPORT_MAX_BYTES"]
 
-    def _decimal(value):
-        return format(value, "f") if value is not None else None
+    retry_after = failure_lock_wait("clinic_import_password", user.id)
+    if retry_after:
+        return _too_many(retry_after, "Too many attempts. Please wait before trying again.")
+    retry_after = rate_limited("clinic_import_user", user.id, limit=5, window_seconds=3600)
+    db.session.commit()
+    if retry_after:
+        return _too_many(retry_after, "Import limit reached. Please try again later.")
 
-    inventory_export = {
-        "categories": [
-            {"id": c.id, "name": c.name, "is_active": c.is_active}
-            for c in _clinic_rows(InventoryCategory)
-        ],
-        "suppliers": [
-            {
-                "id": s.id,
-                "name": s.name,
-                "contact_person": s.contact_person,
-                "phone": s.phone,
-                "email": s.email,
-                "address": s.address,
-                "notes": s.notes,
-                "is_active": s.is_active,
-            }
-            for s in _clinic_rows(InventorySupplier)
-        ],
-        "items": [
-            {
-                "id": i.id,
-                "name": i.name,
-                "sku": i.sku,
-                "barcode": i.barcode,
-                "category_id": i.category_id,
-                "supplier_id": i.supplier_id,
-                "description": i.description,
-                "unit": i.unit,
-                "quantity": _decimal(i.quantity),
-                "minimum_quantity": _decimal(i.minimum_quantity),
-                "cost_per_unit": _decimal(i.cost_per_unit),
-                "location": i.location,
-                "track_batches": i.track_batches,
-                "is_active": i.is_active,
-            }
-            for i in _clinic_rows(InventoryItem)
-        ],
-        "batches": [
-            {
-                "id": b.id,
-                "item_id": b.item_id,
-                "batch_number": b.batch_number,
-                "quantity": _decimal(b.quantity),
-                "unit_cost": _decimal(b.unit_cost),
-                "expiry_date": b.expiry_date.isoformat() if b.expiry_date else None,
-                "supplier_id": b.supplier_id,
-            }
-            for b in _clinic_rows(InventoryBatch)
-        ],
-        "movements": [
-            {
-                "id": m.id,
-                "item_id": m.item_id,
-                "batch_id": m.batch_id,
-                "type": m.type,
-                "quantity": _decimal(m.quantity),
-                "quantity_after": _decimal(m.quantity_after),
-                "unit_cost": _decimal(m.unit_cost),
-                "supplier_id": m.supplier_id,
-                "reference": m.reference,
-                "reason": m.reason,
-                "notes": m.notes,
-                "reference_type": m.reference_type,
-                "reference_id": m.reference_id,
-                "created_by": m.created_by,
-                "created_at": m.created_at.isoformat() if m.created_at else None,
-            }
-            for m in _clinic_rows(InventoryMovement)
-        ],
-    }
+    password = request.form.get("password", "")
+    if not isinstance(password, str) or not password or len(password) > 1024 or not verify_password(password, user.password_hash):
+        wait = record_failure("clinic_import_password", user.id, policy=(5, 60, 30 * 60))
+        log_activity(action="clinic_import_failed", resource_type="clinic", resource_id=user.clinic_id,
+                     details={"reason": "wrong_password"})
+        db.session.commit()
+        if wait:
+            return _too_many(wait, "Too many attempts. Please wait before trying again.")
+        return _error("Password is incorrect.", 403)
+    clear_failures("clinic_import_password", user.id)
 
-    export_payload = {
-        "clinic": _serialize_settings(clinic),
-        "exported_at": datetime.now().isoformat(),
-        "patients": [
-            {
-                "id": p.id,
-                "name": p.name,
-                "phone": p.phone,
-                "location": p.location,
-                "work_study": p.work_study,
-                "dob": p.dob.isoformat() if p.dob else None,
-                "gender": p.gender,
-                "allergies": p.allergies,
-                "medical_flags": p.medical_flags,
-                "notes": p.notes,
-                "created_at": p.created_at.isoformat() if p.created_at else None,
-            }
-            for p in patients
-        ],
-        "treatments": [
-            {
-                "id": t.id,
-                "patient_id": t.patient_id,
-                "tooth_number": t.tooth_number,
-                "description": t.description,
-                "procedure": t.procedure,
-                "fee": format(t.fee, ".2f"),
-                "status": t.status,
-                "date": t.date.isoformat(),
-            }
-            for t in treatments
-        ],
-        "treatment_plans": [
-            {
-                "id": tp.id,
-                "patient_id": tp.patient_id,
-                "tooth_number": tp.tooth_number,
-                "diagnosis": tp.diagnosis,
-                "procedure": tp.procedure,
-                "fee": format(tp.fee, ".2f"),
-                "priority": tp.priority,
-                "status": tp.status,
-                "notes": tp.notes,
-            }
-            for tp in treatment_plans
-        ],
-        "appointments": [
-            {
-                "id": a.id,
-                "patient_id": a.patient_id,
-                "doctor_id": a.doctor_id,
-                "date": a.date.isoformat(),
-                "start_time": a.start_time.strftime("%H:%M"),
-                "duration": a.duration,
-                "status": a.status,
-                "procedure": a.procedure,
-                "notes": a.notes,
-            }
-            for a in appointments
-        ],
-        "prescriptions": [
-            {
-                "id": pr.id,
-                "patient_id": pr.patient_id,
-                "date": pr.date.isoformat(),
-                "notes": pr.notes,
-                "medications": [
-                    {
-                        "name": m.name,
-                        "dosage": m.dosage,
-                        "frequency": m.frequency,
-                        "duration": m.duration,
-                        "instructions": m.instructions,
-                    }
-                    for m in pr.medications
-                ],
-            }
-            for pr in prescriptions
-        ],
-        "invoices": [
-            {
-                "id": inv.id,
-                "patient_id": inv.patient_id,
-                "treatment_id": inv.treatment_id,
-                "amount": format(inv.amount, ".2f"),
-                "discount": format(inv.discount, ".2f"),
-                "paid_amount": format(inv.paid_amount, ".2f"),
-                "balance": format(inv.balance, ".2f"),
-                "status": inv.status,
-            }
-            for inv in invoices
-        ],
-        "odontograms": [
-            {
-                "id": o.id,
-                "patient_id": o.patient_id,
-                "tooth_number": o.tooth_number,
-                "tooth_mode": o.tooth_mode,
-                "condition": o.condition,
-                "procedure": o.procedure,
-                "notes": o.notes,
-            }
-            for o in odontograms
-        ],
-        "xrays": [
-            {
-                "id": x.id,
-                "patient_id": x.patient_id,
-                "filename": x.filename,
-                "type": x.type,
-                "tooth_tag": x.tooth_tag,
-                "date": x.date.isoformat(),
-                "notes": x.notes,
-                # Image bytes live in PostgreSQL (xray_images) and are covered by database
-                # backups; the export carries the metadata and hashes needed to verify them.
-                "image": (
-                    {
-                        "format": x.image.image_format,
-                        "encoding": x.image.encoding,
-                        "size_bytes": x.image.size_bytes,
-                        "width": x.image.width,
-                        "height": x.image.height,
-                        "sha256": x.image.sha256,
-                        "original_sha256": x.image.original_sha256,
-                        "download_url": f"/api/x-rays/{x.id}/file?download=1",
-                    }
-                    if x.image
-                    else None
-                ),
-            }
-            for x in xrays
-        ],
-        "inventory": inventory_export,
-    }
+    upload = request.files.get("file")
+    if upload is None or not upload.filename:
+        return _error("Choose a backup file (.zip) to import.", 400)
 
-    return jsonify({"data": export_payload})
+    clinic = g.current_clinic
+    try:
+        zf, manifest, data = read_archive(upload.stream, current_app.config["CLINIC_IMPORT_MAX_BYTES"] * 4)
+        with zf:
+            summary = import_archive(clinic, user, zf, manifest, data)
+        log_activity(
+            action="clinic_data_imported",
+            resource_type="clinic",
+            resource_id=clinic.id,
+            details={
+                "counts": summary["counts"],
+                "skipped": summary["skipped"],
+                "unmatched_staff": len(summary["unmatched_staff"]),
+                "source_clinic": summary["source_clinic"],
+                "exported_at": summary["exported_at"],
+            },
+        )
+        db.session.commit()
+    except BackupError as error:
+        db.session.rollback()
+        log_activity(action="clinic_import_failed", resource_type="clinic", resource_id=clinic.id,
+                     details={"reason": error.message[:200]})
+        db.session.commit()
+        return _error(error.message, error.status)
+    except (IntegrityError, DataError):
+        db.session.rollback()
+        current_app.logger.exception("Clinic import rejected by database constraints")
+        return _error("The backup contains data that is not valid for this clinic. Nothing was changed.", 400)
+
+    # Old file-storage X-rays of the replaced data are no longer referenced.
+    for key in summary.pop("legacy_keys"):
+        try:
+            LocalFileStorage(current_app.config["AERODENT_STORAGE_PATH"]).delete(key)
+        except Exception:  # noqa: BLE001 - best effort cleanup after a successful commit
+            current_app.logger.warning("Could not remove replaced legacy X-ray file %s", key)
+
+    return jsonify({"data": summary})

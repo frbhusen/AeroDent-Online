@@ -17,6 +17,7 @@ from uuid import uuid4
 from PIL import Image
 
 from backend.app import app
+from backend.services.clinic_backup import load_backup_bytes
 from backend.auth.service import hash_password
 from backend.extensions import db
 from backend.models import AuthThrottle, Clinic, User
@@ -86,7 +87,7 @@ def run_idor_sweep():
                data={"file": (io.BytesIO(_png()), "a.png"), "type": "bitewing"}, content_type="multipart/form-data")
         a.put(f"/api/patients/{pid}/odontogram/permanent/14", json={"condition": "decay"})
 
-        snapshot_before = a.get("/api/clinic/export").get_json()["data"]
+        snapshot_before = load_backup_bytes(a.get("/api/clinic/export").data)[1]["tables"]
 
         b = app.test_client()
         b.environ_base["REMOTE_ADDR"] = "10.60.0.2"
@@ -121,11 +122,11 @@ def run_idor_sweep():
                     leaks.append(f"{method} {url} -> {res.status_code} {res.get_data(as_text=True)[:100]} | missing-id control -> {control.status_code}")
 
         assert not leaks, "\n".join(leaks)
-        snapshot_after = a.get("/api/clinic/export").get_json()["data"]
-        for key in ("patients", "treatments", "treatment_plans", "appointments", "prescriptions", "invoices", "odontograms", "xrays", "inventory"):
-            assert snapshot_before[key] == snapshot_after[key], f"clinic A {key} changed"
-        exported_b = b.get("/api/clinic/export").get_json()["data"]
-        assert exported_b["patients"] == [] and exported_b["xrays"] == [] and exported_b["inventory"]["items"] == []
+        snapshot_after = load_backup_bytes(a.get("/api/clinic/export").data)[1]["tables"]
+        for key, rows in snapshot_before.items():
+            assert rows == snapshot_after[key], f"clinic A {key} changed"
+        exported_b = load_backup_bytes(b.get("/api/clinic/export").data)[1]["tables"]
+        assert all(rows == [] for rows in exported_b.values()), {k: len(v) for k, v in exported_b.items() if v}
         print(f"PASS: {attempts} cross-clinic attempts on {len(routes)} object routes were refused, each indistinguishable from a non-existent ID; clinic A data unchanged.")
 
         # A secretary cannot use clinical write routes even inside their own clinic.

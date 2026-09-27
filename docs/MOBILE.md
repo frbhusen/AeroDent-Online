@@ -51,8 +51,8 @@ would otherwise provide on a phone.
 | No connection / server unreachable | A bundled page (`assets/offline/offline.html`) in the user's language, with a *Try again* button. It retries automatically when Android reports a network is available. Nothing is queued: there is **no fake offline sync**. |
 | Connection lost while using the app | The web app shows a banner ("You're offline. Changes can't be saved…") and its API errors say the server is unreachable. Data reloads when the connection returns. |
 | File uploads (X-rays, documents) | System picker (files, gallery, cloud providers) with multi-select where the input allows it, plus *take a photo* via the camera app when the input accepts images. Files are uploaded untouched; the server stores X-rays losslessly (docs/XRAY_STORAGE.md). The app itself needs **no camera or storage permission**. |
-| Server downloads (e.g. X-ray originals) | Android DownloadManager with the current session cookie → `Downloads/AeroDent/`, with a system notification. Only URLs on the server origin are accepted. |
-| Generated files (clinic export) | `NativeShell.saveBlob()` → MediaStore → `Downloads/AeroDent/`. |
+| Server downloads (X-ray originals, the head doctor's clinic backup ZIP) | Android DownloadManager with the current session cookie → `Downloads/AeroDent/`, with a system notification. Only URLs on the server origin are accepted. |
+| Generated files (made in the page, e.g. offline-style exports) | `NativeShell.saveBlob()` → MediaStore → `Downloads/AeroDent/`. |
 | Printing (prescriptions, invoices) | `NativeShell.print()` → Android print framework (print to PDF or a printer) using the page's print stylesheet. |
 | Back button | Closes the command palette / dialog / drawer first, then returns to the dashboard, then leaves the app. |
 | Safe areas / notches / keyboard | Edge-to-edge window; the WebView is padded by the system-bar, display-cutout and keyboard insets, so nothing is hidden and inputs stay visible above the keyboard. |
@@ -153,7 +153,7 @@ keytool -genkeypair -v -keystore aerodent-release.jks -alias aerodent \
 `window.AeroDentNative` (absent in browsers, so everything falls back to normal browser behaviour)
 and provides:
 
-* `downloadBlob(blob, filename)`: save a generated file (used by the clinic export).
+* `downloadBlob(blob, filename)`: save a file generated in the page.
 * `printPage(jobName)`: print with the print stylesheet (prescriptions, invoices).
 * `window.AeroDentBack()`: called by the Back button.
 * The online/offline connectivity banner (useful in browsers too).

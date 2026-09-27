@@ -5105,3 +5105,30 @@ body.is-super-admin .main {
 @media (max-width: 700px) {
   .recall-interval, .recall-interval select { width: 100%; }
 }
+
+/* Clinic backup (settings). */
+.backup-divider { border: 0; border-top: 1px solid var(--line); margin: 18px 0 14px; }
+.backup-subtitle { margin: 0 0 8px; font-size: 16px; }
+.backup-warning {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.backup-confirm { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; }
+.backup-confirm input { margin-top: 3px; min-height: 0; width: auto; }
+.backup-result {
+  display: grid;
+  gap: 4px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
