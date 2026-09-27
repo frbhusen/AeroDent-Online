@@ -2521,6 +2521,7 @@ textarea {
 
 .agenda {
   display: grid;
+  grid-template-columns: 78px 1fr;
   gap: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -2529,8 +2530,8 @@ textarea {
 
 .agenda-row {
   display: grid;
+  grid-column: 1 / -1;
   grid-template-columns: 78px 1fr;
-  min-height: 55px;
   border-bottom: 1px solid #f1f5f9;
 }
 
@@ -2546,7 +2547,8 @@ textarea {
 }
 
 .appointment {
-  margin: 6px 10px;
+  box-sizing: border-box;
+  margin: 2px 0;
   padding: 8px 12px;
   border-radius: 8px;
   font-size: 11.5px;
@@ -2561,6 +2563,8 @@ textarea {
   user-select: none;
   cursor: grab;
   position: relative;
+  z-index: 1;
+  overflow: hidden;
 }
 
 .appointment:hover {
@@ -2630,7 +2634,6 @@ textarea {
 
 /* Drag-and-drop Drop Target Highlights */
 .agenda-slot-target {
-  min-height: 48px;
   transition: all 0.2s ease;
   border-radius: 6px;
   position: relative;
@@ -4983,6 +4986,7 @@ body.is-super-admin .main {
   .agenda .appointment-status-select { flex: 1 1 140px; }
 }
 @media (max-width: 700px) {
+  .agenda { grid-template-columns: 52px 1fr; }
   .agenda-row { grid-template-columns: 52px 1fr; }
   .agenda-time { padding: 10px 6px; }
   .audit-search-box, #auditSearchInput { max-width: 100%; min-width: 0; width: 100%; }

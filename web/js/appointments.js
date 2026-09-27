@@ -94,16 +94,18 @@ function renderAppointments() {
 
     const workStart = state.settings.work_start || state.settings.workStartHour || "09:00";
     const workEnd = state.settings.work_end || state.settings.workEndHour || "18:00";
-    const slotDuration = Number(state.settings.slot_duration || state.settings.slotDuration) || 30;
+    const slotDuration = Number(state.settings.slot_duration || state.settings.slotDuration) || 15;
 
     const start = timeToMinutes(workStart);
     const end = timeToMinutes(workEnd);
     const slot = slotDuration;
 
     const times = [];
-    for (let value = start; value <= end; value += slot) {
+    for (let value = start; value < end; value += slot) {
         times.push(minutesToTime(value));
     }
+
+    const positionedEntries = layoutAgendaEntries(entries, start, end, slot, times.length);
 
     const weekDates = calendarWeekDates(state.agendaDate);
     const weekStrip = weekDates
@@ -167,51 +169,42 @@ function renderAppointments() {
 
             ${state.appointmentError ? `<div class="alert-banner" style="margin:12px;">${esc(state.appointmentError)}</div>` : ""}
 
-            <div class="agenda">
-                ${times.map((time) => `
-                    <div class="agenda-row agenda-slot-target" data-slot-time="${time}">
+            <div class="agenda" style="grid-template-rows: repeat(${times.length}, var(--agenda-row-h, 44px));">
+                ${times.map((time, index) => `
+                    <div class="agenda-row agenda-slot-target" data-slot-time="${time}" style="grid-row: ${index + 1};">
                         <div class="agenda-time">${time}</div>
-                        <div class="agenda-slot-content" style="flex:1;">
-                            ${entries
-                                .filter((item) => {
-                                    const appointmentStart = timeToMinutes(item.startTime);
-                                    const slotStart = timeToMinutes(time);
-                                    return (
-                                        appointmentStart >= slotStart &&
-                                        appointmentStart < slotStart + slot
-                                    );
-                                })
-                                .map((item) => `
-                                    <div class="appointment status-${item.status || 'booked'} ${item.status === 'cancelled' ? 'is-cancelled' : ''}"
-                                         draggable="true"
-                                         data-appointment-id="${item.id}"
-                                         title="${t("dragToReschedule")}">
-                                        <div style="cursor: grab;">
-                                            <b>${esc(item.patientName)} · ${esc(item.procedure || "Visit")}</b>
-                                            <span class="muted" style="display:flex;align-items:center;gap:6px;margin-top:2px;">
-                                                <span>⏰ ${esc(item.startTime)} (${item.duration || 30}m)</span>
-                                                ${item.doctorName ? `<span>· 👨‍⚕️ ${esc(item.doctorName)}</span>` : ""}
-                                            </span>
-                                        </div>
-                                        <div style="display:flex;gap:6px;align-items:center;" data-stop-propagation>
-                                            <select class="appointment-status-select" data-update-appt-status="${item.id}">
-                                                <option value="booked" ${item.status === "booked" ? "selected" : ""}>📅 ${t("statusBooked")}</option>
-                                                <option value="arrived" ${item.status === "arrived" ? "selected" : ""}>🚶 ${t("statusArrived")}</option>
-                                                <option value="in_chair" ${item.status === "in_chair" ? "selected" : ""}>🦷 ${t("statusInChair")}</option>
-                                                <option value="completed" ${item.status === "completed" ? "selected" : ""}>✓ ${t("statusCompleted")}</option>
-                                                <option value="cancelled" ${item.status === "cancelled" ? "selected" : ""}>✕ ${t("statusCancelled")}</option>
-                                            </select>
-                                            ${typeof appointmentWhatsappButton === "function" ? appointmentWhatsappButton(item) : ""}
-                                            <button class="button button-ghost button-sm" data-edit-appointment="${item.id}">${t("edit")}</button>
-                                            <button
-                                                class="appointment-delete"
-                                                data-delete-appointment="${item.id}"
-                                                title="${t("deleteAppointment")}"
-                                                aria-label="${t("deleteAppointment")}"
-                                            >×</button>
-                                        </div>
-                                    </div>
-                                `).join("")}
+                        <div class="agenda-slot-content"></div>
+                    </div>
+                `).join("")}
+                ${positionedEntries.map((item) => `
+                    <div class="appointment status-${item.status || 'booked'} ${item.status === 'cancelled' ? 'is-cancelled' : ''}"
+                         draggable="true"
+                         data-appointment-id="${item.id}"
+                         title="${t("dragToReschedule")}"
+                         style="grid-column: 2; grid-row: ${item._rowStart + 1} / span ${item._rowSpan}; width: calc(${item._widthPct}% - 4px); margin-inline-start: ${item._leftPct}%;">
+                        <div style="cursor: grab;">
+                            <b>${esc(item.patientName)} · ${esc(item.procedure || "Visit")}</b>
+                            <span class="muted" style="display:flex;align-items:center;gap:6px;margin-top:2px;">
+                                <span>⏰ ${esc(item.startTime)} (${item.duration || 30}m)</span>
+                                ${item.doctorName ? `<span>· 👨‍⚕️ ${esc(item.doctorName)}</span>` : ""}
+                            </span>
+                        </div>
+                        <div style="display:flex;gap:6px;align-items:center;" data-stop-propagation>
+                            <select class="appointment-status-select" data-update-appt-status="${item.id}">
+                                <option value="booked" ${item.status === "booked" ? "selected" : ""}>📅 ${t("statusBooked")}</option>
+                                <option value="arrived" ${item.status === "arrived" ? "selected" : ""}>🚶 ${t("statusArrived")}</option>
+                                <option value="in_chair" ${item.status === "in_chair" ? "selected" : ""}>🦷 ${t("statusInChair")}</option>
+                                <option value="completed" ${item.status === "completed" ? "selected" : ""}>✓ ${t("statusCompleted")}</option>
+                                <option value="cancelled" ${item.status === "cancelled" ? "selected" : ""}>✕ ${t("statusCancelled")}</option>
+                            </select>
+                            ${typeof appointmentWhatsappButton === "function" ? appointmentWhatsappButton(item) : ""}
+                            <button class="button button-ghost button-sm" data-edit-appointment="${item.id}">${t("edit")}</button>
+                            <button
+                                class="appointment-delete"
+                                data-delete-appointment="${item.id}"
+                                title="${t("deleteAppointment")}"
+                                aria-label="${t("deleteAppointment")}"
+                            >×</button>
                         </div>
                     </div>
                 `).join("")}
@@ -516,6 +509,62 @@ async function deleteAppointment(id) {
         await dbPut("appointments", appointment);
         await refresh();
     });
+}
+
+function layoutAgendaEntries(entries, dayStart, dayEnd, rowMinutes, totalRows) {
+    const items = entries
+        .map((item) => {
+            const itemStart = timeToMinutes(item.startTime);
+            const duration = Number(item.duration) > 0 ? Number(item.duration) : rowMinutes;
+            return { ...item, _start: itemStart, _end: itemStart + duration };
+        })
+        .filter((item) => item._start < dayEnd && item._end > dayStart)
+        .sort((a, b) => a._start - b._start || a._end - b._end);
+
+    const clusters = [];
+    let current = [];
+    let currentEnd = -Infinity;
+    for (const item of items) {
+        if (current.length && item._start >= currentEnd) {
+            clusters.push(current);
+            current = [];
+            currentEnd = -Infinity;
+        }
+        current.push(item);
+        currentEnd = Math.max(currentEnd, item._end);
+    }
+    if (current.length) clusters.push(current);
+
+    const positioned = [];
+    for (const cluster of clusters) {
+        const columnEnds = [];
+        for (const item of cluster) {
+            let columnIndex = columnEnds.findIndex((end) => end <= item._start);
+            if (columnIndex === -1) {
+                columnIndex = columnEnds.length;
+                columnEnds.push(item._end);
+            } else {
+                columnEnds[columnIndex] = item._end;
+            }
+            item._col = columnIndex;
+        }
+        const totalCols = columnEnds.length;
+        for (const item of cluster) {
+            const visibleStart = Math.max(item._start, dayStart);
+            const visibleEnd = Math.min(item._end, dayEnd);
+            const rowStart = Math.min(totalRows - 1, Math.floor((visibleStart - dayStart) / rowMinutes));
+            const rowSpan = Math.max(1, Math.min(totalRows - rowStart, Math.round((visibleEnd - visibleStart) / rowMinutes)));
+            const widthPct = 100 / totalCols;
+            positioned.push({
+                ...item,
+                _rowStart: rowStart,
+                _rowSpan: rowSpan,
+                _widthPct: widthPct,
+                _leftPct: item._col * widthPct,
+            });
+        }
+    }
+    return positioned;
 }
 
 function timeToMinutes(value) {
