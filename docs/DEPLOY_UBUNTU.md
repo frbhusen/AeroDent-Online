@@ -376,8 +376,8 @@ Group=aerodent
 WorkingDirectory=/opt/aerodent/app
 EnvironmentFile=/etc/aerodent/aerodent.env
 ExecStart=/opt/aerodent/venv/bin/gunicorn \
-    --workers 3 \
-    --bind 127.0.0.1:8000 \
+    --workers 2 \
+    --bind 127.0.0.1:8010 \
     --timeout 300 \
     --forwarded-allow-ips 127.0.0.1 \
     --access-logfile - \
@@ -394,11 +394,17 @@ ProtectHome=true
 [Install]
 WantedBy=multi-user.target
 EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now aerodent
+sudo systemctl status aerodent --no-pager | head -5
+curl -s -o /dev/null -w "AeroDent: %{http_code}\n" http://127.0.0.1:8010/
+curl -s -o /dev/null -w "Other app on 8000: %{http_code}\n" http://127.0.0.1:8000/
 ```
 
 What the important parts mean:
 
-* `--bind 127.0.0.1:8000`: AeroDent only listens inside the server; nginx is the only way in.
+* `--bind 127.0.0.1:8010`: AeroDent only listens inside the server; nginx is the only way in.
 * `--workers 3`: handles several users at once. Use about `2 × CPU cores + 1` (check cores
   with `nproc`), but not more than your RAM allows (~150 MB per worker).
 * `--timeout 300`: gives large backup exports/imports time to finish.
@@ -412,7 +418,7 @@ What the important parts mean:
 sudo systemctl daemon-reload
 sudo systemctl enable --now aerodent
 sudo systemctl status aerodent --no-pager | head -5    # "active (running)"
-curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8000/     # prints 200
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8010/     # prints 200
 ```
 
 If it isn't running, see the logs: `sudo journalctl -u aerodent -n 50 --no-pager`

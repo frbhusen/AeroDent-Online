@@ -216,7 +216,4 @@ def validate_patient_update(user, incoming_data):
     if fields & PATIENT_IMMUTABLE_FIELDS:
         raise PermissionError("Patient ownership fields cannot be changed.")
 
-    if user.role == "secretary" and fields & PATIENT_CLINICAL_FIELDS:
-        raise PermissionError("Secretaries cannot update clinical patient fields.")
-
     return True

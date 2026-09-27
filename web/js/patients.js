@@ -71,7 +71,7 @@ async function refreshOnlinePatients(preserveEmptySelection = false) {
 }
 
 function onlinePatientClinicalFieldsAllowed() {
-    return state.auth.user?.role !== "secretary";
+    return true;
 }
 
 function patientPagination() {

@@ -301,10 +301,6 @@ def create_patient():
     if error or data is None:
         return error or _error("Invalid patient data.", 400)
 
-    if g.current_user.role == "secretary":
-        for cf in ("allergies", "medical_flags", "notes"):
-            data.pop(cf, None)
-
     patient = Patient(
         **data,
         clinic_id=g.current_user.clinic_id,
