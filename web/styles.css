@@ -1152,24 +1152,32 @@ input[name="phone"] {
   }
 }
 
-html[dir="rtl"] .sidebar-toggle {
-  inset-inline-start: auto;
-  inset-inline-end: 10px;
-  transform: scaleX(-1);
-}
-
+/* Collapse/expand toggle: its own row at the top of the sidebar, so it never covers the
+   avatar or the doctor/clinic names. */
 .sidebar-toggle {
-  position: absolute;
-  inset-inline-end: 10px;
-  top: 12px;
+  display: grid;
+  place-items: center;
   width: 28px;
   height: 28px;
+  margin: -8px 0 6px;
+  margin-inline-start: auto;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: #f8fafc;
   color: var(--muted);
   font-size: 18px;
   line-height: 1;
+}
+
+/* The glyph is "‹". Open: it points toward the sidebar's outer edge (collapse). Collapsed: it
+   points into the page (expand). RTL mirrors both. */
+html[dir="rtl"] .sidebar-toggle,
+.sidebar-collapsed .sidebar-toggle {
+  transform: scaleX(-1);
+}
+html[dir="rtl"] .sidebar-collapsed .sidebar-toggle {
+  transform: none;
 }
 
 .sidebar-toggle:hover {
@@ -1203,12 +1211,19 @@ html[dir="rtl"] .sidebar-toggle {
 }
 
 .sidebar-collapsed .sidebar-toggle {
-  inset-inline-end: 22px;
+  margin-inline: auto;
 }
 
-.sidebar-collapsed .sidebar-toggle {
-  transform: rotate(180deg);
+/* Collapsed: Sign out becomes an icon button that fits the rail (same as on phones). */
+.sidebar-collapsed.online-authenticated .online-logout-button {
+  width: 44px;
+  margin: 10px auto;
+  padding: 8px 0;
+  display: grid;
+  place-items: center;
 }
+.sidebar-collapsed .online-logout-button span { display: none; }
+.sidebar-collapsed .online-logout-button::before { content: "⏻"; font-size: 16px; }
 
 html[dir="rtl"] .context-drawer {
   transform: translateX(-105%) !important;
