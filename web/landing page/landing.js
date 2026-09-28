@@ -221,24 +221,28 @@
       setSubmitting(true);
 
       var lang = document.documentElement.lang || "ar";
-      var payload = {
-        access_key: CFG.web3formsAccessKey,
-        subject: CFG.emailSubject || "AeroDent trial request",
-        from_name: "AeroDent Landing Page",
-        // Fields (Arabic labels so the delivered email is readable):
-        "الاسم الكامل": val(form, "name"),
-        "اسم العيادة": val(form, "clinic"),
-        "رقم الهاتف": val(form, "phone"),
-        "موقع العيادة": val(form, "location"),
-        "رسالة": val(form, "message") || "—",
-        "اللغة": lang,
-        botcheck: "", // Web3Forms native spam field, kept empty for real users
-      };
+      // Submit as multipart FormData (NOT JSON): a JSON content-type triggers a CORS
+      // preflight that Web3Forms rejects, whereas FormData is a CORS "simple request"
+      // (no preflight) and is Web3Forms' primary supported submission method.
+      var fd = new FormData();
+      fd.append("access_key", CFG.web3formsAccessKey);
+      fd.append("subject", CFG.emailSubject || "AeroDent trial request");
+      fd.append("from_name", "AeroDent Landing Page");
+      // Fields (Arabic labels so the delivered email is readable):
+      fd.append("الاسم الكامل", val(form, "name"));
+      fd.append("اسم العيادة", val(form, "clinic"));
+      fd.append("رقم الهاتف", val(form, "phone"));
+      fd.append("موقع العيادة", val(form, "location"));
+      fd.append("رسالة", val(form, "message") || "—");
+      fd.append("اللغة", lang);
+      fd.append("botcheck", ""); // Web3Forms native spam field, kept empty for real users
 
+      // No explicit Content-Type header: the browser sets multipart/form-data with the
+      // correct boundary, and keeps the request preflight-free.
       fetch(CFG.web3formsEndpoint || "https://api.web3forms.com/submit", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify(payload),
+        headers: { Accept: "application/json" },
+        body: fd,
       })
         .then(function (res) {
           return res.json().then(function (data) {

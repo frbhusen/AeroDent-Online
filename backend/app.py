@@ -41,6 +41,19 @@ class DatabaseIdConverter(IntegerConverter):
 
 WEB_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "web"))
 
+# The public landing page submits its "request a trial" form directly to Web3Forms (a static
+# form-delivery service), so its document needs connect-src to reach that one external host.
+# This relaxation is scoped to the landing pages only — the application shell keeps the strict
+# same-origin CSP set in the global security-headers handler below.
+WEB3FORMS_ENDPOINT = "https://api.web3forms.com"
+LANDING_CSP = (
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+    "img-src 'self' data: blob:; font-src 'self' data:; "
+    f"connect-src 'self' {WEB3FORMS_ENDPOINT}; "
+    "worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; "
+    f"form-action 'self' {WEB3FORMS_ENDPOINT}; frame-ancestors 'none'"
+)
+
 
 def create_app() -> Flask:
     # static_folder=None: every frontend file goes through serve_frontend so caching headers
@@ -133,7 +146,9 @@ def create_app() -> Flask:
             return {"error": "Endpoint not found."}, 404
         if path == "":
             # The site root is the public marketing landing page (web/landing page/).
-            return assets.serve_landing_home()
+            response = assets.serve_landing_home()
+            response.headers["Content-Security-Policy"] = LANDING_CSP
+            return response
         if path in ("login", "index.html"):
             # The application shell (login screen + dashboard SPA) lives at /login.
             return assets.serve_index()
@@ -144,7 +159,11 @@ def create_app() -> Flask:
             return assets.serve_service_worker()
         target_path = safe_join(WEB_DIR, path)
         if target_path and os.path.isfile(target_path):
-            return assets.serve_file(path)
+            response = assets.serve_file(path)
+            # Landing-page documents need the relaxed CSP so the trial form can post to Web3Forms.
+            if path.startswith("landing page/") and path.endswith(".html"):
+                response.headers["Content-Security-Policy"] = LANDING_CSP
+            return response
         return assets.serve_index()
 
     # Global JSON error handlers — ensure API errors never return HTML
