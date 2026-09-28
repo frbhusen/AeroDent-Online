@@ -35,6 +35,16 @@ _MIN_GZIP_BYTES = 1024
 _LOCAL_REF = re.compile(
     r'(?P<attr>\b(?:src|href))="(?P<path>(?!https?:|//|data:|#|mailto:)[^"?#]+\.(?:js|css|json|png|ico|svg|webmanifest))"'
 )
+# The public landing page lives in ``web/landing page/`` and references its assets with
+# RELATIVE paths (so it can also be hosted standalone). When we serve it as the site root
+# ("/"), those relative paths would resolve against "/" and collide with the app's own
+# ``/styles.css`` / ``/i18n.js``. This rewrites every relative src/href to an absolute
+# ``/landing page/…`` path. Absolute (/…), external (http(s):, //), anchors (#…), and
+# mailto:/tel:/data: references are left untouched.
+_LANDING_DIR = "landing page"
+_LANDING_REF = re.compile(
+    r'(?P<attr>\b(?:src|href))="(?P<path>(?!https?:|//|/|#|mailto:|tel:|data:)[^"]+)"'
+)
 
 
 class StaticAssets:
@@ -74,6 +84,18 @@ class StaticAssets:
     def index_html(self):
         return self.page_html("index.html")
 
+    def landing_home_html(self):
+        """The public landing page, served as the site root with asset paths made absolute."""
+        if "__landing_home__" not in self._pages:
+            path = os.path.join(self.web_dir, _LANDING_DIR, "index.html")
+            with open(path, encoding="utf-8") as handle:
+                html = handle.read()
+            html = _LANDING_REF.sub(
+                lambda m: f'{m.group("attr")}="/{_LANDING_DIR}/{m.group("path")}"', html
+            )
+            self._pages["__landing_home__"] = html.encode("utf-8")
+        return self._pages["__landing_home__"]
+
     def service_worker(self):
         if self._service_worker is None:
             with open(os.path.join(self.web_dir, "sw.js"), encoding="utf-8") as handle:
@@ -110,6 +132,11 @@ class StaticAssets:
 
     def serve_index(self):
         return self.serve_page("index.html")
+
+    def serve_landing_home(self):
+        return self._bytes_response(
+            self.landing_home_html(), "text/html", REVALIDATE_CACHE, ("__landing_home__", self.version)
+        )
 
     def serve_service_worker(self):
         response = self._bytes_response(

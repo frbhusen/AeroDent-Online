@@ -131,7 +131,11 @@ def create_app() -> Flask:
     def serve_frontend(path):
         if path.startswith("api/") or path == "api":
             return {"error": "Endpoint not found."}, 404
-        if path in ("", "index.html"):
+        if path == "":
+            # The site root is the public marketing landing page (web/landing page/).
+            return assets.serve_landing_home()
+        if path in ("login", "index.html"):
+            # The application shell (login screen + dashboard SPA) lives at /login.
             return assets.serve_index()
         if path == "trial.html":
             # Only reachable through the gated /request-trial route.

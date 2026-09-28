@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b2942" />
+
+  <title>AeroDent — نظام إدارة عيادات الأسنان</title>
+  <meta name="description"
+    content="AeroDent نظام متكامل لإدارة عيادات الأسنان: إدارة المرضى، مخطط الأسنان، خطط العلاج، المواعيد، الوصفات، الأشعة، الفواتير والتقارير. يدعم العربية والإنجليزية. اطلب تجربة مجانية لمدة 14 يومًا." />
+  <meta name="author" content="AeroDent" />
+  <link rel="canonical" href="https://aerodent-online.husr0.codes/landing%20page/index.html" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="ar_AR" />
+  <meta property="og:site_name" content="AeroDent" />
+  <meta property="og:title" content="AeroDent — نظام إدارة عيادات الأسنان" />
+  <meta property="og:description"
+    content="نظام متكامل لإدارة عيادات الأسنان يدعم العربية بالكامل. اطلب تجربة مجانية لمدة 14 يومًا." />
+  <meta property="og:image" content="assets/logo-512.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" href="assets/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" href="assets/logo-mark.png" />
+  <link rel="apple-touch-icon" href="assets/logo-mark.png" />
+
+  <link rel="stylesheet" href="assets/fonts/cairo.css" />
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "AeroDent",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web, Android",
+    "description": "نظام متكامل لإدارة عيادات الأسنان يدعم العربية والإنجليزية.",
+    "inLanguage": "ar",
+    "offers": { "@type": "Offer", "description": "تجربة مجانية لمدة 14 يومًا", "price": "0" }
+  }
+  </script>
+</head>
+
+<body>
+  <a class="skip-link" href="#main" data-i18n="nav.skip">تخطَّ إلى المحتوى الرئيسي</a>
+
+  <!-- ============================ HEADER ============================ -->
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="#top" aria-label="AeroDent">
+        <img src="assets/logo-mark.png" alt="" width="38" height="38" />
+        <span>AeroDent</span>
+      </a>
+
+      <nav aria-label="التنقل الرئيسي">
+        <ul class="nav-links" id="navLinks">
+          <li><a href="#features" data-i18n="nav.features">المزايا</a></li>
+          <li><a href="#preview" data-i18n="nav.preview">لمحة عن النظام</a></li>
+          <li><a href="#how" data-i18n="nav.how">كيف يعمل</a></li>
+          <li><a href="#faq" data-i18n="nav.faq">الأسئلة الشائعة</a></li>
+          <li><a href="user-manual.html" data-i18n="nav.manual">دليل الاستخدام</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <div class="lang-switch" role="group" aria-label="اللغة / Language">
+          <button type="button" data-lang="ar" aria-pressed="true">العربية</button>
+          <button type="button" data-lang="en" aria-pressed="false">EN</button>
+        </div>
+        <!-- Flips to "Go to dashboard" when a signed-in session is detected (landing.js). -->
+        <a class="btn btn-ghost" id="authCta" href="/login">تسجيل الدخول</a>
+        <a class="btn btn-primary" href="#trial" data-i18n="nav.cta">اطلب تجربة</a>
+        <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navLinks"
+          aria-label="القائمة"><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <span id="top"></span>
+
+    <!-- ============================ HERO ============================ -->
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-text">
+          <span class="eyebrow" data-i18n="hero.eyebrow">منصة إدارة عيادات الأسنان</span>
+          <h1 data-i18n="hero.title">أدِر عيادة أسنانك بوضوح وثقة</h1>
+          <p class="hero-sub" data-i18n="hero.subtitle">
+            يجمع AeroDent المرضى ومخطط الأسنان وخطط العلاج والمواعيد والوصفات والأشعة والفواتير
+            والتقارير في منصة واحدة آمنة تدعم العربية بالكامل.
+          </p>
+          <div class="hero-cta">
+            <a class="btn btn-primary btn-lg" href="#trial" data-i18n="hero.cta.primary">اطلب تجربة لمدة 14 يومًا</a>
+            <a class="btn btn-on-dark btn-lg" href="user-manual.html" data-i18n="hero.cta.secondary">استعرض دليل الاستخدام</a>
+          </div>
+          <div class="hero-badges">
+            <span class="hero-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" stroke-width="2" aria-hidden="true"><path d="M12 2l7 4v6c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-4z"/><path d="M9 12l2 2 4-4"/></svg>
+              <span data-i18n="hero.badge.secure">بيانات معزولة لكل عيادة</span>
+            </span>
+            <span class="hero-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 20h8M12 18v2"/></svg>
+              <span data-i18n="hero.badge.devices">يعمل من مختلف الأجهزة</span>
+            </span>
+            <span class="hero-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2c3 3 3 17 0 20M12 2c-3 3-3 17 0 20"/></svg>
+              <span data-i18n="hero.badge.bilingual">عربي / إنجليزي</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Product mock: mini dashboard -->
+        <div class="hero-visual" aria-hidden="true">
+          <div class="mock">
+            <div class="mock-bar">
+              <span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span>
+              <span class="mock-url">aerodent.app</span>
+            </div>
+            <div class="mock-body">
+              <div class="dash">
+                <div class="dash-stats">
+                  <div class="stat"><b>128</b><small>مرضى نشطون</small></div>
+                  <div class="stat"><b>17</b><small>مواعيد اليوم</small></div>
+                  <div class="stat"><b>٩٤٪</b><small>نسبة الحضور</small></div>
+                </div>
+                <div class="dash-row">
+                  <div class="panel">
+                    <h4>الإيرادات — آخر ٧ أيام</h4>
+                    <div class="bars">
+                      <i style="height:40%"></i><i style="height:65%"></i><i style="height:50%"></i>
+                      <i style="height:80%"></i><i style="height:60%"></i><i style="height:90%"></i><i style="height:72%"></i>
+                    </div>
+                  </div>
+                  <div class="panel">
+                    <h4>مواعيد قادمة</h4>
+                    <div class="appt"><span class="avatar-sm">م.ع</span><span class="who grow">محمد علي</span><span class="time">09:30</span></div>
+                    <div class="appt"><span class="avatar-sm">ن.خ</span><span class="who grow">نور خالد</span><span class="time">10:15</span></div>
+                    <div class="appt"><span class="avatar-sm">س.ح</span><span class="who grow">سارة حسن</span><span class="time">11:00</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ FEATURES ============================ -->
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow" data-i18n="features.eyebrow">المزايا</span>
+          <h2 data-i18n="features.title">كل ما تحتاجه عيادتك في مكان واحد</h2>
+          <p data-i18n="features.subtitle">وحدات متكاملة صُممت لسير العمل اليومي في عيادات الأسنان.</p>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature-card">
+            <div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg></div>
+            <h3 data-i18n="feat.patients.t">إدارة المرضى</h3>
+            <p data-i18n="feat.patients.d">ملفات مرضى كاملة تشمل البيانات والتاريخ الطبي وسجل الزيارات والبحث السريع بالاسم أو الهاتف.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 4v7M12 4v7M17 4v7"/></svg></div>
+            <h3 data-i18n="feat.odontogram.t">مخطط الأسنان</h3>
+            <p data-i18n="feat.odontogram.d">مخطط تفاعلي للأسنان لتسجيل الحالة والإجراءات على كل سن مع ملاحظات سريرية وترميز لوني واضح.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 5-6"/><rect x="3" y="4" width="18" height="16" rx="2"/></svg></div>
+            <h3 data-i18n="feat.plans.t">خطط العلاج</h3>
+            <p data-i18n="feat.plans.d">إنشاء خطط علاج متعددة الجلسات مع التكاليف المقدّرة ومتابعة حالة كل بند حتى الإنجاز.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div>
+            <h3 data-i18n="feat.treatments.t">سجل العلاجات</h3>
+            <p data-i18n="feat.treatments.d">تسجيل العلاجات المنفّذة وربطها بالسن والموعد، مع سجل زمني كامل لكل مريض.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg></div>
+            <h3 data-i18n="feat.appointments.t">المواعيد والجدولة</h3>
+            <p data-i18n="feat.appointments.d">تقويم مواعيد مرئي مع مدد زمنية متناسبة، وقائمة انتظار لتنظيم يوم العيادة بكفاءة.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3h8l1 4H7l1-4zM6 7h12v14H6z"/><path d="M9 12h6M9 16h6"/></svg></div>
+            <h3 data-i18n="feat.prescriptions.t">الوصفات الطبية</h3>
+            <p data-i18n="feat.prescriptions.d">إصدار وصفات طبية منظّمة بالأدوية والجرعات، جاهزة للطباعة بهوية العيادة.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="M21 16l-5-5L5 21"/></svg></div>
+            <h3 data-i18n="feat.xrays.t">الأشعة السينية</h3>
+            <p data-i18n="feat.xrays.d">رفع صور الأشعة وحفظها بأمان ضمن ملف المريض للرجوع إليها ومقارنتها عبر الزمن.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M7 15h4"/></svg></div>
+            <h3 data-i18n="feat.billing.t">الفواتير والمدفوعات</h3>
+            <p data-i18n="feat.billing.d">إصدار الفواتير وتسجيل الدفعات ومتابعة المستحقات لكل مريض بوضوح تام.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
+            <h3 data-i18n="feat.dashboard.t">لوحة التحكم والتقارير</h3>
+            <p data-i18n="feat.dashboard.d">نظرة شاملة على نشاط العيادة والمواعيد والإيرادات لاتخاذ قرارات مبنية على البيانات.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M15 20c0-2 2-3.5 4-3.5"/></svg></div>
+            <h3 data-i18n="feat.staff.t">إدارة الموظفين والصلاحيات</h3>
+            <p data-i18n="feat.staff.d">أدوار متعددة (طبيب رئيسي، طبيب، سكرتير) مع صلاحيات دقيقة تحمي بيانات العيادة.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v6H4zM4 14h16v6H4z"/><path d="M8 7h.01M8 17h.01"/></svg></div>
+            <h3 data-i18n="feat.inventory.t">إدارة المخزون</h3>
+            <p data-i18n="feat.inventory.d">متابعة المواد والمستلزمات وحركة المخزون لتفادي النقص في أدوات العيادة.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg></div>
+            <h3 data-i18n="feat.audit.t">سجل العمليات والتدقيق</h3>
+            <p data-i18n="feat.audit.d">تسجيل الإجراءات المهمة داخل النظام لمتابعة النشاط والمساءلة والشفافية.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg></div>
+            <h3 data-i18n="feat.backup.t">النسخ الاحتياطي والتصدير</h3>
+            <p data-i18n="feat.backup.d">تصدير بيانات العيادة والاحتفاظ بنسخ احتياطية للحفاظ على معلوماتك.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ PRODUCT PREVIEW ============================ -->
+    <section class="section section-alt" id="preview">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow" data-i18n="preview.eyebrow">لمحة عن النظام</span>
+          <h2 data-i18n="preview.title">شاهد AeroDent أثناء العمل</h2>
+          <p data-i18n="preview.subtitle">واجهات مصمّمة لتكون واضحة وسريعة في الاستخدام اليومي.</p>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="preview-block">
+          <div class="preview-text">
+            <h3 data-i18n="prev.dash.t">لوحة تحكم شاملة</h3>
+            <p data-i18n="prev.dash.d">تعرض لك أهم مؤشرات العيادة فور تسجيل الدخول: المرضى، مواعيد اليوم، ونظرة على الإيرادات.</p>
+            <ul class="preview-list">
+              <li data-i18n="prev.dash.1">مؤشرات فورية عن نشاط العيادة</li>
+              <li data-i18n="prev.dash.2">مواعيد اليوم في لمحة واحدة</li>
+              <li data-i18n="prev.dash.3">متابعة الإيرادات عبر الزمن</li>
+            </ul>
+          </div>
+          <div class="preview-visual" aria-hidden="true">
+            <div class="mock">
+              <div class="mock-bar"><span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-url">لوحة التحكم</span></div>
+              <div class="mock-body">
+                <div class="dash">
+                  <div class="dash-stats">
+                    <div class="stat"><b>128</b><small>مرضى</small></div>
+                    <div class="stat"><b>17</b><small>مواعيد اليوم</small></div>
+                    <div class="stat"><b>٣</b><small>قائمة الانتظار</small></div>
+                  </div>
+                  <div class="panel"><h4>الإيرادات الأسبوعية</h4>
+                    <div class="bars"><i style="height:45%"></i><i style="height:70%"></i><i style="height:55%"></i><i style="height:85%"></i><i style="height:62%"></i><i style="height:95%"></i><i style="height:78%"></i></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Odontogram -->
+        <div class="preview-block">
+          <div class="preview-text">
+            <h3 data-i18n="prev.odo.t">مخطط أسنان تفاعلي</h3>
+            <p data-i18n="prev.odo.d">سجّل حالة كل سن والإجراءات المنفّذة عليه بترميز لوني واضح، وأضف ملاحظات سريرية بسهولة.</p>
+            <ul class="preview-list">
+              <li data-i18n="prev.odo.1">ترميز لوني لكل نوع إجراء</li>
+              <li data-i18n="prev.odo.2">ملاحظات سريرية لكل سن</li>
+              <li data-i18n="prev.odo.3">ربط الإجراءات بخطة العلاج</li>
+            </ul>
+          </div>
+          <div class="preview-visual" aria-hidden="true">
+            <div class="mock">
+              <div class="mock-bar"><span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-url">مخطط الأسنان</span></div>
+              <div class="mock-body">
+                <div class="teeth">
+                  <i></i><i class="filling"></i><i></i><i class="crown"></i><i></i><i></i><i class="decay"></i><i></i>
+                  <i class="rct"></i><i></i><i></i><i class="implant"></i><i></i><i class="filling"></i><i></i><i></i>
+                </div>
+                <div class="legend">
+                  <span><b style="background:#ef4444"></b>تسوس</span>
+                  <span><b style="background:#3b82f6"></b>حشوة</span>
+                  <span><b style="background:#f59e0b"></b>تاج</span>
+                  <span><b style="background:#8b5cf6"></b>عصب</span>
+                  <span><b style="background:#10b981"></b>زرعة</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Patients -->
+        <div class="preview-block">
+          <div class="preview-text">
+            <h3 data-i18n="prev.pat.t">ملفات مرضى منظّمة</h3>
+            <p data-i18n="prev.pat.d">ابحث عن أي مريض بالاسم أو الهاتف، واطّلع على حالته وخطته العلاجية وزياراته في مكان واحد.</p>
+            <ul class="preview-list">
+              <li data-i18n="prev.pat.1">بحث سريع بالاسم أو رقم الهاتف</li>
+              <li data-i18n="prev.pat.2">تاريخ طبي وملاحظات لكل مريض</li>
+              <li data-i18n="prev.pat.3">سجل زمني كامل للزيارات</li>
+            </ul>
+          </div>
+          <div class="preview-visual" aria-hidden="true">
+            <div class="mock">
+              <div class="mock-bar"><span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-url">المرضى</span></div>
+              <div class="mock-body">
+                <div class="rows">
+                  <div class="rrow"><span class="avatar-sm">م.ع</span><span class="grow">محمد علي — 0912 345 678</span><span class="tag ok">نشط</span></div>
+                  <div class="rrow"><span class="avatar-sm">ن.خ</span><span class="grow">نور خالد — 0934 111 222</span><span class="tag info">خطة علاج</span></div>
+                  <div class="rrow"><span class="avatar-sm">س.ح</span><span class="grow">سارة حسن — 0955 987 654</span><span class="tag warn">مستحقات</span></div>
+                  <div class="rrow"><span class="avatar-sm">ع.م</span><span class="grow">عمر مصطفى — 0977 222 333</span><span class="tag ok">نشط</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- X-rays -->
+        <div class="preview-block">
+          <div class="preview-text">
+            <h3 data-i18n="prev.xray.t">أرشيف أشعة آمن</h3>
+            <p data-i18n="prev.xray.d">احفظ صور الأشعة ضمن ملف المريض وارجع إليها في أي وقت لمقارنة الحالة ومتابعة التطور.</p>
+            <ul class="preview-list">
+              <li data-i18n="prev.xray.1">رفع وحفظ صور الأشعة بأمان</li>
+              <li data-i18n="prev.xray.2">مرتبطة مباشرة بملف المريض</li>
+              <li data-i18n="prev.xray.3">سهولة المقارنة عبر الزمن</li>
+            </ul>
+          </div>
+          <div class="preview-visual" aria-hidden="true">
+            <div class="mock">
+              <div class="mock-bar"><span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-url">الأشعة</span></div>
+              <div class="mock-body">
+                <div class="xray-grid"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ HOW IT WORKS ============================ -->
+    <section class="section" id="how">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow" data-i18n="how.eyebrow">البدء</span>
+          <h2 data-i18n="how.title">كيف تبدأ باستخدام AeroDent</h2>
+          <p data-i18n="how.subtitle">أربع خطوات بسيطة من الطلب حتى بدء العمل.</p>
+        </div>
+        <div class="steps">
+          <div class="step"><div class="step-num">١</div><h3 data-i18n="how.1.t">اطلب تجربة 14 يومًا</h3><p data-i18n="how.1.d">املأ نموذج الطلب ببياناتك ومعلومات عيادتك.</p></div>
+          <div class="step"><div class="step-num">٢</div><h3 data-i18n="how.2.t">نتواصل معك</h3><p data-i18n="how.2.d">يتواصل فريقنا معك لفهم احتياجات عيادتك.</p></div>
+          <div class="step"><div class="step-num">٣</div><h3 data-i18n="how.3.t">نجهّز حساب العيادة</h3><p data-i18n="how.3.d">نقوم بإعداد حساب عيادتك وأول مستخدم لك.</p></div>
+          <div class="step"><div class="step-num">٤</div><h3 data-i18n="how.4.t">ابدأ الاستخدام</h3><p data-i18n="how.4.d">سجّل الدخول وابدأ بإدارة مرضاك ومواعيدك فورًا.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ WHY ============================ -->
+    <section class="section section-alt" id="why">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow" data-i18n="why.eyebrow">لماذا AeroDent</span>
+          <h2 data-i18n="why.title">مصمّم لعيادات الأسنان الناطقة بالعربية</h2>
+          <p data-i18n="why.subtitle">مزايا عملية مبنية على قدرات النظام الفعلية.</p>
+        </div>
+        <div class="why-grid">
+          <div class="why-card">
+            <div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2c3 3 3 17 0 20M12 2c-3 3-3 17 0 20"/></svg></div>
+            <h3 data-i18n="why.1.t">عربي أولًا</h3>
+            <p data-i18n="why.1.d">واجهة عربية كاملة بدعم صحيح للكتابة من اليمين لليسار، مع إمكانية التبديل للإنجليزية.</p>
+          </div>
+          <div class="why-card">
+            <div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l7 4v6c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-4z"/><path d="M9 12l2 2 4-4"/></svg></div>
+            <h3 data-i18n="why.2.t">بيانات معزولة وآمنة</h3>
+            <p data-i18n="why.2.d">بيانات كل عيادة معزولة عن غيرها، مع صلاحيات دقيقة حسب دور كل موظف.</p>
+          </div>
+          <div class="why-card">
+            <div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 20h8M12 18v2"/></svg></div>
+            <h3 data-i18n="why.3.t">يعمل من مختلف الأجهزة</h3>
+            <p data-i18n="why.3.d">استخدم النظام من الحاسوب أو اللوحي أو الهاتف عبر المتصفح دون تثبيت معقّد.</p>
+          </div>
+          <div class="why-card">
+            <div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div>
+            <h3 data-i18n="why.4.t">كل شيء في مكان واحد</h3>
+            <p data-i18n="why.4.d">من الملف الطبي حتى الفاتورة، تدير عملك اليومي كاملًا من منصة واحدة.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ AUDIENCE ============================ -->
+    <section class="section" id="audience">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow" data-i18n="audience.eyebrow">لمن</span>
+          <h2 data-i18n="audience.title">صُمّم من أجلك</h2>
+        </div>
+        <div class="audience-grid">
+          <div class="audience-card"><div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg></div><h3 data-i18n="aud.1">أطباء الأسنان</h3></div>
+          <div class="audience-card"><div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6"/></svg></div><h3 data-i18n="aud.2">العيادات الخاصة</h3></div>
+          <div class="audience-card"><div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/></svg></div><h3 data-i18n="aud.3">العيادات الصغيرة والمتوسطة</h3></div>
+          <div class="audience-card"><div class="feature-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/></svg></div><h3 data-i18n="aud.4">السكرتارية وطاقم العيادة</h3></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ TRIAL FORM ============================ -->
+    <section class="section trial-section" id="trial">
+      <div class="container trial-wrap">
+        <div class="trial-intro">
+          <span class="eyebrow" style="background:rgba(255,255,255,.14);color:#e0f2fe" data-i18n="trial.eyebrow">تجربة مجانية 14 يومًا</span>
+          <h2 data-i18n="trial.title">اطلب تجربتك المجانية لمدة 14 يومًا</h2>
+          <p data-i18n="trial.subtitle">اترك بياناتك وسنتواصل معك لتجهيز حساب عيادتك. لا حاجة لبطاقة ائتمان.</p>
+          <ul class="trial-points">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="trial.p1">تجربة كاملة المزايا لمدة 14 يومًا</span></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="trial.p2">دعم أثناء الإعداد الأولي</span></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="trial.p3">بدون التزام — أنت تقرر بعد التجربة</span></li>
+          </ul>
+        </div>
+
+        <div class="trial-card">
+          <form id="trialForm" novalidate>
+            <div id="formError" class="form-alert error hidden" role="alert" tabindex="-1"></div>
+
+            <div class="field">
+              <label for="fName" data-i18n="form.name">الاسم الكامل<span class="req" aria-hidden="true">*</span></label>
+              <input id="fName" name="name" type="text" autocomplete="name" maxlength="120" required
+                aria-required="true" aria-describedby="errName" />
+              <p class="field-error" id="errName" data-error-for="name" role="alert"></p>
+            </div>
+
+            <div class="field">
+              <label for="fClinic" data-i18n="form.clinic">اسم العيادة<span class="req" aria-hidden="true">*</span></label>
+              <input id="fClinic" name="clinic" type="text" autocomplete="organization" maxlength="120" required
+                aria-required="true" aria-describedby="errClinic" />
+              <p class="field-error" id="errClinic" data-error-for="clinic" role="alert"></p>
+            </div>
+
+            <div class="field">
+              <label for="fPhone" data-i18n="form.phone">رقم الهاتف<span class="req" aria-hidden="true">*</span></label>
+              <input id="fPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="30" dir="ltr"
+                required aria-required="true" aria-describedby="errPhone" />
+              <p class="field-error" id="errPhone" data-error-for="phone" role="alert"></p>
+            </div>
+
+            <div class="field">
+              <label for="fLocation" data-i18n="form.location">موقع العيادة<span class="req" aria-hidden="true">*</span></label>
+              <input id="fLocation" name="location" type="text" autocomplete="address-level2" maxlength="160" required
+                aria-required="true" aria-describedby="errLocation" />
+              <p class="field-error" id="errLocation" data-error-for="location" role="alert"></p>
+            </div>
+
+            <div class="field">
+              <label for="fMessage" data-i18n="form.message">رسالة (اختياري)</label>
+              <textarea id="fMessage" name="message" rows="3" maxlength="1000"></textarea>
+            </div>
+
+            <!-- Honeypot: hidden from users & AT; bots tend to fill it -->
+            <div class="hp" aria-hidden="true">
+              <label for="fWebsite">Website</label>
+              <input id="fWebsite" name="botcheck" type="text" tabindex="-1" autocomplete="off" />
+            </div>
+
+            <button id="trialSubmit" class="btn btn-primary btn-block btn-lg" type="submit">
+              <span class="btn-label" data-i18n="form.submit">اطلب تجربة مجانية لمدة 14 يومًا</span>
+            </button>
+            <p class="field-hint" style="text-align:center;margin-top:12px" data-i18n="form.privacy">
+              بإرسالك الطلب فأنت توافق على تواصلنا معك بخصوص التجربة.
+            </p>
+          </form>
+
+          <div id="trialSuccess" class="trial-success hidden" role="status" tabindex="-1">
+            <div class="icon" aria-hidden="true">✓</div>
+            <h3 data-i18n="form.success.t">تم استلام طلبك</h3>
+            <p data-i18n="form.success.d">شكرًا لك. سنتواصل معك قريبًا لتجهيز تجربتك المجانية لمدة 14 يومًا.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ FAQ ============================ -->
+    <section class="section section-alt" id="faq">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow" data-i18n="faq.eyebrow">أسئلة شائعة</span>
+          <h2 data-i18n="faq.title">الأسئلة الأكثر شيوعًا</h2>
+        </div>
+        <div class="faq-list" id="faqList">
+          <div class="faq-item">
+            <button class="faq-q" aria-expanded="false"><span data-i18n="faq.1.q">ما هو AeroDent؟</span><span class="chev" aria-hidden="true">⌄</span></button>
+            <div class="faq-a"><div data-i18n="faq.1.a">AeroDent نظام لإدارة عيادات الأسنان يجمع المرضى ومخطط الأسنان وخطط العلاج والمواعيد والوصفات والأشعة والفواتير والتقارير في منصة واحدة تدعم العربية بالكامل.</div></div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" aria-expanded="false"><span data-i18n="faq.2.q">هل يوجد إصدار تجريبي؟</span><span class="chev" aria-hidden="true">⌄</span></button>
+            <div class="faq-a"><div data-i18n="faq.2.a">نعم، يمكنك طلب تجربة مجانية لمدة 14 يومًا عبر تعبئة النموذج في هذه الصفحة.</div></div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" aria-expanded="false"><span data-i18n="faq.3.q">كم مدة التجربة؟</span><span class="chev" aria-hidden="true">⌄</span></button>
+            <div class="faq-a"><div data-i18n="faq.3.a">مدة التجربة 14 يومًا كاملة المزايا.</div></div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" aria-expanded="false"><span data-i18n="faq.4.q">هل يحتاج البرنامج إلى تثبيت؟</span><span class="chev" aria-hidden="true">⌄</span></button>
+            <div class="faq-a"><div data-i18n="faq.4.a">يعمل النظام من خلال المتصفح مباشرة دون تثبيت معقّد، كما يتوفر تطبيق أندرويد يعمل كواجهة للمنصة نفسها.</div></div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" aria-expanded="false"><span data-i18n="faq.5.q">هل يمكن استخدامه من الهاتف؟</span><span class="chev" aria-hidden="true">⌄</span></button>
+            <div class="faq-a"><div data-i18n="faq.5.a">نعم، الواجهة متجاوبة وتعمل على الهاتف واللوحي والحاسوب، ويتوفر تطبيق أندرويد.</div></div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" aria-expanded="false"><span data-i18n="faq.6.q">هل يدعم اللغة العربية؟</span><span class="chev" aria-hidden="true">⌄</span></button>
+            <div class="faq-a"><div data-i18n="faq.6.a">نعم، يدعم النظام العربية بالكامل مع الكتابة من اليمين لليسار، كما يدعم الإنجليزية.</div></div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" aria-expanded="false"><span data-i18n="faq.7.q">كيف يتم حفظ صور الأشعة؟</span><span class="chev" aria-hidden="true">⌄</span></button>
+            <div class="faq-a"><div data-i18n="faq.7.a">تُرفع صور الأشعة وتُحفظ بأمان ضمن ملف المريض ضمن حساب عيادتك، ويمكن الرجوع إليها في أي وقت.</div></div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" aria-expanded="false"><span data-i18n="faq.8.q">كيف يتم طلب تجربة؟</span><span class="chev" aria-hidden="true">⌄</span></button>
+            <div class="faq-a"><div data-i18n="faq.8.a">املأ النموذج في هذه الصفحة ببياناتك ومعلومات عيادتك، وسيتواصل معك فريقنا لتجهيز الحساب.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============================ FOOTER ============================ -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-brand-col">
+          <div class="footer-brand"><img src="assets/logo-mark.png" alt="" width="40" height="40" /><span>AeroDent</span></div>
+          <p data-i18n="footer.tagline">نظام متكامل لإدارة عيادات الأسنان يدعم العربية والإنجليزية.</p>
+          <div class="footer-cta"><a class="btn btn-primary" href="#trial" data-i18n="footer.cta">اطلب تجربة 14 يومًا</a></div>
+        </div>
+        <div class="footer-col">
+          <h4 data-i18n="footer.nav">روابط</h4>
+          <ul>
+            <li><a href="#features" data-i18n="nav.features">المزايا</a></li>
+            <li><a href="#preview" data-i18n="nav.preview">لمحة عن النظام</a></li>
+            <li><a href="#how" data-i18n="nav.how">كيف يعمل</a></li>
+            <li><a href="#faq" data-i18n="nav.faq">الأسئلة الشائعة</a></li>
+            <li><a href="user-manual.html" data-i18n="nav.manual">دليل الاستخدام</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4 data-i18n="footer.contact">تواصل معنا</h4>
+          <ul>
+            <li><a href="mailto:husen_.rajb@outlook.com" dir="ltr">husen_.rajb@outlook.com</a></li>
+            <li><a href="https://husr0.codes" target="_blank" rel="noopener noreferrer" dir="ltr">husr0.codes</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span id="year">2026</span> AeroDent — <span data-i18n="footer.rights">جميع الحقوق محفوظة</span></span>
+        <span data-i18n="footer.made">من تطوير حسين رجب</span>
+      </div>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="config.js"></script>
+  <script src="i18n.js"></script>
+  <script src="landing.js"></script>
+</body>
+
+</html>

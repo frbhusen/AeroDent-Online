@@ -6,7 +6,7 @@
 const VERSION = "__ASSET_VERSION__";
 const CACHE = `aerodent-shell-${VERSION}`;
 const SHELL = [
-  "./",
+  // "/" is the public landing page, not the app shell (which is /index.html, served at /login).
   "./index.html",
   "./styles.css",
   "./manifest.json",
@@ -81,6 +81,17 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
   // Never intercept or cache API traffic (clinical data, X-ray images, session state).
   if (url.pathname.startsWith("/api/") || url.pathname === "/sw.js") return;
+  // The public landing page is the site root ("/") and lives under "/landing page/".
+  // It is a standalone static site with its own assets. Ignore it entirely so its
+  // navigations never overwrite the app-shell cache and its assets are always served
+  // fresh from the network. The application shell is served at /login and /index.html.
+  let decodedPath = url.pathname;
+  try {
+    decodedPath = decodeURIComponent(url.pathname);
+  } catch (e) {
+    /* malformed escape sequence — fall back to the raw pathname */
+  }
+  if (decodedPath === "/" || decodedPath.startsWith("/landing page/")) return;
 
   // App shell navigations: always try the network first so a new deploy is picked up and
   // the server can apply no-store; fall back to the cached shell only when offline.

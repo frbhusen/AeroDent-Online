@@ -494,19 +494,11 @@ function hasPermission(permission) {
     return permissions[role]?.includes(permission) || false;
 }
 
-// "Ask for a 14-day trial": the server issues a short-lived, HTTP-only intent cookie and the
-// request-trial page is only served when that cookie is present (see backend/routes/trial.py).
-async function openTrialRequestPage() {
-    const button = $("#startTrialBtn");
-    const errorNode = $("#onlineLoginError");
-    if (button) button.disabled = true;
-    try {
-        const response = await window.AERODENT_API.post("/api/trial/intent", {});
-        window.location.assign(response?.redirect || "/request-trial");
-    } catch (error) {
-        if (errorNode) errorNode.textContent = error.status === 429 ? t("trialErrorTooMany") : t("trialErrorNetwork");
-        if (button) button.disabled = false;
-    }
+// "Ask for a 14-day trial": send the visitor to the public landing page's trial request
+// form (served at the site root). The landing form delivers requests via a third-party
+// static form service, so no intent cookie / backend round-trip is needed here.
+function openTrialRequestPage() {
+    window.location.assign("/#trial");
 }
 
 function toggleLoginLanguage() {

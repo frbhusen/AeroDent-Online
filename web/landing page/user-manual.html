@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b2942" />
+
+  <title>دليل استخدام AeroDent</title>
+  <meta name="description"
+    content="دليل استخدام AeroDent لأطباء الأسنان وطاقم العيادة: تسجيل الدخول، لوحة التحكم، المرضى، مخطط الأسنان، العلاجات، خطط العلاج، المواعيد، الوصفات، الأشعة، الفواتير، المخزون، الموظفون، الإعدادات والنسخ الاحتياطي." />
+  <link rel="canonical" href="https://aerodent-online.husr0.codes/landing%20page/user-manual.html" />
+
+  <link rel="icon" href="assets/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" href="assets/logo-mark.png" />
+  <link rel="stylesheet" href="assets/fonts/cairo.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <a class="skip-link" href="#manualMain">تخطَّ إلى المحتوى الرئيسي</a>
+
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="index.html" aria-label="AeroDent">
+        <img src="assets/logo-mark.png" alt="" width="38" height="38" />
+        <span>AeroDent</span>
+      </a>
+      <nav aria-label="روابط">
+        <ul class="nav-links" id="navLinks">
+          <li><a href="index.html#features">المزايا</a></li>
+          <li><a href="index.html#preview">لمحة عن النظام</a></li>
+          <li><a href="index.html#faq">الأسئلة الشائعة</a></li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <div class="lang-switch" role="group" aria-label="اللغة / Language">
+          <button type="button" data-lang="ar" aria-pressed="true">العربية</button>
+          <button type="button" data-lang="en" aria-pressed="false">EN</button>
+        </div>
+        <a class="btn btn-primary" href="index.html#trial">اطلب تجربة</a>
+        <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navLinks" aria-label="القائمة"><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container manual-layout">
+    <!-- TOC -->
+    <aside class="manual-toc" id="toc" aria-label="محتويات الدليل">
+      <button class="toc-toggle" id="tocToggle" aria-expanded="false" aria-controls="tocList">
+        <span>محتويات الدليل</span><span aria-hidden="true">☰</span>
+      </button>
+      <h2 class="tocHead">محتويات الدليل</h2>
+      <ol id="tocList">
+        <li><a href="#intro">مقدمة</a></li>
+        <li><a href="#login">تسجيل الدخول</a></li>
+        <li><a href="#dashboard">لوحة التحكم</a></li>
+        <li><a href="#patients">إدارة المرضى</a></li>
+        <li><a href="#odontogram">مخطط الأسنان</a></li>
+        <li><a href="#treatments">إضافة العلاج</a></li>
+        <li><a href="#plans">خطط العلاج</a></li>
+        <li><a href="#appointments">إدارة المواعيد</a></li>
+        <li><a href="#prescriptions">الوصفات الطبية</a></li>
+        <li><a href="#xrays">الأشعة</a></li>
+        <li><a href="#billing">الفواتير والمدفوعات</a></li>
+        <li><a href="#inventory">المخزون</a></li>
+        <li><a href="#staff">الموظفون والصلاحيات</a></li>
+        <li><a href="#settings">الإعدادات</a></li>
+        <li><a href="#backup">النسخ الاحتياطي</a></li>
+        <li><a href="#audit">سجل العمليات</a></li>
+      </ol>
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="manual-content" id="manualMain">
+      <a class="manual-back" href="index.html">→ العودة إلى الصفحة الرئيسية</a>
+
+      <div class="manual-hero">
+        <span class="eyebrow" style="background:rgba(255,255,255,.14);color:#e0f2fe">دليل الاستخدام</span>
+        <h1>دليل استخدام AeroDent</h1>
+        <p>دليل عملي بلغة بسيطة لأطباء الأسنان وطاقم العيادة، يشرح أهم الوظائف خطوة بخطوة. اختر القسم الذي تريده من قائمة المحتويات.</p>
+      </div>
+
+      <section class="manual-section" id="intro">
+        <h2><span class="num">١</span> مقدمة</h2>
+        <p>AeroDent نظام لإدارة عيادات الأسنان يجمع كل ما تحتاجه عيادتك في مكان واحد: ملفات المرضى، مخطط الأسنان، خطط العلاج، المواعيد، الوصفات، الأشعة، الفواتير والتقارير.</p>
+        <p>يعمل النظام من خلال المتصفح على الحاسوب أو اللوحي أو الهاتف، ويدعم اللغة العربية بالكامل مع الكتابة من اليمين إلى اليسار.</p>
+        <div class="callout note"><span class="ci" aria-hidden="true">ℹ️</span><div>الصلاحيات تختلف حسب دورك في العيادة (طبيب رئيسي، طبيب، سكرتير)، لذلك قد لا تظهر لك بعض الأقسام حسب صلاحياتك.</div></div>
+      </section>
+
+      <section class="manual-section" id="login">
+        <h2><span class="num">٢</span> تسجيل الدخول</h2>
+        <ol>
+          <li>افتح رابط النظام الخاص بعيادتك في المتصفح.</li>
+          <li>أدخل <b>البريد الإلكتروني</b> و<b>كلمة المرور</b> الخاصة بحسابك.</li>
+          <li>اضغط على زر <b>تسجيل الدخول</b>.</li>
+        </ol>
+        <p>يمكنك إظهار كلمة المرور أثناء الكتابة بالضغط على أيقونة العين للتأكد من صحتها. لتغيير لغة الواجهة استخدم زر اللغة أعلى الشاشة.</p>
+        <div class="callout tip"><span class="ci" aria-hidden="true">💡</span><div>إن لم يكن لديك حساب بعد، اطلب تجربة مجانية لمدة 14 يومًا من الصفحة الرئيسية وسيتم تجهيز حساب عيادتك.</div></div>
+        <div class="callout warn"><span class="ci" aria-hidden="true">⚠️</span><div>لا تشارك بيانات الدخول مع أشخاص خارج العيادة. لكل موظف حساب مستقل بصلاحياته الخاصة.</div></div>
+      </section>
+
+      <section class="manual-section" id="dashboard">
+        <h2><span class="num">٣</span> لوحة التحكم</h2>
+        <p>بعد تسجيل الدخول تظهر لك لوحة التحكم، وهي نقطة البداية اليومية. تعرض لك نظرة سريعة على نشاط العيادة:</p>
+        <ul>
+          <li>عدد المرضى ومواعيد اليوم.</li>
+          <li>نظرة على الإيرادات خلال الفترة الأخيرة.</li>
+          <li>المواعيد القادمة وقائمة الانتظار.</li>
+        </ul>
+        <p>استخدم القائمة الجانبية للتنقل بين أقسام النظام المختلفة، وشريط البحث العلوي للوصول السريع إلى أي مريض بالاسم أو رقم الهاتف.</p>
+      </section>
+
+      <section class="manual-section" id="patients">
+        <h2><span class="num">٤</span> إدارة المرضى</h2>
+        <h3>إضافة مريض جديد</h3>
+        <ol>
+          <li>اضغط على زر <b>مريض جديد</b> من الأعلى أو من قسم المرضى.</li>
+          <li>أدخل بيانات المريض الأساسية (الاسم، رقم الهاتف، وأي معلومات مطلوبة).</li>
+          <li>احفظ لإنشاء ملف المريض.</li>
+        </ol>
+        <h3>البحث عن مريض</h3>
+        <p>اكتب اسم المريض أو رقم هاتفه في شريط البحث للوصول إلى ملفه مباشرة.</p>
+        <h3>ملف المريض</h3>
+        <p>يجمع ملف المريض بياناته وتاريخه الطبي ومخطط أسنانه وخطط علاجه وسجل زياراته وفواتيره في مكان واحد.</p>
+        <div class="callout note"><span class="ci" aria-hidden="true">ℹ️</span><div>يمكن للسكرتير إدارة بيانات المرضى الأساسية، بينما تُدار المعلومات السريرية من قبل الأطباء حسب الصلاحيات.</div></div>
+      </section>
+
+      <section class="manual-section" id="odontogram">
+        <h2><span class="num">٥</span> مخطط الأسنان</h2>
+        <p>مخطط الأسنان يعرض أسنان المريض بشكل تفاعلي لتسجيل حالتها والإجراءات عليها.</p>
+        <ol>
+          <li>افتح ملف المريض ثم انتقل إلى مخطط الأسنان.</li>
+          <li>اضغط على السن الذي تريد العمل عليه.</li>
+          <li>اختر الإجراء المناسب (مثل حشوة، تاج، علاج عصب، خلع، زرعة).</li>
+          <li>أضف ملاحظة سريرية عند الحاجة ثم احفظ.</li>
+        </ol>
+        <p>يُستخدم ترميز لوني لكل نوع إجراء ليسهل عليك قراءة حالة الأسنان بلمحة واحدة.</p>
+      </section>
+
+      <section class="manual-section" id="treatments">
+        <h2><span class="num">٦</span> إضافة العلاج</h2>
+        <p>يمكنك تسجيل العلاجات المنفّذة للمريض وربطها بالسن والموعد المناسب.</p>
+        <ol>
+          <li>من ملف المريض، افتح قسم العلاجات.</li>
+          <li>أضف علاجًا جديدًا وحدّد نوعه والسن المرتبط به.</li>
+          <li>احفظ ليُسجّل ضمن السجل الزمني للمريض.</li>
+        </ol>
+        <div class="callout tip"><span class="ci" aria-hidden="true">💡</span><div>ربط العلاج بالسن وبالموعد يساعدك لاحقًا على متابعة تاريخ كل مريض بدقة وإصدار الفواتير المناسبة.</div></div>
+      </section>
+
+      <section class="manual-section" id="plans">
+        <h2><span class="num">٧</span> خطط العلاج</h2>
+        <p>خطة العلاج تتيح لك تنظيم علاج متعدد الجلسات مع التكاليف المقدّرة ومتابعة التنفيذ.</p>
+        <ol>
+          <li>من ملف المريض، أنشئ خطة علاج جديدة.</li>
+          <li>أضف بنود الخطة (الإجراءات المطلوبة) وتكلفتها المقدّرة.</li>
+          <li>تابع حالة كل بند وحدّثها مع تقدّم العلاج حتى الإنجاز.</li>
+        </ol>
+      </section>
+
+      <section class="manual-section" id="appointments">
+        <h2><span class="num">٨</span> إدارة المواعيد</h2>
+        <h3>حجز موعد</h3>
+        <ol>
+          <li>انتقل إلى قسم المواعيد.</li>
+          <li>اختر المريض والوقت والمدة المناسبة.</li>
+          <li>احفظ الموعد ليظهر في التقويم.</li>
+        </ol>
+        <p>يعرض التقويم المواعيد بمدد زمنية متناسبة مع طولها، ما يسهّل تنظيم يوم العيادة. كما تتوفر قائمة انتظار لتنظيم المرضى دون موعد مسبق.</p>
+        <div class="callout note"><span class="ci" aria-hidden="true">ℹ️</span><div>يمكن للسكرتير إدارة المواعيد وتنظيم جدول العيادة اليومي.</div></div>
+      </section>
+
+      <section class="manual-section" id="prescriptions">
+        <h2><span class="num">٩</span> الوصفات الطبية</h2>
+        <ol>
+          <li>من ملف المريض، افتح قسم الوصفات.</li>
+          <li>أضف الأدوية والجرعات المطلوبة.</li>
+          <li>احفظ الوصفة، ويمكنك طباعتها بهوية العيادة لتسليمها للمريض.</li>
+        </ol>
+      </section>
+
+      <section class="manual-section" id="xrays">
+        <h2><span class="num">١٠</span> الأشعة</h2>
+        <ol>
+          <li>افتح ملف المريض ثم قسم الأشعة.</li>
+          <li>ارفع صورة الأشعة من جهازك.</li>
+          <li>تُحفظ الصورة بأمان ضمن ملف المريض للرجوع إليها لاحقًا.</li>
+        </ol>
+        <p>يتيح لك ذلك مقارنة صور الأشعة عبر الزمن ومتابعة تطور الحالة.</p>
+        <div class="callout warn"><span class="ci" aria-hidden="true">⚠️</span><div>احرص على رفع الصور بجودة واضحة وتسميتها ضمن ملف المريض الصحيح.</div></div>
+      </section>
+
+      <section class="manual-section" id="billing">
+        <h2><span class="num">١١</span> الفواتير والمدفوعات</h2>
+        <ol>
+          <li>من ملف المريض، افتح قسم الفواتير.</li>
+          <li>أنشئ فاتورة بالخدمات المقدّمة.</li>
+          <li>سجّل الدفعات المستلمة وتابع المبالغ المتبقية.</li>
+        </ol>
+        <p>يساعدك النظام على متابعة مستحقات كل مريض بوضوح ومعرفة حالة السداد.</p>
+      </section>
+
+      <section class="manual-section" id="inventory">
+        <h2><span class="num">١٢</span> المخزون</h2>
+        <p>يتيح لك قسم المخزون متابعة المواد والمستلزمات الطبية في العيادة.</p>
+        <ol>
+          <li>أضف أصناف المخزون وكمياتها.</li>
+          <li>سجّل حركة الدخول والخروج للمواد.</li>
+          <li>تابع الكميات المتبقية لتفادي النقص.</li>
+        </ol>
+      </section>
+
+      <section class="manual-section" id="staff">
+        <h2><span class="num">١٣</span> الموظفون والصلاحيات</h2>
+        <div class="manual-role-badges">
+          <span class="role-badge">الطبيب الرئيسي</span>
+          <span class="role-badge">الطبيب</span>
+          <span class="role-badge">السكرتير</span>
+        </div>
+        <p>يمكن للطبيب الرئيسي إدارة موظفي العيادة وتحديد دور كل منهم:</p>
+        <ul>
+          <li><b>الطبيب الرئيسي:</b> صلاحيات كاملة على العيادة وإدارة الموظفين.</li>
+          <li><b>الطبيب:</b> إدارة المرضى والعلاجات والوصفات والمواعيد.</li>
+          <li><b>السكرتير:</b> إدارة بيانات المرضى والمواعيد والمهام الإدارية.</li>
+        </ul>
+        <p>لإضافة موظف جديد، انتقل إلى قسم الموظفين، أضف الموظف وحدّد دوره وبيانات الدخول الخاصة به.</p>
+      </section>
+
+      <section class="manual-section" id="settings">
+        <h2><span class="num">١٤</span> الإعدادات</h2>
+        <p>من قسم الإعدادات يمكنك ضبط بيانات العيادة والتفضيلات العامة، وتغيير لغة الواجهة بين العربية والإنجليزية.</p>
+      </section>
+
+      <section class="manual-section" id="backup">
+        <h2><span class="num">١٥</span> النسخ الاحتياطي</h2>
+        <p>يتيح لك النظام تصدير بيانات عيادتك والاحتفاظ بنسخة احتياطية منها.</p>
+        <ol>
+          <li>اضغط على زر النسخ الاحتياطي / التصدير.</li>
+          <li>احفظ الملف الناتج في مكان آمن.</li>
+        </ol>
+        <div class="callout tip"><span class="ci" aria-hidden="true">💡</span><div>احرص على أخذ نسخ احتياطية دورية والاحتفاظ بها في مكان آمن.</div></div>
+      </section>
+
+      <section class="manual-section" id="audit">
+        <h2><span class="num">١٦</span> سجل العمليات</h2>
+        <p>يسجّل النظام الإجراءات المهمة التي تتم داخل العيادة، ما يوفّر شفافية ومتابعة للنشاط ومساءلة واضحة. يمكن للطبيب الرئيسي الاطلاع على هذا السجل.</p>
+        <div class="callout note"><span class="ci" aria-hidden="true">ℹ️</span><div>هذه الميزة مفيدة لمعرفة من قام بأي إجراء ومتى، خصوصًا في العيادات التي يعمل بها أكثر من موظف.</div></div>
+      </section>
+
+      <div style="text-align:center;margin:32px 0">
+        <a class="btn btn-primary btn-lg" href="index.html#trial">اطلب تجربة مجانية لمدة 14 يومًا</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-bottom" style="border:0">
+      <span>© <span id="year">2026</span> AeroDent — جميع الحقوق محفوظة</span>
+      <span><a href="mailto:husen_.rajb@outlook.com" dir="ltr">husen_.rajb@outlook.com</a></span>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="config.js"></script>
+  <script src="i18n.js"></script>
+  <script src="manual.js"></script>
+</body>
+
+</html>
