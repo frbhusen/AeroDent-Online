@@ -15,6 +15,7 @@ const SHELL = [
   "./i18n.js",
   "./db.js",
   "./js/api.js",
+  "./js/serverMessages.js",
   "./js/state.js",
   "./js/core.js",
   "./js/ui.js",

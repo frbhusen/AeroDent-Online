@@ -302,7 +302,7 @@ function bindPatientEvents() {
                     );
 
                     toast(
-                        error.message || "Unable to delete patient."
+                        error.message || t("errorOccurred")
                     );
                 } finally {
                     state.patientSaving = false;
@@ -380,7 +380,7 @@ function bindTreatmentEvents() {
                 } catch (error) {
                     console.error("Failed to update treatment status:", error);
                     select.value = previousStatus;
-                    toast("Unable to update status.");
+                    toast(t("statusUpdateFailed"));
                     render();
                 }
             }
@@ -441,7 +441,7 @@ function bindAppointmentEvents() {
             try {
                 if (window.AERODENT_ONLINE) {
                     await window.AERODENT_API.patch(`/api/appointments/${apptId}`, { status: newStatus });
-                    toast(`Status: ${t(newStatus) || newStatus}`);
+                    toast(`${t("status")}: ${t(newStatus)}`);
                     await loadOnlineAppointments();
                 } else {
                     if (targetAppt) {
@@ -454,7 +454,7 @@ function bindAppointmentEvents() {
                     promptWaitlistAutoFill(targetAppt);
                 }
             } catch (err) {
-                toast(err.message || "Failed to update appointment status");
+                toast(err.message || t("errorOccurred"));
             }
         };
     });
@@ -708,7 +708,7 @@ function bindPrescriptionEvents() {
                 const index = container.querySelectorAll(".prescription-edit-medication").length;
                 container.insertAdjacentHTML("beforeend", prescriptionMedicationFields(med, index));
                 bindPrescriptionMedicationControls();
-                toast(`${med.name} ${t("added") || "added"}`);
+                toast(`${med.name} ${t("added")}`);
             } else {
                 addPrescription(med);
             }
@@ -843,7 +843,7 @@ function bindFormEvents() {
                 await loadOnlineSettings();
                 render();
             } catch (error) {
-                toast(error.message || "Failed to update clinic settings");
+                toast(error.message || t("errorOccurred"));
             }
         };
     }
@@ -865,7 +865,7 @@ function bindFormEvents() {
                 toast(t("passwordChangedSuccess") || "Password updated successfully.");
                 changePasswordForm.reset();
             } catch (err) {
-                toast(err.message || "Failed to change password.");
+                toast(err.message || t("errorOccurred"));
             }
         };
     }
@@ -1198,7 +1198,7 @@ function bindAdminEvents() {
                 await loadAdminMetrics();
                 render();
             } catch (err) {
-                toast(err.message || "Failed to extend subscription");
+                toast(err.message || t("errorOccurred"));
             }
         };
     });

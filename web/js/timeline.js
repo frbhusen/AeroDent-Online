@@ -26,7 +26,7 @@ async function loadOnlinePatientTimeline(patientId) {
             patientId,
             events: [],
             loading: false,
-            error: error.message || "Failed to load timeline",
+            error: error.message || t("errorOccurred"),
         };
     } finally {
         if (requestId === onlineTimelineRequest && state.selectedPatient?.id === patientId) {

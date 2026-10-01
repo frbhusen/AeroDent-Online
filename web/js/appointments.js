@@ -235,7 +235,7 @@ async function addAppointment() {
         ? `<div class="field">
             <label>${t("doctor")}</label>
             <select name="doctorId">
-                <option value="">${t("selectDoctor") || "Select Doctor"}</option>
+                <option value="">${t("selectDoctor")}</option>
                 ${state.doctorsList.map((doc) => `<option value="${doc.id}">${esc(doc.name)}</option>`).join("")}
             </select>
         </div>`
@@ -276,7 +276,7 @@ async function addAppointment() {
             </div>
             <div class="field full-span">
                 <label>${t("procedure")}</label>
-                <input name="procedure" placeholder="e.g. Consultation, Cleaning" required>
+                <input name="procedure" placeholder="${t("phProcedure")}" required>
             </div>
             <div class="field full-span">
                 <label>${t("notes")}</label>
@@ -316,7 +316,7 @@ async function addAppointment() {
                 render();
                 toast(t("savedOnline"));
             } catch (error) {
-                toast(error.message || "Failed to schedule appointment.");
+                toast(error.message || t("errorOccurred"));
             } finally {
                 state.appointmentSaving = false;
             }
@@ -448,7 +448,7 @@ async function editAppointment(id) {
                     promptWaitlistAutoFill(updated);
                 }
             } catch (error) {
-                toast(error.message || "Failed to update appointment.");
+                toast(error.message || t("errorOccurred"));
             } finally {
                 state.appointmentSaving = false;
             }
@@ -496,7 +496,7 @@ async function deleteAppointment(id) {
             render();
             toast(t("savedOnline"));
         } catch (error) {
-            toast(error.message || "Failed to delete appointment.");
+            toast(error.message || t("errorOccurred"));
         } finally {
             state.appointmentSaving = false;
         }
@@ -681,7 +681,7 @@ async function addWaitlistEntry() {
             </div>
             <div class="field">
                 <label>${t("preferredTime")}</label>
-                <input name="preferredTime" placeholder="e.g. Morning, 10:00, Any">
+                <input name="preferredTime" placeholder="${t("phPreferredTime")}">
             </div>
             <div class="field full-span">
                 <label>${t("preferredDate")}</label>
@@ -689,7 +689,7 @@ async function addWaitlistEntry() {
             </div>
             <div class="field full-span">
                 <label>${t("procedure")}</label>
-                <input name="procedure" placeholder="e.g. Extraction, Crown, Cleaning" required>
+                <input name="procedure" placeholder="${t("phProcedureLong")}" required>
             </div>
             <div class="field full-span">
                 <label>${t("notes")}</label>
@@ -720,7 +720,7 @@ async function addWaitlistEntry() {
                 render();
                 toast(t("savedOnline"));
             } catch (err) {
-                toast(err.message || "Failed to add to waitlist.");
+                toast(err.message || t("errorOccurred"));
             }
         } else {
             const patient = state.patients.find((p) => p.id === Number(data.patientId));
@@ -755,7 +755,7 @@ async function deleteWaitlistEntry(id) {
             render();
             toast(t("savedOnline"));
         } catch (err) {
-            toast(err.message || "Failed to delete from waitlist.");
+            toast(err.message || t("errorOccurred"));
         }
     } else {
         state.waitlist = (state.waitlist || []).filter((w) => w.id !== id);
@@ -787,7 +787,7 @@ async function rescheduleAppointment(appointmentId, newDate, newTime) {
             await loadOnlineAppointments();
         } catch (error) {
             console.error("Failed to reschedule:", error);
-            toast(error.message || "Failed to reschedule appointment.");
+            toast(error.message || t("errorOccurred"));
             // Revert
             appt.date = oldDate;
             appt.startTime = oldTime;
@@ -815,7 +815,7 @@ async function bookWaitlistIntoSlot(waitlistId, targetDate, targetTime, doctorId
             await loadOnlineAppointments();
             render();
         } catch (error) {
-            toast(error.message || "Failed to book slot from wait-list.");
+            toast(error.message || t("errorOccurred"));
         }
     } else {
         const w = (state.waitlist || []).find((x) => x.id === waitlistId);

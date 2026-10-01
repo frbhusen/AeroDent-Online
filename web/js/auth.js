@@ -404,7 +404,7 @@ async function loginOnline(event) {
         }
     } catch (error) {
         if (errorNode) {
-            errorNode.textContent = error.message || "Unable to sign in right now.";
+            errorNode.textContent = error.message || t("unableSignIn");
         }
     } finally {
         button.disabled = false;
@@ -521,7 +521,7 @@ function bindOnlineAuthControls() {
             const isHidden = pwdInput.type === "password";
             pwdInput.type = isHidden ? "text" : "password";
             toggleBtn.textContent = isHidden ? "🙈" : "👁️";
-            toggleBtn.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
+            toggleBtn.setAttribute("aria-label", isHidden ? t("hidePassword") : t("showPassword"));
         });
     }
 }

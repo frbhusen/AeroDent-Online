@@ -281,11 +281,11 @@ function render() {
         xrays: renderXrays,
         settings: renderSettings,
         hr: typeof renderHR === "function" ? renderHR : () => "<div>HR</div>",
-        inventory: typeof renderInventory === "function" ? renderInventory : () => "<div>Inventory</div>",
+        inventory: typeof renderInventory === "function" ? renderInventory : () => `<div>${t("inventory")}</div>`,
         admin_overview: renderAdminOverview,
         admin_clinics: renderAdminClinics,
         admin_users: renderAdminUsers,
-        audit_logs: typeof renderAuditLogs === "function" ? renderAuditLogs : () => "<div>Audit Logs</div>",
+        audit_logs: typeof renderAuditLogs === "function" ? renderAuditLogs : () => `<div>${t("auditLogs")}</div>`,
     };
     const defaultView = isSuperAdmin ? renderAdminOverview : renderDashboard;
     $("#view").innerHTML = (views[state.view] || defaultView)();

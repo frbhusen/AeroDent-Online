@@ -74,7 +74,7 @@ async function loadOnlineXrays() {
     } catch (error) {
         if (requestId !== onlineXrayRequest || selectedXrayPatient()?.id !== patientId) return;
         state.xrayReadOnly = error.status === 403;
-        state.xrayError = error.message || "Failed to load X-rays.";
+        state.xrayError = error.message || t("errorOccurred");
         if (error.status === 404) state.xrays = [];
     } finally {
         if (requestId === onlineXrayRequest && selectedXrayPatient()?.id === patientId) {
@@ -272,7 +272,7 @@ async function editXray(xrayId) {
                 await openXrayViewer(xrayId);
                 toast(t("savedOnline"));
             } catch (error) {
-                toast(error.message || "Failed to update X-ray.");
+                toast(error.message || t("errorOccurred"));
             }
             return;
         }
@@ -520,7 +520,7 @@ async function handleXrayUploadFile(file) {
             await loadOnlineXrays();
             toast(t("xrayUploaded") || "X-ray uploaded successfully.");
         } catch (error) {
-            toast(error.message || "Failed to upload X-ray.");
+            toast(error.message || t("errorOccurred"));
         } finally {
             state.xraySaving = false;
         }
@@ -564,7 +564,7 @@ async function deleteXrayRecord(xrayId) {
             render();
             toast(t("savedOnline"));
         } catch (error) {
-            toast(error.message || "Failed to delete X-ray.");
+            toast(error.message || t("errorOccurred"));
         } finally {
             state.xraySaving = false;
         }
@@ -590,7 +590,7 @@ function blobToBase64(blob) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(new Error("Could not read image."));
+        reader.onerror = () => reject(new Error(t("xrayReadFailed")));
         reader.readAsDataURL(blob);
     });
 }

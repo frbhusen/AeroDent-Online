@@ -759,7 +759,7 @@ function openInventoryItemForm(item = null) {
         <select name="category_id"><option value="">—</option>${categories}</select></div>
       <div class="field"><label>${t("invPreferredSupplier")}</label>
         <select name="supplier_id"><option value="">—</option>${suppliers}</select></div>
-      <div class="field"><label>SKU</label>
+      <div class="field"><label>${t("skuLabel")}</label>
         <input name="sku" maxlength="64" dir="ltr" value="${esc(item?.sku || "")}"></div>
       <div class="field"><label>${t("invBarcode")}</label>
         <input name="barcode" maxlength="64" dir="ltr" value="${esc(item?.barcode || "")}"></div>

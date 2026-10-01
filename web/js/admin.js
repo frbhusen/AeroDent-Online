@@ -24,7 +24,7 @@ async function loadAdminClinics(search = "", status = "all") {
         const res = await window.AERODENT_API.get(`/api/admin/clinics${query}`);
         state.adminClinics = res.data || [];
     } catch (err) {
-        toast(err.message || "Failed to load clinics");
+        toast(err.message || t("errorOccurred"));
     } finally {
         state.adminLoading = false;
     }
@@ -42,7 +42,7 @@ async function loadAdminUsers(clinicId = null, role = "", search = "") {
         const res = await window.AERODENT_API.get(`/api/admin/users${query}`);
         state.adminUsers = res.data || [];
     } catch (err) {
-        toast(err.message || "Failed to load users");
+        toast(err.message || t("errorOccurred"));
     } finally {
         state.adminLoading = false;
     }
@@ -83,7 +83,7 @@ function _statusBadge(effectiveStatus, subStatus, isActive) {
         return `<span class="admin-status-pill status-neutral"><span class="dot"></span>${t("filterSuspended")}</span>`;
     }
     if (subStatus === "trial") {
-        return `<span class="admin-status-pill status-trial"><span class="dot"></span>Trial</span>`;
+        return `<span class="admin-status-pill status-trial"><span class="dot"></span>${t("statusTrialLabel")}</span>`;
     }
     return `<span class="admin-status-pill status-active"><span class="dot"></span>${t("filterActive")}</span>`;
 }
@@ -382,7 +382,7 @@ function renderAdminUsers() {
                 <td style="text-align:end;">
                     <div class="admin-action-group">
                         <button class="btn-admin-action" data-admin-edit-user="${u.id}">✎ ${t("edit")}</button>
-                        ${!isSelf ? `<button class="btn-admin-action btn-admin-danger btn-admin-icon" data-admin-delete-user="${u.id}" title="${t("deleteStaff") || "Delete"}">🗑️</button>` : ""}
+                        ${!isSelf ? `<button class="btn-admin-action btn-admin-danger btn-admin-icon" data-admin-delete-user="${u.id}" title="${t("deleteStaff")}">🗑️</button>` : ""}
                     </div>
                 </td>
             </tr>
@@ -452,7 +452,7 @@ function adminOpenCreateClinicModal() {
         <form id="adminCreateClinicForm" class="form-grid">
             <div class="field full-span">
                 <label>${t("clinicNameLabel")}</label>
-                <input name="name" required placeholder="e.g. Damascus Dental Center">
+                <input name="name" required placeholder="${t("phClinicName")}">
             </div>
             <div class="field">
                 <label>${t("phone")}</label>
@@ -468,13 +468,13 @@ function adminOpenCreateClinicModal() {
             </div>
             <div class="field full-span">
                 <label>${t("address")}</label>
-                <input name="address" placeholder="Address...">
+                <input name="address" placeholder="${t("phAddress")}">
             </div>
             <div class="field">
                 <label>${t("subscriptionStatus")}</label>
                 <select name="subscription_status">
-                    <option value="active">Active</option>
-                    <option value="trial">Trial</option>
+                    <option value="active">${t("filterActive")}</option>
+                    <option value="trial">${t("statusTrialLabel")}</option>
                 </select>
             </div>
             <div class="field">
@@ -484,7 +484,7 @@ function adminOpenCreateClinicModal() {
             <hr class="full-span" style="border:none;border-top:1px solid var(--border);margin:8px 0;">
             <div class="field full-span">
                 <label>${t("headDoctorNameLabel")}</label>
-                <input name="head_doctor_name" required placeholder="Dr. First Last">
+                <input name="head_doctor_name" required placeholder="${t("phHeadDoctorName")}">
             </div>
             <div class="field">
                 <label>${t("headDoctorEmailLabel")}</label>
@@ -516,7 +516,7 @@ function adminOpenCreateClinicModal() {
             await loadAdminMetrics();
             render();
         } catch (err) {
-            toast(err.message || "Failed to create clinic");
+            toast(err.message || t("errorOccurred"));
         }
     };
 }
@@ -532,11 +532,11 @@ function adminOpenManageSubscriptionModal(clinicId) {
             <div class="field full-span">
                 <label>${t("subscriptionStatus")}</label>
                 <select name="subscription_status">
-                    <option value="active" ${clinic.subscription_status === "active" ? "selected" : ""}>Active</option>
-                    <option value="trial" ${clinic.subscription_status === "trial" ? "selected" : ""}>Trial</option>
-                    <option value="past_due" ${clinic.subscription_status === "past_due" ? "selected" : ""}>Past Due</option>
-                    <option value="suspended" ${clinic.subscription_status === "suspended" ? "selected" : ""}>Suspended</option>
-                    <option value="cancelled" ${clinic.subscription_status === "cancelled" ? "selected" : ""}>Cancelled</option>
+                    <option value="active" ${clinic.subscription_status === "active" ? "selected" : ""}>${t("filterActive")}</option>
+                    <option value="trial" ${clinic.subscription_status === "trial" ? "selected" : ""}>${t("statusTrialLabel")}</option>
+                    <option value="past_due" ${clinic.subscription_status === "past_due" ? "selected" : ""}>${t("statusPastDue")}</option>
+                    <option value="suspended" ${clinic.subscription_status === "suspended" ? "selected" : ""}>${t("filterSuspended")}</option>
+                    <option value="cancelled" ${clinic.subscription_status === "cancelled" ? "selected" : ""}>${t("cancelled")}</option>
                 </select>
             </div>
             <div class="field full-span">
@@ -544,7 +544,7 @@ function adminOpenManageSubscriptionModal(clinicId) {
                 <input type="date" name="subscription_expires_at" value="${expiresIso}">
             </div>
             <div class="field full-span">
-                <label>Quick Add Days</label>
+                <label>${t("quickAddDays")}</label>
                 <div style="display:flex;gap:8px;margin-top:4px;">
                     <button type="button" class="button button-ghost button-sm" data-quick-days="30">${t("quickExtend30")}</button>
                     <button type="button" class="button button-ghost button-sm" data-quick-days="90">${t("quickExtend90")}</button>
@@ -572,7 +572,7 @@ function adminOpenManageSubscriptionModal(clinicId) {
                 await loadAdminMetrics();
                 render();
             } catch (err) {
-                toast(err.message || "Failed to extend subscription");
+                toast(err.message || t("errorOccurred"));
             }
         };
     });
@@ -597,7 +597,7 @@ function adminOpenManageSubscriptionModal(clinicId) {
             await loadAdminMetrics();
             render();
         } catch (err) {
-            toast(err.message || "Failed to update subscription");
+            toast(err.message || t("errorOccurred"));
         }
     };
 }
@@ -658,26 +658,25 @@ function adminOpenEditClinicModal(clinicId) {
             await loadAdminClinics();
             render();
         } catch (err) {
-            toast(err.message || "Failed to update clinic");
+            toast(err.message || t("errorOccurred"));
         }
     };
 }
 
 async function adminToggleClinicActive(clinicId, currentActive) {
-    const actionDesc = currentActive ? "Deactivate" : "Activate";
-    if (currentActive && !confirm(`${t("clinicDeactivateWarning")}\n\nAre you sure you want to deactivate this clinic?`)) {
+    if (currentActive && !confirm(`${t("clinicDeactivateWarning")}\n\n${t("confirmDeactivateClinic")}`)) {
         return;
     }
     try {
         await window.AERODENT_API.patch(`/api/admin/clinics/${clinicId}`, {
             is_active: !currentActive,
         });
-        toast(`Clinic ${actionDesc.toLowerCase()}d successfully.`);
+        toast(t(currentActive ? "clinicDeactivatedOk" : "clinicActivatedOk"));
         await loadAdminClinics();
         await loadAdminMetrics();
         render();
     } catch (err) {
-        toast(err.message || "Failed to update clinic status");
+        toast(err.message || t("clinicStatusUpdateFailed"));
     }
 }
 
@@ -688,7 +687,7 @@ async function adminToggleUserActive(userId, currentActive, role) {
     }
 
     if (role === "head_doctor" && currentActive) {
-        const confirmed = confirm(`${t("cascadeDeactivateWarning")}\n\nAre you sure you want to deactivate this Head Doctor?`);
+        const confirmed = confirm(`${t("cascadeDeactivateWarning")}\n\n${t("confirmDeactivateHeadDoctor")}`);
         if (!confirmed) return;
     }
 
@@ -702,7 +701,7 @@ async function adminToggleUserActive(userId, currentActive, role) {
         await loadAdminMetrics();
         render();
     } catch (err) {
-        toast(err.message || "Failed to update user status");
+        toast(err.message || t("errorOccurred"));
     }
 }
 
@@ -757,7 +756,7 @@ function adminOpenCreateUserModal() {
             await loadAdminMetrics();
             render();
         } catch (err) {
-            toast(err.message || "Failed to create user");
+            toast(err.message || t("errorOccurred"));
         }
     };
 }
@@ -815,7 +814,7 @@ function adminOpenEditUserModal(userId) {
             await loadAdminMetrics();
             render();
         } catch (err) {
-            toast(err.message || "Failed to update user");
+            toast(err.message || t("errorOccurred"));
         }
     };
 }
@@ -830,7 +829,7 @@ async function adminDeleteUser(userId) {
         await loadAdminMetrics();
         render();
     } catch (err) {
-        toast(err.message || "Failed to delete user");
+        toast(err.message || t("errorOccurred"));
     }
 }
 
@@ -838,7 +837,7 @@ async function adminDeleteClinic(clinicId) {
     const clinic = (state.adminClinics || []).find((c) => c.id === clinicId);
     const clinicName = clinic ? clinic.name : `#${clinicId}`;
     const confirmed = confirm(
-        `${t("confirmDeleteClinic")}\n\nClinic: "${clinicName}"\n\n⚠️ ${t("deleteClinicWarning") || "Deleting this clinic will permanently delete all of its staff accounts (head doctors, doctors, secretaries), patients, appointments, and data."}`
+        `${t("confirmDeleteClinic")}\n\nClinic: "${clinicName}"\n\n⚠️ ${t("deleteClinicWarning")}`
     );
     if (!confirmed) return;
 
@@ -851,7 +850,7 @@ async function adminDeleteClinic(clinicId) {
         await loadAdminMetrics();
         render();
     } catch (err) {
-        toast(err.message || "Failed to delete clinic");
+        toast(err.message || t("errorOccurred"));
     }
 }
 

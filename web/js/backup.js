@@ -131,7 +131,7 @@ function parseExcelBackup(source) {
         typeof source !== "string"
     ) {
         throw new Error(
-            "Backup file is empty."
+            t("backupFileEmpty")
         );
     }
 
@@ -150,7 +150,7 @@ function parseExcelBackup(source) {
 
     if (!marker) {
         throw new Error(
-            "This file is not a valid AeroDent backup."
+            t("backupFileInvalid")
         );
     }
 
@@ -323,7 +323,7 @@ function parseExcelBackup(source) {
 async function importBackup(file) {
     if (!file) {
         throw new Error(
-            "No backup file selected."
+            t("backupNoFile")
         );
     }
 

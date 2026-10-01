@@ -156,6 +156,11 @@ const I18N = {
     demoVersion: "This is a demo version of AeroDent",
     demoTitle: "Demo Version",
     featureDisabledInDemo: "This feature is disabled in demo mode.",
+    subscriptionExpired: "Your subscription has expired. Please contact support to renew.",
+    subscriptionSuspended: "Your subscription has been suspended. Please contact support for assistance.",
+    subscriptionInactive: "Your subscription is inactive. Please contact support for assistance.",
+    headDoctorInactive: "Head Doctor account is inactive. Please contact support for assistance.",
+    manyLoginAttempts: "Too many login attempts. Please try again later.",
   },
   ar: {
     appName: "AeroDent",
@@ -312,9 +317,15 @@ const I18N = {
     right: "يمين",
     deleteDemoPatient: "لا يمكن حذف المريض في النسخة التجريبية",
     demoOnePatient: "النسخة التجريبية تسمح بمريض واحد فقط",
+    demoDescription: "هذه النسخة التجريبية تحتوي على ميزات محدودة",
     demoVersion: "هذه نسخة تجريبية من AeroDent",
     demoTitle: "نسخة تجريبية",
     featureDisabledInDemo: "هذه الميزة معطلة في النسخة التجريبية",
+    subscriptionExpired: "انتهت صلاحية اشتراكك. يرجى الاتصال بالدعم لتجديده.",
+    subscriptionSuspended: "تم تعليق اشتراكك. يرجى الاتصال بالدعم للحصول على المساعدة.",
+    subscriptionInactive: "اشتراكك غير نشط. يرجى الاتصال بالدعم للحصول على المساعدة.",
+    headDoctorInactive: "حساب الطبيب الرئيسي غير نشط. يرجى الاتصال بالدعم للحصول على المساعدة.",
+    manyLoginAttempts: "تم تسجيل محاولات تسجيل دخول كثيرة. يرجى المحاولة مرة أخرى.",
   },
 };
 
@@ -1811,6 +1822,280 @@ I18N.ar.backupUnmatchedStaff = "موظفون في النسخة الاحتياط�
 
 I18N.en.backupWrongPassword = "Password is incorrect. Nothing was changed.";
 I18N.ar.backupWrongPassword = "كلمة المرور غير صحيحة. لم يتم تغيير أي شيء.";
+
+// Completeness pass: previously hardcoded / missing strings
+I18N.en.deleteStaff = "Delete staff member";
+I18N.ar.deleteStaff = "حذف الموظف";
+I18N.en.deleteClinicWarning = "Deleting this clinic will permanently delete all of its staff accounts (head doctors, doctors, secretaries), patients, appointments, and data.";
+I18N.ar.deleteClinicWarning = "حذف هذه العيادة سيؤدي إلى حذف جميع حسابات موظفيها (الأطباء الرئيسيين والأطباء والسكرتارية) والمرضى والمواعيد والبيانات بشكل نهائي.";
+I18N.en.selectDoctor = "Select Doctor";
+I18N.ar.selectDoctor = "اختر الطبيب";
+I18N.en.added = "added";
+I18N.ar.added = "تمت الإضافة";
+I18N.en.treatmentNetworkError = "Network error. Please check your connection and try again.";
+I18N.ar.treatmentNetworkError = "خطأ في الشبكة. يرجى التحقق من الاتصال والمحاولة مرة أخرى.";
+I18N.en.treatmentUnavailable = "Treatment not found or unavailable.";
+I18N.ar.treatmentUnavailable = "العلاج غير موجود أو غير متاح.";
+I18N.en.treatmentInvalid = "Invalid treatment data.";
+I18N.ar.treatmentInvalid = "بيانات العلاج غير صالحة.";
+I18N.en.treatmentConflict = "This treatment was changed by someone else. Please refresh and try again.";
+I18N.ar.treatmentConflict = "تم تعديل هذا العلاج من قبل شخص آخر. يرجى التحديث والمحاولة مرة أخرى.";
+I18N.en.invoiceUnavailable = "Invoice not found.";
+I18N.ar.invoiceUnavailable = "الفاتورة غير موجودة.";
+I18N.en.noTreatments = "No treatments recorded yet.";
+I18N.ar.noTreatments = "لا توجد علاجات مسجلة بعد.";
+I18N.en.statusTrialLabel = "Trial";
+I18N.ar.statusTrialLabel = "تجريبي";
+I18N.en.statusPastDue = "Past Due";
+I18N.ar.statusPastDue = "متأخر السداد";
+I18N.en.quickAddDays = "Quick Add Days";
+I18N.ar.quickAddDays = "إضافة أيام سريعة";
+I18N.en.clinicActivatedOk = "Clinic activated successfully.";
+I18N.ar.clinicActivatedOk = "تم تفعيل العيادة بنجاح.";
+I18N.en.clinicDeactivatedOk = "Clinic deactivated successfully.";
+I18N.ar.clinicDeactivatedOk = "تم تعطيل العيادة بنجاح.";
+I18N.en.clinicStatusUpdateFailed = "Failed to update clinic status.";
+I18N.ar.clinicStatusUpdateFailed = "تعذر تحديث حالة العيادة.";
+I18N.en.confirmDeactivateClinic = "Are you sure you want to deactivate this clinic?";
+I18N.ar.confirmDeactivateClinic = "هل أنت متأكد من تعطيل هذه العيادة؟";
+I18N.en.confirmDeactivateHeadDoctor = "Are you sure you want to deactivate this Head Doctor?";
+I18N.ar.confirmDeactivateHeadDoctor = "هل أنت متأكد من تعطيل حساب الطبيب الرئيسي؟";
+I18N.en.statusUpdateFailed = "Unable to update status.";
+I18N.ar.statusUpdateFailed = "تعذر تحديث الحالة.";
+I18N.en.medicationRequired = "At least one medication is required.";
+I18N.ar.medicationRequired = "يجب إضافة دواء واحد على الأقل.";
+I18N.en.skuLabel = "SKU";
+I18N.ar.skuLabel = "رمز المنتج (SKU)";
+I18N.en.footerRights = "All rights reserved";
+I18N.ar.footerRights = "جميع الحقوق محفوظة";
+I18N.en.footerMadeBy = "Made by";
+I18N.ar.footerMadeBy = "تطوير";
+I18N.en.xrayReadFailed = "Could not read image.";
+I18N.ar.xrayReadFailed = "تعذرت قراءة الصورة.";
+I18N.en.phClinicName = "e.g. Damascus Dental Center";
+I18N.ar.phClinicName = "مثال: مركز دمشق لطب الأسنان";
+I18N.en.phAddress = "Address...";
+I18N.ar.phAddress = "العنوان...";
+I18N.en.phHeadDoctorName = "Dr. First Last";
+I18N.ar.phHeadDoctorName = "د. الاسم الأول واسم العائلة";
+I18N.en.phProcedure = "e.g. Consultation, Cleaning";
+I18N.ar.phProcedure = "مثال: استشارة، تنظيف";
+I18N.en.phProcedureLong = "e.g. Extraction, Crown, Cleaning";
+I18N.ar.phProcedureLong = "مثال: خلع، تاج، تنظيف";
+I18N.en.phPreferredTime = "e.g. Morning, 10:00, Any";
+I18N.ar.phPreferredTime = "مثال: صباحاً، 10:00، أي وقت";
+I18N.en.phPaymentNotes = "e.g. Installment 1, Receipt #104";
+I18N.ar.phPaymentNotes = "مثال: الدفعة الأولى، إيصال رقم 104";
+
+// Audit log labels for actions/resources/detail fields added after the first translation pass
+I18N.en.action_admin_clinic_created = "Clinic Created (Admin)";
+I18N.ar.action_admin_clinic_created = "إنشاء عيادة (مدير المنصة)";
+I18N.en.action_admin_clinic_deleted = "Clinic Deleted (Admin)";
+I18N.ar.action_admin_clinic_deleted = "حذف عيادة (مدير المنصة)";
+I18N.en.action_admin_clinic_updated = "Clinic Updated (Admin)";
+I18N.ar.action_admin_clinic_updated = "تحديث عيادة (مدير المنصة)";
+I18N.en.action_admin_user_created = "User Created (Admin)";
+I18N.ar.action_admin_user_created = "إنشاء مستخدم (مدير المنصة)";
+I18N.en.action_admin_user_deleted = "User Deleted (Admin)";
+I18N.ar.action_admin_user_deleted = "حذف مستخدم (مدير المنصة)";
+I18N.en.action_admin_user_updated = "User Updated (Admin)";
+I18N.ar.action_admin_user_updated = "تحديث مستخدم (مدير المنصة)";
+I18N.en.action_clinic_data_exported = "Clinic Data Exported";
+I18N.ar.action_clinic_data_exported = "تصدير بيانات العيادة";
+I18N.en.action_clinic_data_imported = "Clinic Data Imported";
+I18N.ar.action_clinic_data_imported = "استيراد بيانات العيادة";
+I18N.en.action_clinic_import_failed = "Clinic Import Failed";
+I18N.ar.action_clinic_import_failed = "فشل استيراد بيانات العيادة";
+I18N.en.action_credential_added = "Credential Added";
+I18N.ar.action_credential_added = "إضافة شهادة";
+I18N.en.action_credential_deleted = "Credential Deleted";
+I18N.ar.action_credential_deleted = "حذف شهادة";
+I18N.en.action_credential_updated = "Credential Updated";
+I18N.ar.action_credential_updated = "تحديث شهادة";
+I18N.en.action_inventory_category_created = "Inventory Category Created";
+I18N.ar.action_inventory_category_created = "إنشاء فئة مخزون";
+I18N.en.action_inventory_category_deleted = "Inventory Category Deleted";
+I18N.ar.action_inventory_category_deleted = "حذف فئة مخزون";
+I18N.en.action_inventory_category_updated = "Inventory Category Updated";
+I18N.ar.action_inventory_category_updated = "تحديث فئة مخزون";
+I18N.en.action_inventory_item_created = "Inventory Item Created";
+I18N.ar.action_inventory_item_created = "إنشاء عنصر مخزون";
+I18N.en.action_inventory_item_deactivated = "Inventory Item Deactivated";
+I18N.ar.action_inventory_item_deactivated = "تعطيل عنصر مخزون";
+I18N.en.action_inventory_item_reactivated = "Inventory Item Reactivated";
+I18N.ar.action_inventory_item_reactivated = "إعادة تفعيل عنصر مخزون";
+I18N.en.action_inventory_stock_adjusted = "Stock Adjusted";
+I18N.ar.action_inventory_stock_adjusted = "تعديل المخزون";
+I18N.en.action_inventory_stock_received = "Stock Received";
+I18N.ar.action_inventory_stock_received = "استلام مخزون";
+I18N.en.action_inventory_stock_returned = "Stock Returned";
+I18N.ar.action_inventory_stock_returned = "إرجاع مخزون";
+I18N.en.action_inventory_stock_used = "Stock Used";
+I18N.ar.action_inventory_stock_used = "استخدام مخزون";
+I18N.en.action_inventory_stock_written_off = "Stock Written Off";
+I18N.ar.action_inventory_stock_written_off = "شطب مخزون";
+I18N.en.action_inventory_supplier_created = "Supplier Created";
+I18N.ar.action_inventory_supplier_created = "إنشاء مورّد";
+I18N.en.action_inventory_supplier_deleted = "Supplier Deleted";
+I18N.ar.action_inventory_supplier_deleted = "حذف مورّد";
+I18N.en.action_inventory_supplier_updated = "Supplier Updated";
+I18N.ar.action_inventory_supplier_updated = "تحديث مورّد";
+I18N.en.action_invoice_deleted = "Invoice Deleted";
+I18N.ar.action_invoice_deleted = "حذف فاتورة";
+I18N.en.action_login_failed = "Failed Sign-in";
+I18N.ar.action_login_failed = "محاولة تسجيل دخول فاشلة";
+I18N.en.action_password_change_failed = "Failed Password Change";
+I18N.ar.action_password_change_failed = "فشل تغيير كلمة المرور";
+I18N.en.action_session_revoked = "Session Revoked";
+I18N.ar.action_session_revoked = "إنهاء جلسة";
+I18N.en.action_sessions_revoked_others = "Other Sessions Revoked";
+I18N.ar.action_sessions_revoked_others = "إنهاء الجلسات الأخرى";
+I18N.en.action_shift_created = "Shift Created";
+I18N.ar.action_shift_created = "إنشاء وردية";
+I18N.en.action_shift_deleted = "Shift Deleted";
+I18N.ar.action_shift_deleted = "حذف وردية";
+I18N.en.action_shift_updated = "Shift Updated";
+I18N.ar.action_shift_updated = "تحديث وردية";
+I18N.en.action_time_clock_in = "Clocked In";
+I18N.ar.action_time_clock_in = "تسجيل حضور";
+I18N.en.action_time_clock_out = "Clocked Out";
+I18N.ar.action_time_clock_out = "تسجيل انصراف";
+I18N.en.action_trial_requested = "Trial Requested";
+I18N.ar.action_trial_requested = "طلب نسخة تجريبية";
+I18N.en.action_waitlist_auto_filled = "Waitlist Auto-Filled";
+I18N.ar.action_waitlist_auto_filled = "تعبئة تلقائية من قائمة الانتظار";
+I18N.en.action_waitlist_created = "Waitlist Entry Created";
+I18N.ar.action_waitlist_created = "إضافة إلى قائمة الانتظار";
+I18N.en.action_waitlist_deleted = "Waitlist Entry Deleted";
+I18N.ar.action_waitlist_deleted = "حذف من قائمة الانتظار";
+I18N.en.action_waitlist_updated = "Waitlist Entry Updated";
+I18N.ar.action_waitlist_updated = "تحديث قائمة الانتظار";
+I18N.en.action_xray_downloaded = "X-ray Downloaded";
+I18N.ar.action_xray_downloaded = "تنزيل صورة أشعة";
+I18N.en.action_xray_integrity_failed = "X-ray Integrity Check Failed";
+I18N.ar.action_xray_integrity_failed = "فشل فحص سلامة صورة الأشعة";
+I18N.en.resource_inventory_category = "Inventory Category";
+I18N.ar.resource_inventory_category = "فئة مخزون";
+I18N.en.resource_inventory_item = "Inventory Item";
+I18N.ar.resource_inventory_item = "عنصر مخزون";
+I18N.en.resource_inventory_supplier = "Supplier";
+I18N.ar.resource_inventory_supplier = "مورّد";
+I18N.en.resource_staff_credential = "Staff Credential";
+I18N.ar.resource_staff_credential = "شهادة موظف";
+I18N.en.resource_staff_shift = "Staff Shift";
+I18N.ar.resource_staff_shift = "وردية موظف";
+I18N.en.resource_time_clock = "Time Clock";
+I18N.ar.resource_time_clock = "ساعة الدوام";
+I18N.en.resource_trial_request = "Trial Request";
+I18N.ar.resource_trial_request = "طلب تجربة";
+I18N.en.resource_waitlist = "Waitlist";
+I18N.ar.resource_waitlist = "قائمة الانتظار";
+I18N.en.detail_clock_in = "Clock in";
+I18N.ar.detail_clock_in = "وقت الحضور";
+I18N.en.detail_condition = "Condition";
+I18N.ar.detail_condition = "الحالة السنية";
+I18N.en.detail_count = "Count";
+I18N.ar.detail_count = "العدد";
+I18N.en.detail_counts = "Counts";
+I18N.ar.detail_counts = "الأعداد";
+I18N.en.detail_currency = "Currency";
+I18N.ar.detail_currency = "العملة";
+I18N.en.detail_date = "Date";
+I18N.ar.detail_date = "التاريخ";
+I18N.en.detail_defaults = "Defaults";
+I18N.ar.detail_defaults = "القيم الافتراضية";
+I18N.en.detail_encoding = "Encoding";
+I18N.ar.detail_encoding = "الترميز";
+I18N.en.detail_expected_sha256 = "Expected SHA-256";
+I18N.ar.detail_expected_sha256 = "SHA-256 المتوقع";
+I18N.en.detail_expiry_date = "Expiry date";
+I18N.ar.detail_expiry_date = "تاريخ الانتهاء";
+I18N.en.detail_exported_at = "Exported at";
+I18N.ar.detail_exported_at = "وقت التصدير";
+I18N.en.detail_fee = "Fee";
+I18N.ar.detail_fee = "الرسوم";
+I18N.en.detail_fields = "Fields";
+I18N.ar.detail_fields = "الحقول";
+I18N.en.detail_filename = "File name";
+I18N.ar.detail_filename = "اسم الملف";
+I18N.en.detail_format = "Format";
+I18N.ar.detail_format = "الصيغة";
+I18N.en.detail_head_doctor_email = "Head doctor email";
+I18N.ar.detail_head_doctor_email = "بريد الطبيب الرئيسي";
+I18N.en.detail_hours = "Hours";
+I18N.ar.detail_hours = "الساعات";
+I18N.en.detail_initial_quantity = "Initial quantity";
+I18N.ar.detail_initial_quantity = "الكمية الافتتاحية";
+I18N.en.detail_is_active = "Active";
+I18N.ar.detail_is_active = "نشط";
+I18N.en.detail_language = "Language";
+I18N.ar.detail_language = "اللغة";
+I18N.en.detail_medications_count = "Medications";
+I18N.ar.detail_medications_count = "عدد الأدوية";
+I18N.en.detail_movement_ids = "Movement IDs";
+I18N.ar.detail_movement_ids = "معرّفات الحركات";
+I18N.en.detail_name = "Name";
+I18N.ar.detail_name = "الاسم";
+I18N.en.detail_phone = "Phone";
+I18N.ar.detail_phone = "الهاتف";
+I18N.en.detail_priority = "Priority";
+I18N.ar.detail_priority = "الأولوية";
+I18N.en.detail_procedure = "Procedure";
+I18N.ar.detail_procedure = "الإجراء";
+I18N.en.detail_quantity = "Quantity";
+I18N.ar.detail_quantity = "الكمية";
+I18N.en.detail_quantity_after = "Quantity after";
+I18N.ar.detail_quantity_after = "الكمية بعد";
+I18N.en.detail_reference = "Reference";
+I18N.ar.detail_reference = "المرجع";
+I18N.en.detail_session_id = "Session ID";
+I18N.ar.detail_session_id = "معرّف الجلسة";
+I18N.en.detail_sha256 = "SHA-256";
+I18N.ar.detail_sha256 = "SHA-256";
+I18N.en.detail_shift_type = "Shift type";
+I18N.ar.detail_shift_type = "نوع الوردية";
+I18N.en.detail_size_bytes = "Size (bytes)";
+I18N.ar.detail_size_bytes = "الحجم (بايت)";
+I18N.en.detail_skipped = "Skipped";
+I18N.ar.detail_skipped = "تم تخطيه";
+I18N.en.detail_sku = "SKU";
+I18N.ar.detail_sku = "رمز المنتج (SKU)";
+I18N.en.detail_slot_duration = "Slot duration";
+I18N.ar.detail_slot_duration = "مدة الموعد";
+I18N.en.detail_source_clinic = "Source clinic";
+I18N.ar.detail_source_clinic = "العيادة المصدر";
+I18N.en.detail_start_time = "Start time";
+I18N.ar.detail_start_time = "وقت البدء";
+I18N.en.detail_throttled_seconds = "Throttled (seconds)";
+I18N.ar.detail_throttled_seconds = "مدة الحظر (ثوانٍ)";
+I18N.en.detail_title = "Title";
+I18N.ar.detail_title = "العنوان";
+I18N.en.detail_tooth_mode = "Tooth mode";
+I18N.ar.detail_tooth_mode = "نمط الأسنان";
+I18N.en.detail_tooth_number = "Tooth number";
+I18N.ar.detail_tooth_number = "رقم السن";
+I18N.en.detail_type = "Type";
+I18N.ar.detail_type = "النوع";
+I18N.en.detail_unmatched_staff = "Unmatched staff";
+I18N.ar.detail_unmatched_staff = "موظفون غير مطابقين";
+I18N.en.detail_waitlist_id = "Waitlist ID";
+I18N.ar.detail_waitlist_id = "معرّف قائمة الانتظار";
+
+// Remaining fallbacks
+I18N.en.unableSignIn = "Unable to sign in right now.";
+I18N.ar.unableSignIn = "تعذر تسجيل الدخول حالياً.";
+I18N.en.hidePassword = "Hide password";
+I18N.ar.hidePassword = "إخفاء كلمة المرور";
+I18N.en.showPassword = "Show password";
+I18N.ar.showPassword = "إظهار كلمة المرور";
+I18N.en.clinicalVisit = "Clinical visit";
+I18N.ar.clinicalVisit = "زيارة سريرية";
+I18N.en.backupFileEmpty = "Backup file is empty.";
+I18N.ar.backupFileEmpty = "ملف النسخة الاحتياطية فارغ.";
+I18N.en.backupFileInvalid = "This file is not a valid AeroDent backup.";
+I18N.ar.backupFileInvalid = "هذا الملف ليس نسخة احتياطية صالحة من AeroDent.";
+I18N.en.backupNoFile = "No backup file selected.";
+I18N.ar.backupNoFile = "لم يتم اختيار ملف نسخة احتياطية.";
 
 function t(key) {
   return I18N[currentLanguage]?.[key] || I18N.en?.[key] || key;

@@ -28,10 +28,10 @@ function canModifyPrescriptions() {
 }
 
 function prescriptionErrorMessage(error) {
-    if (error?.status === 0) return t("treatmentNetworkError") || "Network error";
+    if (error?.status === 0) return t("treatmentNetworkError");
     if (error?.status === 403) return t("readOnly");
-    if (error?.status === 404) return t("treatmentUnavailable") || "Not found";
-    return error?.message || "Failed to process prescription";
+    if (error?.status === 404) return t("treatmentUnavailable");
+    return error?.message || t("errorOccurred");
 }
 
 async function loadOnlinePrescriptions() {
@@ -343,7 +343,7 @@ function addPrescription(preset = null) {
         const medications = collectPrescriptionMedications();
 
         if (!medications.length) {
-            toast("At least one medication is required.");
+            toast(t("medicationRequired"));
             return;
         }
 
@@ -399,7 +399,7 @@ function editPrescription(id) {
         const medications = collectPrescriptionMedications();
 
         if (!medications.length) {
-            toast("At least one medication is required.");
+            toast(t("medicationRequired"));
             return;
         }
 

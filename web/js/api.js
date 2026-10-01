@@ -13,6 +13,15 @@ class ApiError extends Error {
     }
 }
 
+// Server errors are either an i18n key (e.g. "subscriptionSuspended") or an English sentence;
+// serverMessages.js supplies the Arabic for the latter.
+function localizeApiError(error) {
+    if (typeof error !== "string") return error;
+    const translated = typeof t === "function" ? t(error) : error;
+    if (translated !== error) return translated;
+    return typeof translateServerMessage === "function" ? translateServerMessage(error) : error;
+}
+
 async function apiRequest(path, options = {}) {
     const method = (options.method || "GET").toUpperCase();
     const isFormData = options.body instanceof FormData;
@@ -47,7 +56,7 @@ async function apiRequest(path, options = {}) {
             window.handleOnlineUnauthorized();
         }
         throw new ApiError(
-            payload?.error || "The request could not be completed.",
+            localizeApiError(payload?.error) || (typeof t === "function" ? t("errorOccurred") : "The request could not be completed."),
             response.status,
             payload,
         );

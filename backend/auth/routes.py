@@ -107,26 +107,18 @@ def evaluate_user_access(user):
     if clinic is None or not clinic.is_active:
         return (
             False,
-            "Clinic account has been deactivated. Please contact platform support.",
+            "subscriptionInactive",
             403,
         )
 
     if clinic.subscription_status in {"suspended", "cancelled"}:
-        return (
-            False,
-            "Clinic subscription has been suspended. Please contact platform support.",
-            403,
-        )
+        return False, "subscriptionSuspended", 403
 
     if (
         clinic.subscription_expires_at
         and clinic.subscription_expires_at < datetime.now(timezone.utc)
     ):
-        return (
-            False,
-            "Clinic subscription has expired. Please contact platform support to renew.",
-            403,
-        )
+        return False, "subscriptionExpired", 403
 
     # Cascade Rule: If clinic head doctor is deactivated, entire clinic is locked out
     has_inactive_head = db.session.scalar(
@@ -146,7 +138,7 @@ def evaluate_user_access(user):
     if has_inactive_head > 0 and has_active_head == 0:
         return (
             False,
-            "Clinic head doctor account is inactive. Access for this entire clinic is disabled.",
+            "headDoctorInactive",
             403,
         )
 
@@ -209,7 +201,7 @@ def login():
     retry_after = login_retry_after(normalized_email, ip)
     if retry_after:
         db.session.rollback()
-        return _too_many(retry_after, "Too many failed sign-in attempts. Please wait before trying again.")
+        return _too_many(retry_after, "manyLoginAttempts")
 
     user = db.session.scalar(
         db.select(User).where(func.lower(User.email) == normalized_email)
@@ -228,7 +220,7 @@ def login():
         db.session.commit()
         session.clear()
         if wait:
-            return _too_many(wait, "Too many failed sign-in attempts. Please wait before trying again.")
+            return _too_many(wait, "manyLoginAttempts")
         return _invalid_credentials()
 
     allowed, error_msg, status_code = evaluate_user_access(user)

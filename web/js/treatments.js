@@ -65,8 +65,8 @@ function treatmentErrorMessage(error) {
 function invoiceErrorMessage(error) {
     if (error?.status === 0) return t("treatmentNetworkError");
     if (error?.status === 403) return t("readOnly");
-    if (error?.status === 404) return t("invoiceUnavailable") || "Invoice not found";
-    return error?.message || "Invoice request failed";
+    if (error?.status === 404) return t("invoiceUnavailable");
+    return error?.message || t("errorOccurred");
 }
 
 function setTreatmentSaving(isSaving) {
@@ -684,7 +684,7 @@ function openAddPaymentModal(invoiceId) {
             </div>
             <div class="field full-span">
                 <label>${t("notes")}</label>
-                <input name="notes" placeholder="e.g. Installment 1, Receipt #104">
+                <input name="notes" placeholder="${t("phPaymentNotes")}">
             </div>
             <div class="form-actions full-span">
                 <button class="button button-primary" type="submit">${t("save")}</button>
@@ -713,7 +713,7 @@ function openAddPaymentModal(invoiceId) {
                 await refresh();
             }
         } catch (err) {
-            toast(err.message || "Failed to record payment");
+            toast(err.message || t("errorOccurred"));
         }
     };
 }

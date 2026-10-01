@@ -285,7 +285,7 @@ function renderDashboard() {
                 <div class="appointment-body">
                   <b class="appointment-patient-name">${esc(item.patient_name || item.patientName)}</b>
                   <div class="appointment-meta muted">
-                    <span>🩺 ${esc(item.procedure || "Clinical visit")}</span>
+                    <span>🩺 ${esc(item.procedure || t("clinicalVisit"))}</span>
                     ${item.doctor_name ? `<span>· 👨‍⚕️ ${esc(item.doctor_name)}</span>` : ""}
                   </div>
                 </div>
@@ -406,7 +406,7 @@ function renderDashboard() {
               <div class="appointment-body">
                 <b class="appointment-patient-name">${esc(item.patientName)}</b>
                 <div class="appointment-meta muted">
-                  <span>🩺 ${esc(item.procedure || "Clinical visit")}</span>
+                  <span>🩺 ${esc(item.procedure || t("clinicalVisit"))}</span>
                 </div>
               </div>
               <div class="appointment-status">
@@ -688,7 +688,7 @@ function addStaff() {
       await loadOnlineStaff();
       render();
     } catch (err) {
-      toast(err.message || "Failed to create staff member");
+      toast(err.message || t("errorOccurred"));
     }
   };
 }
@@ -734,7 +734,7 @@ function editStaff(userId) {
       await loadOnlineStaff();
       render();
     } catch (err) {
-      toast(err.message || "Failed to update staff member");
+      toast(err.message || t("errorOccurred"));
     }
   };
 }
@@ -747,7 +747,7 @@ async function toggleStaffActive(userId, currentActive) {
     await loadOnlineStaff();
     render();
   } catch (err) {
-    toast(err.message || "Failed to update staff status");
+    toast(err.message || t("errorOccurred"));
   }
 }
 
@@ -760,7 +760,7 @@ async function deleteStaff(userId) {
     await loadOnlineStaff();
     render();
   } catch (err) {
-    toast(err.message || "Failed to delete staff member");
+    toast(err.message || t("errorOccurred"));
   }
 }
 

@@ -28,9 +28,9 @@ function canModifyTreatmentPlans() {
 }
 
 function treatmentPlanErrorMessage(error) {
-    if (error?.status === 0) return t("treatmentNetworkError") || "Network error";
+    if (error?.status === 0) return t("treatmentNetworkError");
     if (error?.status === 403) return t("readOnly");
-    if (error?.status === 404) return t("treatmentUnavailable") || "Not found";
+    if (error?.status === 404) return t("treatmentUnavailable");
     if (error?.status === 400 || error?.status === 422) return error.message || t("treatmentInvalid");
     return error?.message || t("unableSaveTreatmentPlan");
 }
