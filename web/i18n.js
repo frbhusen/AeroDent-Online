@@ -2118,6 +2118,26 @@ I18N.en.seatsDoctors = "Doctors";
 I18N.ar.seatsDoctors = "الأطباء";
 I18N.en.seatsSecretaries = "Secretaries";
 I18N.ar.seatsSecretaries = "السكرتارية";
+I18N.en.toothFeeLabel = "Fee for this procedure";
+I18N.ar.toothFeeLabel = "أجر هذا الإجراء";
+I18N.en.toothFeePlaceholder = "Leave blank to use the price list";
+I18N.ar.toothFeePlaceholder = "اتركه فارغاً لاستخدام قائمة الأسعار";
+I18N.en.toothFeeNoPrices = "No default prices set yet (Settings).";
+I18N.ar.toothFeeNoPrices = "لا توجد أسعار افتراضية بعد (من الإعدادات).";
+I18N.en.toothCreateInvoice = "Also create an invoice";
+I18N.ar.toothCreateInvoice = "إنشاء فاتورة أيضاً";
+I18N.en.toothBillingAdded = "Added to treatments";
+I18N.ar.toothBillingAdded = "تمت الإضافة إلى العلاجات";
+I18N.en.toothBillingAddedInvoice = "Added to treatments and billing";
+I18N.ar.toothBillingAddedInvoice = "تمت الإضافة إلى العلاجات والفواتير";
+I18N.en.toothBillingCancelled = "Related treatment and invoice cancelled";
+I18N.ar.toothBillingCancelled = "تم إلغاء العلاج والفاتورة المرتبطين";
+I18N.en.procedurePricesTitle = "Procedure prices";
+I18N.ar.procedurePricesTitle = "أسعار الإجراءات";
+I18N.en.procedurePricesHint = "Default fee used when a procedure is marked on a tooth. It can be changed per tooth.";
+I18N.ar.procedurePricesHint = "الأجر الافتراضي عند تسجيل إجراء على سن. يمكن تغييره لكل سن.";
+I18N.en.autoInvoiceOdontogram = "Create an unpaid invoice automatically when a procedure is marked";
+I18N.ar.autoInvoiceOdontogram = "إنشاء فاتورة غير مدفوعة تلقائياً عند تسجيل إجراء";
 
 function t(key) {
   return I18N[currentLanguage]?.[key] || I18N.en?.[key] || key;

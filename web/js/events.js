@@ -838,6 +838,10 @@ function bindFormEvents() {
                     work_start: data.work_start || "09:00",
                     work_end: data.work_end || "18:00",
                     inventory_expiry_warning_days: Number(data.inventory_expiry_warning_days) || 60,
+                    procedure_prices: Object.fromEntries(
+                        ["filling", "crown", "rct", "extract", "implant"].map((key) => [key, data[`price_${key}`] ?? ""]),
+                    ),
+                    auto_invoice_odontogram: data.auto_invoice_odontogram === "on",
                 });
                 toast(t("savedOnline"));
                 await loadOnlineSettings();

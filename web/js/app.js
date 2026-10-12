@@ -463,6 +463,8 @@ async function loadOnlineSettings() {
       workEndHour: d.work_end,
       slotDuration: d.slot_duration,
       inventoryExpiryWarningDays: d.inventory_expiry_warning_days,
+      procedurePrices: d.procedure_prices || {},
+      autoInvoiceOdontogram: d.auto_invoice_odontogram !== false,
     };
   } catch (error) {
     // Graceful error handling
@@ -574,6 +576,21 @@ function renderSettings() {
           <div class="field">
             <label>${t("invExpiryWarningDays")}</label>
             <input type="number" name="inventory_expiry_warning_days" min="1" max="365" step="1" value="${esc(s.inventoryExpiryWarningDays || 60)}" ${!canEditClinic ? "disabled" : ""}>
+          </div>
+          <div class="full-span settings-subsection">
+            <h3>${t("procedurePricesTitle")}</h3>
+            <p class="muted">${t("procedurePricesHint")}</p>
+            <div class="form-grid">
+              ${["filling", "crown", "rct", "extract", "implant"].map((key) => `
+                <div class="field">
+                  <label>${t(key)}</label>
+                  <input type="number" name="price_${key}" min="0" step="0.01" inputmode="decimal" value="${esc((s.procedurePrices || {})[key] ?? "")}" ${!canEditClinic ? "disabled" : ""}>
+                </div>`).join("")}
+            </div>
+            <label class="tooth-billing-check">
+              <input type="checkbox" name="auto_invoice_odontogram" ${s.autoInvoiceOdontogram === false ? "" : "checked"} ${!canEditClinic ? "disabled" : ""}>
+              ${t("autoInvoiceOdontogram")}
+            </label>
           </div>
           ${canEditClinic ? `<div class="form-actions full-span"><button class="button button-primary" type="submit">${t("save")}</button></div>` : ""}
         </form>

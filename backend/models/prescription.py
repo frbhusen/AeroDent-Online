@@ -112,6 +112,7 @@ class Prescription(db.Model):
         "PrescriptionMedication",
         back_populates="prescription",
         cascade="all, delete-orphan",
+        order_by="PrescriptionMedication.id",
     )
 
 

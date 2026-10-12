@@ -80,6 +80,14 @@ class Treatment(db.Model):
         index=True,
     )
 
+    # Set when the treatment was generated from a tooth change in the odontogram.
+    odontogram_id = db.Column(
+        db.Integer,
+        db.ForeignKey("odontograms.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
     tooth_number = db.Column(
         db.Integer,
         nullable=True,

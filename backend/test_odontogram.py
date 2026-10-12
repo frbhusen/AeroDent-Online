@@ -130,7 +130,8 @@ def run_odontogram_tests():
 
                 response = client.get(f"/api/patients/{patient_a_id}/odontogram")
                 assert response.status_code == 200
-                assert response.json["meta"] == {"patient_id": patient_a_id, "count": 2}
+                assert response.json["meta"]["patient_id"] == patient_a_id
+                assert response.json["meta"]["count"] == 2
 
                 response = client.get(
                     f"/api/patients/{patient_a_id}/odontogram?mode=primary"

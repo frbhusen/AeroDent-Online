@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 from flask import Blueprint, g, jsonify, request
 from sqlalchemy.exc import IntegrityError
 
@@ -5,6 +7,7 @@ from backend.auth import login_required, require_permission
 from backend.extensions import db
 from backend.models import Odontogram, Patient
 from backend.services.audit import log_activity
+from backend.services.odontogram_billing import clinic_prices, parse_money, sync_billing
 
 
 odontogram_blueprint = Blueprint(
@@ -19,6 +22,8 @@ TOOTH_RANGES = {
     "primary": range(1, 21),
 }
 ODONTOGRAM_FIELDS = frozenset({"condition", "procedure", "notes"})
+# Billing hints for the treatment/invoice generated from a condition change; not stored on the tooth.
+BILLING_FIELDS = frozenset({"fee", "create_invoice"})
 ODONTOGRAM_IDENTITY_FIELDS = frozenset(
     {
         "id",
@@ -75,7 +80,7 @@ def _json_object():
     if not isinstance(data, dict):
         return None, _error("Request body must be a JSON object.", 400)
 
-    unsupported = set(data) - ODONTOGRAM_FIELDS
+    unsupported = set(data) - ODONTOGRAM_FIELDS - BILLING_FIELDS
     if unsupported:
         if unsupported & ODONTOGRAM_IDENTITY_FIELDS:
             return None, _error(
@@ -84,8 +89,13 @@ def _json_object():
         return None, _error("Unsupported odontogram field.", 400)
 
     for field, value in data.items():
+        if field in BILLING_FIELDS:
+            continue
         if value is not None and not isinstance(value, str):
             return None, _error(f"{field} must be a string or null.", 422)
+
+    if "create_invoice" in data and data["create_invoice"] is not None and not isinstance(data["create_invoice"], bool):
+        return None, _error("create_invoice must be a boolean or null.", 422)
 
     return data, None
 
@@ -127,7 +137,12 @@ def list_odontogram(patient_id):
     return jsonify(
         {
             "data": [_serialize_odontogram(record) for record in records],
-            "meta": {"patient_id": patient.id, "count": len(records)},
+            "meta": {
+                "patient_id": patient.id,
+                "count": len(records),
+                "procedure_prices": clinic_prices(g.current_clinic),
+                "auto_invoice": bool(g.current_clinic.auto_invoice_odontogram),
+            },
         }
     )
 
@@ -150,8 +165,14 @@ def upsert_odontogram(patient_id, tooth_mode, tooth_number):
     if error:
         return error
 
+    fee, fee_error = parse_money(data.pop("fee", None))
+    if fee_error:
+        return _error(fee_error, 422)
+    create_invoice = data.pop("create_invoice", None)
+
     record = _scoped_record(patient.id, tooth_mode, tooth_number)
     created = record is None
+    previous_condition = None if created else record.condition
     if created:
         record = Odontogram(
             clinic_id=g.current_user.clinic_id,
@@ -166,6 +187,15 @@ def upsert_odontogram(patient_id, tooth_mode, tooth_number):
         setattr(record, field, value)
 
     try:
+        db.session.flush()
+        billing = sync_billing(
+            g.current_clinic,
+            g.current_user,
+            record,
+            previous_condition,
+            fee=fee,
+            create_invoice=create_invoice,
+        )
         log_activity(
             action="odontogram_updated",
             resource_type="odontogram",
@@ -177,6 +207,7 @@ def upsert_odontogram(patient_id, tooth_mode, tooth_number):
                 "tooth_mode": tooth_mode,
                 "condition": record.condition,
                 "procedure": record.procedure,
+                "billing": billing,
             },
         )
         db.session.commit()
@@ -184,7 +215,7 @@ def upsert_odontogram(patient_id, tooth_mode, tooth_number):
         db.session.rollback()
         return _error("Odontogram could not be saved.", 409)
 
-    return jsonify({"data": _serialize_odontogram(record)}), 201 if created else 200
+    return jsonify({"data": _serialize_odontogram(record), "billing": billing}), 201 if created else 200
 
 
 @odontogram_blueprint.delete(
@@ -205,6 +236,15 @@ def delete_odontogram(patient_id, tooth_mode, tooth_number):
     if record is None:
         return _error("Odontogram record not found.", 404)
 
+    removed = SimpleNamespace(
+        id=record.id,
+        clinic_id=record.clinic_id,
+        patient_id=record.patient_id,
+        tooth_number=record.tooth_number,
+        tooth_mode=record.tooth_mode,
+        condition=None,
+    )
+    sync_billing(g.current_clinic, g.current_user, removed, record.condition)
     db.session.delete(record)
     try:
         db.session.commit()

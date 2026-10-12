@@ -5154,3 +5154,33 @@ body.is-super-admin .main {
   font-size: 13px;
   overflow-wrap: anywhere;
 }
+
+/* Odontogram billing: fee/invoice options in the tooth panel and price list in Settings. */
+.tooth-billing {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.tooth-billing[hidden] { display: none; }
+.tooth-billing .field { margin: 0; }
+.tooth-billing small { display: block; margin-top: 4px; }
+.tooth-billing-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.tooth-billing-check input { width: auto; min-height: 0; }
+.settings-subsection {
+  display: grid;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.settings-subsection h3 { margin: 0; font-size: 15px; }
+.settings-subsection p { margin: 0; }

@@ -64,6 +64,20 @@ class Clinic(db.Model):
         default=True,
     )
 
+    # Default fee per odontogram procedure, e.g. {"filling": "50.00"}; missing/blank = no default.
+    procedure_prices = db.Column(
+        db.JSON,
+        nullable=True,
+    )
+
+    # Whether tooth changes in the odontogram also raise an (unpaid) invoice by default.
+    auto_invoice_odontogram = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=True,
+        server_default=db.true(),
+    )
+
     # Staff seat limits set by the Super Admin (NULL = unlimited). Head doctors are not counted.
     max_doctors = db.Column(
         db.Integer,

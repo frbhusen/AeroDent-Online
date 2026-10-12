@@ -156,7 +156,7 @@ def run_prescription_tests():
                 response = client.get("/api/prescriptions")
                 assert response.status_code == 200
                 assert response.json["meta"]["total"] == 1
-                assert "medications" not in response.json["data"][0]
+                assert len(response.json["data"][0]["medications"]) == 1
                 response = client.get(f"/api/prescriptions/{prescription_id}")
                 assert response.status_code == 200
                 assert len(response.json["data"]["medications"]) == 1

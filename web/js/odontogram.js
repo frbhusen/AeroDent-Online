@@ -102,6 +102,8 @@ async function loadOnlineOdontogram() {
         const response = await window.AERODENT_API.get(`/api/patients/${patientId}/odontogram`);
         if (requestId !== onlineOdontogramRequest || selectedOdontogramPatient()?.id !== patientId) return;
         state.odontograms = (response.data || []).map((record) => mapApiOdontogram(record, patientId));
+        state.procedurePrices = response.meta?.procedure_prices || {};
+        state.autoInvoice = response.meta?.auto_invoice !== false;
     } catch (error) {
         if (requestId !== onlineOdontogramRequest || selectedOdontogramPatient()?.id !== patientId) return;
         state.odontogramReadOnly = error.status === 403;
@@ -194,6 +196,7 @@ async function openTooth(number) {
     $("#drawerAnatomy").textContent = currentLanguage === "ar" ? "رحى علوية / سفلية" : "Molar · clinical surface";
     const readOnly = window.AERODENT_ONLINE
         && (!hasPermission("odontogram.update") || state.odontogramReadOnly);
+    renderToothBilling(readOnly);
     if (readOnly) {
         $("#toothActions").innerHTML = `<p class="muted">${t("readOnly")}</p>`;
     } else {
@@ -205,6 +208,61 @@ async function openTooth(number) {
     $("#saveToothNote").hidden = readOnly;
     setOdontogramSaving(state.odontogramSaving);
     document.body.classList.add("drawer-open");
+}
+
+// Procedures that are billed automatically (online mode); mirrors BILLABLE_CONDITIONS in the backend.
+const BILLABLE_PROCEDURES = ["filling", "crown", "rct", "extract", "implant"];
+
+// Fee/invoice options for the next procedure. A blank fee means "use the clinic price list".
+function renderToothBilling(readOnly) {
+    const box = $("#toothBilling");
+    if (!box) return;
+    const canBill = window.AERODENT_ONLINE && !readOnly
+        && hasPermission("treatments.create");
+    if (!canBill) {
+        box.hidden = true;
+        box.innerHTML = "";
+        return;
+    }
+    const prices = state.procedurePrices || {};
+    const priceHint = BILLABLE_PROCEDURES
+        .filter((key) => prices[key] !== undefined)
+        .map((key) => `${t(key)}: ${money(prices[key])}`)
+        .join(" · ");
+    const canInvoice = hasPermission("invoices.create");
+    box.hidden = false;
+    box.innerHTML = `
+        <div class="field">
+            <label for="toothFee">${t("toothFeeLabel")}</label>
+            <input type="number" id="toothFee" min="0" step="0.01" inputmode="decimal" placeholder="${t("toothFeePlaceholder")}">
+            <small class="muted">${priceHint ? esc(priceHint) : t("toothFeeNoPrices")}</small>
+        </div>
+        ${canInvoice ? `<label class="tooth-billing-check"><input type="checkbox" id="toothCreateInvoice" ${state.autoInvoice === false ? "" : "checked"}> ${t("toothCreateInvoice")}</label>` : ""}
+    `;
+}
+
+function toothBillingPayload(condition) {
+    if (!BILLABLE_PROCEDURES.includes(condition)) return {};
+    const payload = {};
+    const fee = $("#toothFee")?.value;
+    if (fee !== undefined && fee !== "") payload.fee = fee;
+    const invoice = $("#toothCreateInvoice");
+    if (invoice) payload.create_invoice = invoice.checked;
+    return payload;
+}
+
+// Returns true when a billing-specific message was shown (so the generic "saved" toast is skipped).
+function announceToothBilling(billing) {
+    if (!billing) return false;
+    if (billing.action === "cancelled") {
+        toast(t("toothBillingCancelled"));
+        return true;
+    }
+    if (billing.action === "created" || billing.action === "updated") {
+        toast(billing.invoice_id ? t("toothBillingAddedInvoice") : t("toothBillingAdded"));
+        return true;
+    }
+    return false;
 }
 
 async function updateTooth(condition) {
@@ -220,6 +278,7 @@ async function updateTooth(condition) {
         const existing = findOdontogramRecord(patient.id, identity.toothMode, identity.toothNumber);
         let saved = false;
         let forbidden = false;
+        let billing = null;
         try {
             const url = `/api/patients/${patient.id}/odontogram/${identity.toothMode}/${identity.toothNumber}`;
             if (condition === "clear") {
@@ -228,14 +287,18 @@ async function updateTooth(condition) {
                     removeOnlineOdontogram(patient.id, identity.toothMode, identity.toothNumber);
                 }
             } else {
-                const response = await window.AERODENT_API.put(url, { condition, procedure: t(condition), notes: existing?.notes || null });
+                const response = await window.AERODENT_API.put(url, { condition, procedure: t(condition), notes: existing?.notes || null, ...toothBillingPayload(condition) });
                 if (selectedOdontogramPatient()?.id === patient.id) {
                     upsertOnlineOdontogram(response.data, patient.id);
                 }
+                billing = response.billing;
             }
             if (selectedOdontogramPatient()?.id === patient.id) state.odontogramError = "";
             saved = true;
-            toast(t("savedOnline"));
+            if (!announceToothBilling(billing)) toast(t("savedOnline"));
+            // Treatments/Invoices lists are reloaded when their view opens; drop the stale copies.
+            state.treatments = [];
+            state.invoices = [];
         } catch (error) {
             if (error.status === 404 && error.payload?.error === "Odontogram record not found.") {
                 if (selectedOdontogramPatient()?.id === patient.id) {

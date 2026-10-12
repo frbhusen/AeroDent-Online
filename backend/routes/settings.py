@@ -5,6 +5,7 @@ from sqlalchemy.exc import DataError, IntegrityError
 from backend.auth import login_required, require_permission
 from backend.extensions import db
 from backend.services.audit import log_activity
+from backend.services.odontogram_billing import clinic_prices, normalize_prices
 from backend.auth.service import verify_password
 from backend.services.auth_security import clear_failures, failure_lock_wait, rate_limited, record_failure
 from backend.services.clinic_backup import BackupError, export_archive, import_archive, read_archive
@@ -23,6 +24,8 @@ ALLOWED_SETTING_FIELDS = frozenset(
         "work_end",
         "slot_duration",
         "inventory_expiry_warning_days",
+        "procedure_prices",
+        "auto_invoice_odontogram",
     }
 )
 
@@ -51,6 +54,8 @@ def _serialize_settings(clinic):
         "work_end": clinic.work_end.strftime("%H:%M") if clinic.work_end else "18:00",
         "slot_duration": clinic.slot_duration or 30,
         "inventory_expiry_warning_days": clinic.inventory_expiry_warning_days or 60,
+        "procedure_prices": clinic_prices(clinic),
+        "auto_invoice_odontogram": bool(clinic.auto_invoice_odontogram),
         "created_at": clinic.created_at.isoformat() if clinic.created_at else None,
         "updated_at": clinic.updated_at.isoformat() if clinic.updated_at else None,
     }
@@ -137,6 +142,17 @@ def update_settings():
         if isinstance(val, bool) or not isinstance(val, int) or val < 1 or val > 365:
             return _error("inventory_expiry_warning_days must be an integer between 1 and 365.", 422)
         clinic.inventory_expiry_warning_days = val
+
+    if "procedure_prices" in data:
+        prices, price_error = normalize_prices(data["procedure_prices"])
+        if price_error:
+            return _error(price_error, 422)
+        clinic.procedure_prices = prices or None
+
+    if "auto_invoice_odontogram" in data:
+        if not isinstance(data["auto_invoice_odontogram"], bool):
+            return _error("auto_invoice_odontogram must be a boolean.", 422)
+        clinic.auto_invoice_odontogram = data["auto_invoice_odontogram"]
 
     try:
         log_activity(

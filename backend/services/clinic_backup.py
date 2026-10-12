@@ -35,11 +35,11 @@ VERSION = 1
 # `audit_logs` must be listed here; backend/test_clinic_backup.py enforces that.
 DATA_TABLES = (
     "patients",
+    "odontograms",
     "treatments",
     "treatment_plans",
     "appointments",
     "waitlist",
-    "odontograms",
     "prescriptions",
     "prescription_medications",
     "x_rays",

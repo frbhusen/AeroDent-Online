@@ -2,6 +2,7 @@ from datetime import date
 
 from flask import Blueprint, g, jsonify, request
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload
 
 from backend.auth import login_required, require_permission
 from backend.extensions import db
@@ -223,14 +224,15 @@ def list_prescriptions():
     total = db.session.scalar(db.select(db.func.count()).select_from(query.subquery()))
     pages = (total + per_page - 1) // per_page if total else 0
     prescriptions = db.session.scalars(
-        query.order_by(Prescription.date.desc(), Prescription.id.desc())
+        query.options(selectinload(Prescription.medications))
+        .order_by(Prescription.date.desc(), Prescription.id.desc())
         .offset((page - 1) * per_page)
         .limit(per_page)
     ).all()
 
     return jsonify(
         {
-            "data": [_serialize_prescription(item) for item in prescriptions],
+            "data": [_serialize_prescription(item, True) for item in prescriptions],
             "meta": {"page": page, "per_page": per_page, "total": total, "pages": pages},
         }
     )
