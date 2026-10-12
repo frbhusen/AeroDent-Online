@@ -2096,6 +2096,28 @@ I18N.en.backupFileInvalid = "This file is not a valid AeroDent backup.";
 I18N.ar.backupFileInvalid = "هذا الملف ليس نسخة احتياطية صالحة من AeroDent.";
 I18N.en.backupNoFile = "No backup file selected.";
 I18N.ar.backupNoFile = "لم يتم اختيار ملف نسخة احتياطية.";
+I18N.en.planLabel = "Plan";
+I18N.ar.planLabel = "الخطة";
+I18N.en.planCustom = "Custom";
+I18N.ar.planCustom = "مخصصة";
+I18N.en.planUnlimited = "Unlimited";
+I18N.ar.planUnlimited = "غير محدودة";
+I18N.en.planSolo = "Solo (1 doctor, 1 secretary)";
+I18N.ar.planSolo = "فردية (طبيب و سكرتير واحد)";
+I18N.en.planClinic = "Clinic (3 doctors, 3 secretaries)";
+I18N.ar.planClinic = "عيادة (3 أطباء و3 سكرتارية)";
+I18N.en.planCenter = "Center (8 doctors, 8 secretaries)";
+I18N.ar.planCenter = "مركز (8 أطباء و8 سكرتارية)";
+I18N.en.maxDoctorsLabel = "Max doctors";
+I18N.ar.maxDoctorsLabel = "الحد الأقصى للأطباء";
+I18N.en.maxSecretariesLabel = "Max secretaries";
+I18N.ar.maxSecretariesLabel = "الحد الأقصى للسكرتارية";
+I18N.en.seatLimitHint = "Leave blank for unlimited. The head doctor is not counted.";
+I18N.ar.seatLimitHint = "اتركه فارغاً لعدد غير محدود. الطبيب الرئيسي غير محتسب.";
+I18N.en.seatsDoctors = "Doctors";
+I18N.ar.seatsDoctors = "الأطباء";
+I18N.en.seatsSecretaries = "Secretaries";
+I18N.ar.seatsSecretaries = "السكرتارية";
 
 function t(key) {
   return I18N[currentLanguage]?.[key] || I18N.en?.[key] || key;

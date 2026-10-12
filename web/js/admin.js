@@ -445,6 +445,68 @@ function renderAdminUsers() {
 }
 
 // ------------------------------------------
+// Staff seat limits ("plans")
+// ------------------------------------------
+// Presets only fill the two numeric fields; the numbers are what the server stores (blank = unlimited).
+const ADMIN_SEAT_PLANS = {
+    solo: { key: "planSolo", doctors: 1, secretaries: 1 },
+    clinic: { key: "planClinic", doctors: 3, secretaries: 3 },
+    center: { key: "planCenter", doctors: 8, secretaries: 8 },
+    unlimited: { key: "planUnlimited", doctors: null, secretaries: null },
+};
+
+function _seatPlanFromLimits(maxDoctors, maxSecretaries) {
+    const match = Object.entries(ADMIN_SEAT_PLANS).find(
+        ([, plan]) => plan.doctors === (maxDoctors ?? null) && plan.secretaries === (maxSecretaries ?? null)
+    );
+    return match ? match[0] : "custom";
+}
+
+function adminSeatFieldsHtml(maxDoctors, maxSecretaries) {
+    const selected = _seatPlanFromLimits(maxDoctors, maxSecretaries);
+    const options = Object.entries(ADMIN_SEAT_PLANS)
+        .map(([id, plan]) => `<option value="${id}" ${selected === id ? "selected" : ""}>${t(plan.key)}</option>`)
+        .join("");
+    return `
+        <div class="field full-span">
+            <label>${t("planLabel")}</label>
+            <select id="adminSeatPlan">
+                ${options}
+                <option value="custom" ${selected === "custom" ? "selected" : ""}>${t("planCustom")}</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>${t("maxDoctorsLabel")}</label>
+            <input type="number" min="0" max="1000" name="max_doctors" value="${maxDoctors ?? ""}" placeholder="${t("planUnlimited")}">
+        </div>
+        <div class="field">
+            <label>${t("maxSecretariesLabel")}</label>
+            <input type="number" min="0" max="1000" name="max_secretaries" value="${maxSecretaries ?? ""}" placeholder="${t("planUnlimited")}">
+        </div>
+        <small class="muted full-span">${t("seatLimitHint")}</small>
+    `;
+}
+
+function adminBindSeatPlanPicker(form) {
+    const plan = form.querySelector("#adminSeatPlan");
+    const doctors = form.querySelector('[name="max_doctors"]');
+    const secretaries = form.querySelector('[name="max_secretaries"]');
+    if (!plan || !doctors || !secretaries) return;
+    plan.onchange = () => {
+        const preset = ADMIN_SEAT_PLANS[plan.value];
+        if (!preset) return;
+        doctors.value = preset.doctors ?? "";
+        secretaries.value = preset.secretaries ?? "";
+    };
+    const syncPlan = () => {
+        const toLimit = (input) => (input.value === "" ? null : Number(input.value));
+        plan.value = _seatPlanFromLimits(toLimit(doctors), toLimit(secretaries));
+    };
+    doctors.oninput = syncPlan;
+    secretaries.oninput = syncPlan;
+}
+
+// ------------------------------------------
 // Super Admin Action Modals
 // ------------------------------------------
 function adminOpenCreateClinicModal() {
@@ -481,6 +543,7 @@ function adminOpenCreateClinicModal() {
                 <label>${t("subscriptionExpires")}</label>
                 <input type="date" name="subscription_expires_at">
             </div>
+            ${adminSeatFieldsHtml(3, 3)}
             <hr class="full-span" style="border:none;border-top:1px solid var(--border);margin:8px 0;">
             <div class="field full-span">
                 <label>${t("headDoctorNameLabel")}</label>
@@ -500,6 +563,7 @@ function adminOpenCreateClinicModal() {
         </form>
     `);
 
+    adminBindSeatPlanPicker($("#adminCreateClinicForm"));
     $("#adminCreateClinicForm").onsubmit = async (e) => {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(e.target));
@@ -628,6 +692,7 @@ function adminOpenEditClinicModal(clinicId) {
                 <label>${t("address")}</label>
                 <input name="address" value="${esc(clinic.address || "")}">
             </div>
+            ${adminSeatFieldsHtml(clinic.max_doctors, clinic.max_secretaries)}
             <div class="form-actions full-span" style="margin-top:12px;">
                 <button class="button button-primary" type="submit">${t("save")}</button>
             </div>
@@ -648,6 +713,7 @@ function adminOpenEditClinicModal(clinicId) {
         delBtn.onclick = () => adminDeleteClinic(clinicId);
     }
 
+    adminBindSeatPlanPicker($("#adminEditClinicForm"));
     $("#adminEditClinicForm").onsubmit = async (e) => {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(e.target));

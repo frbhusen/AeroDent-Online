@@ -8,6 +8,7 @@ from backend.auth.service import hash_password
 from backend.extensions import db
 from backend.models import User
 from backend.services.audit import log_activity
+from backend.services.seat_limits import seat_limit_error, seat_usage
 from backend.services.auth_security import revoke_user_sessions, validate_new_password
 
 
@@ -76,7 +77,12 @@ def list_staff():
         .where(User.clinic_id == g.current_user.clinic_id)
         .order_by(User.id.asc())
     ).all()
-    return jsonify({"data": [_serialize_user(u) for u in users]})
+    return jsonify(
+        {
+            "data": [_serialize_user(u) for u in users],
+            "seats": seat_usage(g.current_user.clinic_id),
+        }
+    )
 
 
 @staff_blueprint.post("/staff")
@@ -116,6 +122,11 @@ def create_staff():
 
     if not isinstance(is_active, bool):
         return _error("is_active must be a boolean.", 422)
+
+    if is_active and g.current_user.role != "super_admin":
+        limit_error = seat_limit_error(g.current_user.clinic_id, role)
+        if limit_error:
+            return _error(limit_error, 403)
 
     # Check for existing email across the entire database
     existing = db.session.scalar(
@@ -193,6 +204,9 @@ def update_staff(user_id):
                 return _error("A user with this email already exists.", 409)
             target_user.email = new_email
 
+    previous_role = target_user.role
+    previous_active = target_user.is_active
+
     if "role" in data:
         new_role = data["role"]
         if not isinstance(new_role, str) or new_role not in VALID_STAFF_ROLES:
@@ -244,6 +258,17 @@ def update_staff(user_id):
         target_user.is_active = new_status
         if not new_status:
             revoke_user_sessions(target_user.id)
+
+    # Taking a new seat (role change or reactivation) must respect the clinic's limits.
+    takes_new_seat = target_user.is_active and (
+        target_user.role != previous_role or not previous_active
+    )
+    if takes_new_seat and g.current_user.role != "super_admin":
+        limit_error = seat_limit_error(
+            target_user.clinic_id, target_user.role, exclude_user_id=target_user.id
+        )
+        if limit_error:
+            return _error(limit_error, 403)
 
     if "password" in data:
         pwd = data["password"]

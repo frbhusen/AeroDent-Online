@@ -484,8 +484,10 @@ async function loadOnlineStaff() {
   try {
     const response = await window.AERODENT_API.get("/api/staff");
     state.staff = response.data || [];
+    state.staffSeats = response.seats || null;
   } catch (error) {
     state.staff = [];
+    state.staffSeats = null;
   }
 }
 
@@ -600,12 +602,21 @@ function renderSettings() {
         </tr>`;
       }).join("");
 
+      const seatBadge = (label, seat) => seat
+        ? `<span class="badge ${seat.limit !== null && seat.used >= seat.limit ? "badge-gray" : "badge-green"}">${label}: ${seat.used} / ${seat.limit ?? "∞"}</span>`
+        : "";
+      const seats = state.staffSeats;
+      const seatSummary = seats
+        ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">${seatBadge(t("seatsDoctors"), seats.doctors)}${seatBadge(t("seatsSecretaries"), seats.secretaries)}</div>`
+        : "";
+
       staffCard = `
         <div class="card full-span" style="grid-column: 1 / -1;">
           <div class="card-heading">
             <h2>${t("staff")}</h2>
             <button class="button button-primary" data-action="addStaff">＋ ${t("addStaff")}</button>
           </div>
+          ${seatSummary}
           <div class="table-wrap">
             <table class="data-table">
               <thead>

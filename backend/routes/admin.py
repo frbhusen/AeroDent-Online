@@ -9,6 +9,7 @@ from backend.auth.service import hash_password
 from backend.extensions import db
 from backend.models import Clinic, User
 from backend.services.audit import log_activity
+from backend.services.seat_limits import parse_seat_limit
 from backend.services.auth_security import revoke_user_sessions, validate_new_password
 from backend.services.validation import query_int, query_page
 
@@ -79,6 +80,8 @@ def _serialize_clinic(clinic):
         "work_end": clinic.work_end.strftime("%H:%M") if clinic.work_end else "18:00",
         "slot_duration": clinic.slot_duration,
         "is_active": clinic.is_active,
+        "max_doctors": clinic.max_doctors,
+        "max_secretaries": clinic.max_secretaries,
         "subscription_status": clinic.subscription_status,
         "subscription_expires_at": (
             clinic.subscription_expires_at.isoformat()
@@ -279,11 +282,20 @@ def create_clinic():
         except (ValueError, TypeError):
             return _error("Invalid subscription_expires_at ISO datetime.", 422)
 
+    max_doctors, limit_error = parse_seat_limit(data.get("max_doctors"))
+    if limit_error:
+        return _error(limit_error, 422)
+    max_secretaries, limit_error = parse_seat_limit(data.get("max_secretaries"))
+    if limit_error:
+        return _error(limit_error, 422)
+
     clinic = Clinic(
         name=clinic_name.strip(),
         phone=phone.strip() if isinstance(phone, str) else None,
         address=address.strip() if isinstance(address, str) else None,
         currency=currency.strip().upper() if isinstance(currency, str) else "SYR",
+        max_doctors=max_doctors,
+        max_secretaries=max_secretaries,
         subscription_status=subscription_status,
         subscription_expires_at=subscription_expires_at,
         is_active=bool(is_active),
@@ -339,10 +351,19 @@ def update_clinic(clinic_id):
         "subscription_status",
         "subscription_expires_at",
         "extend_days",
+        "max_doctors",
+        "max_secretaries",
     }
     unsupported = set(data) - allowed_fields
     if unsupported:
         return _error(f"Unsupported fields: {sorted(unsupported)}", 400)
+
+    for seat_field in ("max_doctors", "max_secretaries"):
+        if seat_field in data:
+            value, limit_error = parse_seat_limit(data[seat_field])
+            if limit_error:
+                return _error(limit_error, 422)
+            setattr(clinic, seat_field, value)
 
     if "name" in data:
         if not isinstance(data["name"], str) or not data["name"].strip():

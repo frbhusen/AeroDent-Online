@@ -64,6 +64,17 @@ class Clinic(db.Model):
         default=True,
     )
 
+    # Staff seat limits set by the Super Admin (NULL = unlimited). Head doctors are not counted.
+    max_doctors = db.Column(
+        db.Integer,
+        nullable=True,
+    )
+
+    max_secretaries = db.Column(
+        db.Integer,
+        nullable=True,
+    )
+
     subscription_status = db.Column(
         db.String(30),
         nullable=False,

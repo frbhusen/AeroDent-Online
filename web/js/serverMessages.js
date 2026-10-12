@@ -263,6 +263,8 @@ const SERVER_MESSAGES_AR = {
   "slot_duration must be a positive integer up to 240 minutes.": "يجب أن تكون مدة الموعد عدداً صحيحاً موجباً حتى 240 دقيقة.",
   "inventory_expiry_warning_days must be an integer between 1 and 365.": "يجب أن تكون أيام تنبيه انتهاء المخزون عدداً صحيحاً بين 1 و365.",
   "Settings could not be updated.": "تعذر تحديث الإعدادات.",
+  "Seat limits must be whole numbers.": "يجب أن تكون حدود الحسابات أعداداً صحيحة.",
+  "Seat limits must be between 0 and 1000.": "يجب أن تكون حدود الحسابات بين 0 و1000.",
   "The backup contains data that is not valid for this clinic. Nothing was changed.": "تحتوي النسخة الاحتياطية على بيانات غير صالحة لهذه العيادة. لم يتم تغيير أي شيء.",
 
   // Staff
@@ -300,6 +302,8 @@ const SERVER_MESSAGES_AR = {
 const SERVER_MESSAGE_PATTERNS_AR = [
   [/^Invalid subscription status\. Must be one of .*$/, () => "حالة الاشتراك غير صالحة."],
   [/^Unsupported fields: (.*)$/, (m) => `حقول غير مدعومة: ${m[1]}`],
+  [/^Your plan allows (\d+) doctor\(s\)\..*$/, (m) => `خطتك تسمح بـ ${m[1]} طبيب فقط. اطلب من مدير المنصة رفع الحد.`],
+  [/^Your plan allows (\d+) secretary account\(s\)\..*$/, (m) => `خطتك تسمح بـ ${m[1]} سكرتير فقط. اطلب من مدير المنصة رفع الحد.`],
   [/^Failed to delete clinic: .*$/, () => "تعذر حذف العيادة."],
   [/^(\w+) must be a positive integer\.$/, (m) => `يجب أن يكون ${m[1]} عدداً صحيحاً موجباً.`],
   [/^(\w+) must be a string or null\.$/, (m) => `يجب أن يكون ${m[1]} نصاً أو فارغاً.`],
