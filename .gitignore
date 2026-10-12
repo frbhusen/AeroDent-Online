@@ -49,3 +49,6 @@ mobile/
 /mobile/android/local.properties
 *.jks
 *.keystore
+
+whatsapp-messages.md
+leads.csv
