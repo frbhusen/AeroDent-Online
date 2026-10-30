@@ -31,6 +31,12 @@
                     <p class="field-error" data-error-for="name" role="alert"></p>
                 </div>
                 <div class="field">
+                    <label for="trialUsername" data-i18n="trialUsername">Username (English letters, no spaces)</label>
+                    <input id="trialUsername" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="30" dir="ltr" required>
+                    <p class="field-hint" data-i18n="trialUsernameHint">We use it to create your login email and password.</p>
+                    <p class="field-error" data-error-for="username" role="alert"></p>
+                </div>
+                <div class="field">
                     <label for="trialPhone" data-i18n="trialPhone">Phone number</label>
                     <input id="trialPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="30" dir="ltr" required>
                     <p class="field-error" data-error-for="phone" role="alert"></p>
@@ -60,6 +66,11 @@
                 <div class="trial-success-icon" aria-hidden="true">✓</div>
                 <h2 data-i18n="trialSuccessTitle">Request received</h2>
                 <p class="muted" data-i18n="trialSuccessBody">Thank you. We will contact you soon to set up your 14-day trial.</p>
+                <dl class="trial-creds" id="trialCreds" dir="ltr">
+                    <div><dt data-i18n="trialCredEmail">Email</dt><dd><code id="trialCredEmail"></code></dd></div>
+                    <div><dt data-i18n="trialCredPassword">Password</dt><dd><code id="trialCredPassword"></code></dd></div>
+                </dl>
+                <p class="field-hint" data-i18n="trialCredNote">Save these details now and change the password in Settings after your first sign-in.</p>
                 <a class="button button-primary full" href="/" data-i18n="trialBackToSignIn">Back to sign in</a>
             </div>
         </div>

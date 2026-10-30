@@ -25,6 +25,7 @@ import re
 import threading
 
 from flask import Response, request, send_from_directory
+from werkzeug.security import safe_join
 
 IMMUTABLE_CACHE = "public, max-age=31536000, immutable"
 REVALIDATE_CACHE = "no-cache"
@@ -59,21 +60,35 @@ class StaticAssets:
     # ------------------------------------------------------------------ version
     def _compute_version(self):
         digest = hashlib.sha256()
+        for relative, payload in self._iter_files():
+            digest.update(relative.encode())
+            digest.update(payload)
+        return digest.hexdigest()[:12]
+
+    # ------------------------------------------------------------------ file access hooks
+    # Everything that touches the frontend files goes through these four methods, so a packaged
+    # edition (standalone/packed_assets.py) can serve the same files from memory instead of disk.
+    def _iter_files(self):
         for root, dirs, files in os.walk(self.web_dir):
             dirs.sort()
             for name in sorted(files):
                 path = os.path.join(root, name)
-                digest.update(os.path.relpath(path, self.web_dir).encode())
                 with open(path, "rb") as handle:
-                    digest.update(handle.read())
-        return digest.hexdigest()[:12]
+                    yield os.path.relpath(path, self.web_dir), handle.read()
+
+    def read_bytes(self, relative_path):
+        with open(os.path.join(self.web_dir, relative_path), "rb") as handle:
+            return handle.read()
+
+    def exists(self, relative_path):
+        target = safe_join(self.web_dir, relative_path)
+        return bool(target and os.path.isfile(target))
 
     # ------------------------------------------------------------------ documents
     def page_html(self, name):
         """HTML document with every local asset reference pinned to the current version."""
         if name not in self._pages:
-            with open(os.path.join(self.web_dir, name), encoding="utf-8") as handle:
-                html = handle.read()
+            html = self.read_bytes(name).decode("utf-8")
             html = _LOCAL_REF.sub(
                 lambda m: f'{m.group("attr")}="{m.group("path")}?v={self.version}"', html
             )
@@ -87,9 +102,7 @@ class StaticAssets:
     def landing_home_html(self):
         """The public landing page, served as the site root with asset paths made absolute."""
         if "__landing_home__" not in self._pages:
-            path = os.path.join(self.web_dir, _LANDING_DIR, "index.html")
-            with open(path, encoding="utf-8") as handle:
-                html = handle.read()
+            html = self.read_bytes(f"{_LANDING_DIR}/index.html").decode("utf-8")
             html = _LANDING_REF.sub(
                 lambda m: f'{m.group("attr")}="/{_LANDING_DIR}/{m.group("path")}"', html
             )
@@ -98,8 +111,9 @@ class StaticAssets:
 
     def service_worker(self):
         if self._service_worker is None:
-            with open(os.path.join(self.web_dir, "sw.js"), encoding="utf-8") as handle:
-                self._service_worker = handle.read().replace("__ASSET_VERSION__", self.version).encode("utf-8")
+            self._service_worker = (
+                self.read_bytes("sw.js").decode("utf-8").replace("__ASSET_VERSION__", self.version).encode("utf-8")
+            )
         return self._service_worker
 
     # ------------------------------------------------------------------ gzip

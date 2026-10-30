@@ -61,6 +61,7 @@ CLINIC_SETTINGS_FIELDS = (
     "phone",
     "address",
     "currency",
+    "country",
     "work_start",
     "work_end",
     "slot_duration",
@@ -119,8 +120,11 @@ def _encode(value):
 
 
 def _python_type(column):
+    column_type = column.type
+    # Wrapped types (e.g. the SQLite UTC DateTime) report the type they wrap.
+    column_type = getattr(column_type, "impl_instance", column_type)
     try:
-        return column.type.python_type
+        return column_type.python_type
     except NotImplementedError:
         return None
 

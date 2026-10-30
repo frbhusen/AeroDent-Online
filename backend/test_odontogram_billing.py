@@ -142,6 +142,27 @@ def run_odontogram_billing_tests():
                 assert len(tooth_11) == 2 and {t.procedure for t in tooth_11} == {"Filling", "Crown"}
                 print("PASS: Paid billing is preserved; a new procedure gets its own treatment.")
 
+                # 6b. The fee of the current procedure can be edited from the odontogram
+                res = client.put(url("permanent", 16), json={"condition": "filling"})
+                invoice_id = res.json["billing"]["invoice_id"]
+                res = client.get(f"/api/patients/{patient_id}/odontogram")
+                tooth_16 = next(r for r in res.json["data"] if r["tooth_number"] == 16)
+                assert tooth_16["billing"]["fee"] == "50.00" and tooth_16["billing"]["locked"] is False
+                res = client.put(url("permanent", 16), json={"condition": "filling", "fee": "65"})
+                assert res.json["billing"]["action"] == "updated" and res.json["billing"]["fee"] == "65.00"
+                assert res.json["data"]["billing"]["fee"] == "65.00"
+                db.session.expire_all()
+                assert db.session.get(Invoice, invoice_id).amount == Decimal("65.00")
+                assert len([t for t in treatments() if t.tooth_number == 16]) == 1
+                client.post(f"/api/invoices/{invoice_id}/payments", json={"amount": 10, "payment_method": "cash"})
+                res = client.put(url("permanent", 16), json={"condition": "filling", "fee": "99"})
+                assert res.json["billing"] is None
+                db.session.expire_all()
+                assert db.session.get(Invoice, invoice_id).amount == Decimal("65.00")
+                res = client.get(f"/api/patients/{patient_id}/odontogram")
+                assert next(r for r in res.json["data"] if r["tooth_number"] == 16)["billing"]["locked"] is True
+                print("PASS: The fee can be edited from the odontogram until the invoice has a payment.")
+
                 # 7. Clearing a tooth voids its unpaid billing
                 res = client.put(url("permanent", 12), json={"condition": "rct"})
                 assert res.status_code == 201

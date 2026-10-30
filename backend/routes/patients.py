@@ -2,7 +2,7 @@ import calendar
 from datetime import date
 
 from flask import Blueprint, g, jsonify, request
-from sqlalchemy import func, or_
+from sqlalchemy import case, func, or_
 from sqlalchemy.exc import IntegrityError
 
 from backend.auth import login_required, require_permission, validate_patient_update
@@ -13,6 +13,8 @@ from backend.services.validation import query_int, query_page
 
 
 patients_blueprint = Blueprint("patients", __name__, url_prefix="/api/patients")
+
+from backend.services.phone import normalize_phone
 
 PATIENT_FIELDS = frozenset(
     {
@@ -138,9 +140,13 @@ def list_patients():
     search = request.args.get("q", "").strip()[:100]
     if search:
         pattern = f"%{search}%"
-        query = query.where(
-            or_(Patient.name.ilike(pattern), Patient.phone.ilike(pattern))
-        )
+        conditions = [Patient.name.ilike(pattern), Patient.phone.ilike(pattern)]
+        # Numbers are stored in international format, so a search typed locally ("0944 123")
+        # also matches on the digits without the leading 0.
+        digits = "".join(ch for ch in search if ch.isdigit())
+        if search.lstrip().startswith("0") and len(digits.lstrip("0")) >= 3:
+            conditions.append(Patient.phone.ilike(f"%{digits.lstrip('0')}%"))
+        query = query.where(or_(*conditions))
 
     try:
         page = max(query_page(request.args.get("page", 1)), 1)
@@ -226,8 +232,14 @@ def list_recall_patients():
         .group_by(Treatment.patient_id)
         .subquery()
     )
-    # GREATEST ignores NULLs in PostgreSQL, so either source alone counts as a visit.
-    last_visit = func.greatest(last_appointment.c.last_date, last_treatment.c.last_date).label("last_visit")
+    # The later of the two dates; either source alone counts as a visit when the other is NULL.
+    # (A CASE instead of GREATEST so it also runs on SQLite.)
+    last_visit = case(
+        (last_appointment.c.last_date.is_(None), last_treatment.c.last_date),
+        (last_treatment.c.last_date.is_(None), last_appointment.c.last_date),
+        (last_appointment.c.last_date >= last_treatment.c.last_date, last_appointment.c.last_date),
+        else_=last_treatment.c.last_date,
+    ).label("last_visit")
     has_upcoming = (
         db.select(Appointment.id)
         .where(
@@ -301,6 +313,11 @@ def create_patient():
     if error or data is None:
         return error or _error("Invalid patient data.", 400)
 
+    if data.get("phone"):
+        data["phone"], phone_error = normalize_phone(data["phone"], g.current_clinic.country)
+        if phone_error:
+            return _error(phone_error, 422)
+
     patient = Patient(
         **data,
         clinic_id=g.current_user.clinic_id,
@@ -349,6 +366,11 @@ def update_patient(patient_id):
 
     if not data:
         return _error("At least one patient field is required.", 400)
+
+    if data.get("phone"):
+        data["phone"], phone_error = normalize_phone(data["phone"], g.current_clinic.country)
+        if phone_error:
+            return _error(phone_error, 422)
 
     for field, value in data.items():
         setattr(patient, field, value)

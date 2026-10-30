@@ -196,7 +196,7 @@ async function openTooth(number) {
     $("#drawerAnatomy").textContent = currentLanguage === "ar" ? "رحى علوية / سفلية" : "Molar · clinical surface";
     const readOnly = window.AERODENT_ONLINE
         && (!hasPermission("odontogram.update") || state.odontogramReadOnly);
-    renderToothBilling(readOnly);
+    renderToothBilling(readOnly, record);
     if (readOnly) {
         $("#toothActions").innerHTML = `<p class="muted">${t("readOnly")}</p>`;
     } else {
@@ -214,7 +214,7 @@ async function openTooth(number) {
 const BILLABLE_PROCEDURES = ["filling", "crown", "rct", "extract", "implant"];
 
 // Fee/invoice options for the next procedure. A blank fee means "use the clinic price list".
-function renderToothBilling(readOnly) {
+function renderToothBilling(readOnly, record) {
     const box = $("#toothBilling");
     if (!box) return;
     const canBill = window.AERODENT_ONLINE && !readOnly
@@ -230,12 +230,19 @@ function renderToothBilling(readOnly) {
         .map((key) => `${t(key)}: ${money(prices[key])}`)
         .join(" · ");
     const canInvoice = hasPermission("invoices.create");
+    const billing = BILLABLE_PROCEDURES.includes(record?.condition) ? record?.billing : null;
+    const currentFee = billing
+        ? `<div class="tooth-current-fee"><span>${t("toothCurrentFee")}: <b>${money(billing.fee)}</b></span>${billing.locked
+            ? `<small class="muted">${t("toothFeeLocked")}</small>`
+            : ""}</div>`
+        : "";
     box.hidden = false;
     box.innerHTML = `
+        ${currentFee}
         <div class="field">
             <label for="toothFee">${t("toothFeeLabel")}</label>
             <input type="number" id="toothFee" min="0" step="0.01" inputmode="decimal" placeholder="${t("toothFeePlaceholder")}">
-            <small class="muted">${priceHint ? esc(priceHint) : t("toothFeeNoPrices")}</small>
+            <small class="muted">${billing && !billing.locked ? `${t("toothFeeSaveHint")} · ` : ""}${priceHint ? esc(priceHint) : t("toothFeeNoPrices")}</small>
         </div>
         ${canInvoice ? `<label class="tooth-billing-check"><input type="checkbox" id="toothCreateInvoice" ${state.autoInvoice === false ? "" : "checked"}> ${t("toothCreateInvoice")}</label>` : ""}
     `;
@@ -252,8 +259,12 @@ function toothBillingPayload(condition) {
 }
 
 // Returns true when a billing-specific message was shown (so the generic "saved" toast is skipped).
-function announceToothBilling(billing) {
+function announceToothBilling(billing, feeOnly = false) {
     if (!billing) return false;
+    if (feeOnly && billing.action === "updated") {
+        toast(t("toothFeeUpdated"));
+        return true;
+    }
     if (billing.action === "cancelled") {
         toast(t("toothBillingCancelled"));
         return true;
@@ -295,7 +306,7 @@ async function updateTooth(condition) {
             }
             if (selectedOdontogramPatient()?.id === patient.id) state.odontogramError = "";
             saved = true;
-            if (!announceToothBilling(billing)) toast(t("savedOnline"));
+            if (!announceToothBilling(billing, existing?.condition === condition)) toast(t("savedOnline"));
             // Treatments/Invoices lists are reloaded when their view opens; drop the stale copies.
             state.treatments = [];
             state.invoices = [];
@@ -351,14 +362,20 @@ async function saveCurrentToothNote() {
         setOdontogramSaving(true);
         let saved = false;
         let forbidden = false;
+        const feeTyped = Boolean($("#toothFee")?.value);
         try {
-            const response = await window.AERODENT_API.put(`/api/patients/${patient.id}/odontogram/${identity.toothMode}/${identity.toothNumber}`, { condition: existing?.condition || "healthy", procedure: existing?.procedure || null, notes: $("#toothNote").value });
+            const response = await window.AERODENT_API.put(`/api/patients/${patient.id}/odontogram/${identity.toothMode}/${identity.toothNumber}`, { condition: existing?.condition || "healthy", procedure: existing?.procedure || null, notes: $("#toothNote").value, ...toothBillingPayload(existing?.condition) });
             if (selectedOdontogramPatient()?.id === patient.id) {
                 upsertOnlineOdontogram(response.data, patient.id);
                 state.odontogramError = "";
             }
             saved = true;
-            toast(t("savedOnline"));
+            if (feeTyped && existing?.billing?.locked) toast(t("toothFeeLocked"));
+            else if (!announceToothBilling(response.billing, true)) toast(t("savedOnline"));
+            if (feeTyped) {
+                state.treatments = [];
+                state.invoices = [];
+            }
         } catch (error) {
             if (selectedOdontogramPatient()?.id === patient.id) {
                 state.odontogramReadOnly = error.status === 403;

@@ -163,6 +163,8 @@
     nameShort: "يرجى إدخال الاسم الكامل",
     phoneInvalid: "يرجى إدخال رقم هاتف صحيح",
     clinicShort: "يرجى إدخال اسم العيادة",
+    usernameInvalid: "اسم المستخدم: 3–30 حرفًا إنجليزيًا أو رقمًا أو شرطة سفلية، يبدأ بحرف ودون مسافات",
+    tooMany: "عدد الطلبات كبير. يرجى المحاولة لاحقًا.",
     locationShort: "يرجى إدخال موقع العيادة",
     generic: "تعذّر إرسال الطلب. يرجى المحاولة مرة أخرى.",
     network: "تعذّر الاتصال. تحقّق من الإنترنت وحاول مرة أخرى.",
@@ -172,6 +174,8 @@
 
   // Phone: 6–20 digits, optional leading +, spaces/()/- allowed. Mirrors backend PHONE_RE.
   var PHONE_RE = /^\+?[0-9 ()\-]{6,30}$/;
+  // Mirrors backend/services/trial_accounts.py (the server lowercases it).
+  var USERNAME_RE = /^[A-Za-z][A-Za-z0-9_]{2,29}$/;
 
   function initTrialForm() {
     var form = document.getElementById("trialForm");
@@ -208,15 +212,77 @@
         return;
       }
 
-      // Not configured yet -> clear, honest message (no silent failure).
-      if (!CFG.web3formsAccessKey || CFG.web3formsAccessKey === "WEB3FORMS_ACCESS_KEY_PLACEHOLDER") {
-        showFormError(MSG.notConfigured);
-        return;
-      }
-
-      submitViaWeb3Forms(form);
+      createTrialAccount(form);
     });
 
+    // Creates the trial clinic + head-doctor account and shows the generated credentials.
+    function createTrialAccount(form) {
+      setSubmitting(true);
+      fetch("/api/trial/signup", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          name: val(form, "name"),
+          clinic: val(form, "clinic"),
+          username: val(form, "username"),
+          phone: val(form, "phone"),
+          location: val(form, "location"),
+          message: val(form, "message"),
+          language: document.documentElement.lang || "ar",
+        }),
+      })
+        .then(function (res) {
+          return res.json().catch(function () { return {}; }).then(function (data) {
+            return { status: res.status, ok: res.ok, data: data };
+          });
+        })
+        .then(function (r) {
+          if (r.ok && r.data && r.data.data) {
+            notifyOwner(form, r.data.data.email);
+            showSuccess(r.data.data);
+            return;
+          }
+          setSubmitting(false);
+          if (r.status === 422 && r.data && form.elements[r.data.field]) {
+            var map = {};
+            map[r.data.field] = r.data.field === "username" ? MSG.usernameInvalid : (r.data.error || MSG.generic);
+            showErrors(form, map);
+            focusFirstError(form, map);
+          } else if (r.status === 429) {
+            showFormError(MSG.tooMany);
+          } else {
+            showFormError(MSG.generic);
+          }
+        })
+        .catch(function () {
+          setSubmitting(false);
+          showFormError(MSG.network);
+        });
+    }
+
+    // Best-effort email to the owner (Web3Forms). The account already exists, so failures are ignored.
+    function notifyOwner(form, accountEmail) {
+      if (!CFG.web3formsAccessKey || CFG.web3formsAccessKey === "WEB3FORMS_ACCESS_KEY_PLACEHOLDER") return;
+      var fd = new FormData();
+      fd.append("access_key", CFG.web3formsAccessKey);
+      fd.append("subject", CFG.emailSubject || "AeroDent trial request");
+      fd.append("from_name", "AeroDent Landing Page");
+      fd.append("الاسم الكامل", val(form, "name"));
+      fd.append("اسم العيادة", val(form, "clinic"));
+      fd.append("رقم الهاتف", val(form, "phone"));
+      fd.append("موقع العيادة", val(form, "location"));
+      fd.append("رسالة", val(form, "message") || "—");
+      fd.append("حساب التجربة", accountEmail);
+      fd.append("botcheck", "");
+      fetch(CFG.web3formsEndpoint || "https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body: fd,
+      }).catch(function () {});
+    }
+
+    // Kept for reference/fallback: delivery-only submission through Web3Forms.
     function submitViaWeb3Forms(form) {
       setSubmitting(true);
 
@@ -274,7 +340,13 @@
       }
     }
 
-    function showSuccess() {
+    function showSuccess(creds) {
+      var credsBox = document.getElementById("trialCreds");
+      if (credsBox) credsBox.classList.toggle("hidden", !creds);
+      if (creds) {
+        document.getElementById("credEmail").textContent = creds.email;
+        document.getElementById("credPassword").textContent = creds.password;
+      }
       form.classList.add("hidden");
       successBox.classList.remove("hidden");
       successBox.focus();
@@ -293,6 +365,7 @@
     var errors = {};
     var name = val(form, "name");
     var clinic = val(form, "clinic");
+    var username = val(form, "username");
     var phone = val(form, "phone");
     var location = val(form, "location");
 
@@ -301,6 +374,9 @@
 
     if (!clinic) errors.clinic = MSG.required;
     else if (clinic.length < 2) errors.clinic = MSG.clinicShort;
+
+    if (!username) errors.username = MSG.required;
+    else if (!USERNAME_RE.test(username)) errors.username = MSG.usernameInvalid;
 
     if (!phone) errors.phone = MSG.required;
     else if (!PHONE_RE.test(phone) || digits(phone) < 6) errors.phone = MSG.phoneInvalid;

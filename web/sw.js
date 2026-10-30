@@ -37,6 +37,9 @@ const SHELL = [
   "./js/inventory.js",
   "./js/sessions.js",
   "./js/outreach.js",
+  "./js/region.js",
+  "./js/setup.js",
+  "./js/edition.js",
   "./js/events.js",
   "./js/app.js",
 ];

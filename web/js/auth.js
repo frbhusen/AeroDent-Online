@@ -498,7 +498,7 @@ function hasPermission(permission) {
 // form (served at the site root). The landing form delivers requests via a third-party
 // static form service, so no intent cookie / backend round-trip is needed here.
 function openTrialRequestPage() {
-    window.location.assign("/#trial");
+    window.location.assign("/#");
 }
 
 function toggleLoginLanguage() {

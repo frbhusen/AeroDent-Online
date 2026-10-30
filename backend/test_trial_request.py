@@ -86,7 +86,7 @@ def run_trial_request_tests():
         email = f"clinic.{suffix}@example.com"
         res = user.post("/api/trial/requests", json={
             "name": "Dr. Sami Haddad", "phone": "+963 944 123 456", "email": email,
-            "message": "<b>We have 3 chairs</b>", "language": "ar",
+            "message": "<b>We have 3 chairs</b>", "language": "ar", "username": f"sami{suffix}",
         })
         assert res.status_code == 201, res.data
         row = db.session.scalar(db.select(TrialRequest).where(TrialRequest.email == email))
@@ -97,11 +97,20 @@ def run_trial_request_tests():
 
         # Per-IP abuse limit (5 per hour).
         statuses = [user.post("/api/trial/requests", json={
-            "name": "Dr. Rami", "phone": "+963 944 123 457", "email": f"r{i}.{suffix}@example.com"}).status_code for i in range(6)]
+            "name": "Dr. Rami", "phone": "+963 944 123 457", "email": f"r{i}.{suffix}@example.com",
+            "username": f"rami{i}{suffix}"}).status_code for i in range(6)]
         assert statuses.count(201) == 4 and statuses[-1] == 429, statuses
         print("PASS: Trial submissions are rate-limited per IP.")
     finally:
         db.session.rollback()
+        from backend.routes.admin import purge_clinic_data
+
+        for clinic_id in db.session.scalars(
+            db.select(TrialRequest.created_clinic_id).where(
+                TrialRequest.email.like(f"%{suffix}%"), TrialRequest.created_clinic_id.is_not(None)
+            )
+        ).all():
+            purge_clinic_data(clinic_id)
         db.session.query(TrialRequest).filter(TrialRequest.email.like(f"%{suffix}%")).delete(synchronize_session=False)
         db.session.query(AuthThrottle).delete()
         db.session.commit()

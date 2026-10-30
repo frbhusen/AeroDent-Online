@@ -825,6 +825,7 @@ function bindFormEvents() {
 
     const onlineSettingsForm = $("#onlineSettingsForm");
     if (onlineSettingsForm) {
+        bindRegionFields(onlineSettingsForm);
         onlineSettingsForm.onsubmit = async (event) => {
             event.preventDefault();
             const data = Object.fromEntries(new FormData(onlineSettingsForm));
@@ -833,7 +834,8 @@ function bindFormEvents() {
                     name: data.name,
                     phone: data.phone || "",
                     address: data.address || "",
-                    currency: data.currency || "SYR",
+                    currency: (data.currency || "").trim() || "SYR",
+                    country: data.country || null,
                     slot_duration: Number(data.slot_duration) || 30,
                     work_start: data.work_start || "09:00",
                     work_end: data.work_end || "18:00",
@@ -907,6 +909,10 @@ function bindFormEvents() {
 
 
 function bindNavigationEvents() {
+    $$("[data-open-odontogram]").forEach((element) => {
+        element.onclick = () => navigateTo("odontogram");
+    });
+
     $$("[data-view]").forEach(
         (element) => {
             element.onclick = () => navigateTo(element.dataset.view);

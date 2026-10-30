@@ -23,6 +23,13 @@ PostgreSQL Database + Protected Local File Storage (X-rays)
 - **Multi-Tenancy**: Strict clinic-level data isolation enforced via foreign keys and composite constraints (`clinic_id`), parameterized SQLAlchemy queries, and 404 responses for cross-tenant resource lookups.
 - **X-Ray Storage**: Secure filesystem storage outside web roots, streaming image bytes through authenticated, clinic-scoped endpoints (`/api/x-rays/<id>/file`).
 
+### Standalone desktop edition
+
+A Windows program with the same clinic screens as the head-doctor panel, running on one computer
+with all data in a local SQLite file (no internet, no other accounts, no platform admin, no trial
+sign-up). It reuses this backend, started locally. See [standalone/README.md](standalone/README.md)
+to run or build it (`python -m standalone.build --zip`; the program ships without source code).
+
 ### Offline Mode (Local-First PWA)
 
 ```text

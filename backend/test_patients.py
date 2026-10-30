@@ -207,14 +207,21 @@ def run_patient_tests():
                 )
                 assert response.status_code == 200
 
+                # Secretaries may edit clinical fields too (permission change); ownership stays locked
+                # and they still cannot delete patients.
                 response = client.patch(
                     f"/api/patients/{secretary_patient_id}",
-                    json={"allergies": "Should Be Rejected"},
+                    json={"allergies": "Penicillin"},
                 )
-                assert response.status_code == 403
-                assert db.session.get(Patient, secretary_patient_id).allergies is None
+                assert response.status_code == 200
+                assert db.session.get(Patient, secretary_patient_id).allergies == "Penicillin"
+                response = client.patch(
+                    f"/api/patients/{secretary_patient_id}",
+                    json={"clinic_id": 999999},
+                )
+                assert response.status_code == 400
                 assert client.delete(f"/api/patients/{secretary_patient_id}").status_code == 403
-                print("PASS: Secretary can manage administrative fields only.")
+                print("PASS: Secretary can edit patient fields but not ownership, and cannot delete.")
 
             with app.test_client() as client:
                 login(client, users["doctor"])

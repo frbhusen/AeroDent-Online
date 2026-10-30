@@ -9,6 +9,8 @@ from backend.auth.service import hash_password
 from backend.extensions import db
 from backend.models import Clinic, User
 from backend.services.audit import log_activity
+from backend.services.countries import get_country
+from backend.services.phone import normalize_phone
 from backend.services.seat_limits import parse_seat_limit
 from backend.services.auth_security import revoke_user_sessions, validate_new_password
 from backend.services.validation import query_int, query_page
@@ -57,6 +59,9 @@ def _serialize_clinic(clinic):
 
     doctors_count = sum(1 for u in clinic.users if u.role == "doctor")
     secretaries_count = sum(1 for u in clinic.users if u.role == "secretary")
+    # Active accounts are the ones that use a seat (see services/seat_limits.py).
+    active_doctors = sum(1 for u in clinic.users if u.role == "doctor" and u.is_active)
+    active_secretaries = sum(1 for u in clinic.users if u.role == "secretary" and u.is_active)
 
     # Determine effective status
     if not clinic.is_active:
@@ -76,6 +81,7 @@ def _serialize_clinic(clinic):
         "phone": clinic.phone,
         "address": clinic.address,
         "currency": clinic.currency,
+        "country": clinic.country,
         "work_start": clinic.work_start.strftime("%H:%M") if clinic.work_start else "09:00",
         "work_end": clinic.work_end.strftime("%H:%M") if clinic.work_end else "18:00",
         "slot_duration": clinic.slot_duration,
@@ -92,6 +98,10 @@ def _serialize_clinic(clinic):
         "effective_status": effective_status,
         "has_active_head_doctor": has_active_head,
         "head_doctors": head_doctors,
+        "seats": {
+            "doctors": {"used": active_doctors, "limit": clinic.max_doctors},
+            "secretaries": {"used": active_secretaries, "limit": clinic.max_secretaries},
+        },
         "staff_summary": {
             "head_doctors": len(head_doctors),
             "doctors": doctors_count,
@@ -282,6 +292,15 @@ def create_clinic():
         except (ValueError, TypeError):
             return _error("Invalid subscription_expires_at ISO datetime.", 422)
 
+    country = data.get("country") or None
+    if country is not None and get_country(country) is None:
+        return _error("Unknown country.", 422)
+    if not isinstance(currency, str) or not currency.strip() or len(currency.strip()) > 10:
+        return _error("Currency must be 1-10 characters.", 422)
+    phone, phone_error = normalize_phone(phone if isinstance(phone, str) else None, country)
+    if phone_error:
+        return _error(phone_error, 422)
+
     max_doctors, limit_error = parse_seat_limit(data.get("max_doctors"))
     if limit_error:
         return _error(limit_error, 422)
@@ -291,9 +310,10 @@ def create_clinic():
 
     clinic = Clinic(
         name=clinic_name.strip(),
-        phone=phone.strip() if isinstance(phone, str) else None,
+        phone=phone,
         address=address.strip() if isinstance(address, str) else None,
-        currency=currency.strip().upper() if isinstance(currency, str) else "SYR",
+        currency=currency.strip(),
+        country=country,
         max_doctors=max_doctors,
         max_secretaries=max_secretaries,
         subscription_status=subscription_status,
@@ -347,6 +367,7 @@ def update_clinic(clinic_id):
         "phone",
         "address",
         "currency",
+        "country",
         "is_active",
         "subscription_status",
         "subscription_expires_at",
@@ -370,14 +391,28 @@ def update_clinic(clinic_id):
             return _error("Clinic name cannot be blank.", 422)
         clinic.name = data["name"].strip()
 
+    if "country" in data:
+        if data["country"] in (None, ""):
+            clinic.country = None
+        elif get_country(data["country"]) is None:
+            return _error("Unknown country.", 422)
+        else:
+            clinic.country = data["country"]
+
     if "phone" in data:
-        clinic.phone = data["phone"].strip() if isinstance(data["phone"], str) else None
+        phone, phone_error = normalize_phone(data["phone"] if isinstance(data["phone"], str) else None, clinic.country)
+        if phone_error:
+            return _error(phone_error, 422)
+        clinic.phone = phone
 
     if "address" in data:
         clinic.address = data["address"].strip() if isinstance(data["address"], str) else None
 
     if "currency" in data:
-        clinic.currency = str(data["currency"]).strip().upper()
+        currency = str(data["currency"]).strip()
+        if not currency or len(currency) > 10:
+            return _error("Currency must be 1-10 characters.", 422)
+        clinic.currency = currency
 
     if "is_active" in data:
         if not isinstance(data["is_active"], bool):

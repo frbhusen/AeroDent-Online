@@ -276,9 +276,11 @@ def run_e2e_tests():
         res = client.patch(f"/api/patients/{patient_a_id}", json={"phone": "111222333"})
         assert res.status_code == 200
 
-        # Secretary cannot touch clinical fields
+        # Secretary may also edit clinical fields (permission change); ownership stays locked
         res = client.patch(f"/api/patients/{patient_a_id}", json={"allergies": "Sulfa"})
-        assert res.status_code == 403
+        assert res.status_code == 200
+        res = client.patch(f"/api/patients/{patient_a_id}", json={"clinic_id": 999999})
+        assert res.status_code in (400, 403)
 
         # Secretary blocked from writing odontogram
         res = client.put(f"/api/patients/{patient_a_id}/odontogram/permanent/15", json={"condition": "decay"})

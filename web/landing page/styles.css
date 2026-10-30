@@ -840,3 +840,76 @@ h1, h2, h3, h4 { line-height: 1.25; margin: 0 0 0.4em; letter-spacing: -0.01em; 
   .manual-toc ol { display: none; margin-top: 12px; }
   .manual-toc.open ol { display: grid; }
 }
+
+/* Generated trial credentials shown after sign-up */
+.trial-creds {
+  margin: 16px 0 12px;
+  padding: 14px 16px;
+  background: var(--bg-alt, #f1f5f9);
+  border-radius: 12px;
+  display: grid;
+  gap: 10px;
+  text-align: start;
+}
+.trial-creds > div { display: grid; gap: 2px; }
+.trial-creds dt { font-size: 12px; color: var(--muted); }
+.trial-creds dd { margin: 0; }
+.trial-creds code {
+  font-size: 15px;
+  font-weight: 700;
+  user-select: all;
+  word-break: break-all;
+}
+.trial-success .btn { margin-top: 12px; }
+
+/* Pricing */
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+.plan-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 26px 22px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 18px;
+}
+.plan-card h3 { margin: 0; font-size: 20px; font-weight: 800; }
+.plan-who { margin: 0; color: var(--muted); font-size: 14px; }
+.plan-price { margin: 6px 0 4px; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.plan-amount { font-size: 34px; font-weight: 800; line-height: 1.1; }
+.plan-per { color: var(--muted); font-size: 14px; }
+.plan-list { list-style: none; padding: 0; margin: 4px 0 14px; display: grid; gap: 8px; flex: 1; }
+.plan-list li { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.plan-list svg { width: 18px; height: 18px; flex: none; color: #16a34a; }
+.plan-featured {
+  border-color: rgba(3, 105, 161, 0.6);
+  box-shadow: 0 10px 30px rgba(3, 105, 161, 0.14);
+}
+.plan-badge {
+  position: absolute;
+  top: -12px;
+  inset-inline-start: 20px;
+  background: #0369a1;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+.plan-notes {
+  list-style: none;
+  padding: 0;
+  margin: 28px auto 0;
+  max-width: 640px;
+  display: grid;
+  gap: 8px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 15px;
+}

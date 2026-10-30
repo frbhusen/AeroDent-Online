@@ -250,7 +250,7 @@ function renderAdminClinics() {
 
     const rows = clinics.map((c) => {
         const headDoc = c.head_doctors?.[0] || { name: t("none"), email: "-", is_active: false };
-        const staffSummary = `${c.staff_summary?.doctors ?? 0} ${t("doctorRole")} · ${c.staff_summary?.secretaries ?? 0} ${t("secretaryRole")}`;
+        const staffSummary = adminSeatSummaryHtml(c);
         const isActive = c.is_active;
 
         return `
@@ -447,6 +447,20 @@ function renderAdminUsers() {
 // ------------------------------------------
 // Staff seat limits ("plans")
 // ------------------------------------------
+// "Doctors 2 / 3 · Secretaries 1 / 3"; a full seat count is highlighted so upgrade candidates stand out.
+function adminSeatSummaryHtml(clinic) {
+    const part = (label, seat) => {
+        const used = seat?.used ?? 0;
+        const limit = seat?.limit ?? null;
+        const full = limit !== null && used >= limit;
+        const text = `${label} ${used} / ${limit ?? "∞"}`;
+        return full
+            ? `<span class="badge badge-amber" title="${t("seatsFull")}">${text}</span>`
+            : `<span>${text}</span>`;
+    };
+    return `<small style="color:#475569;font-weight:500;display:flex;flex-direction:column;gap:3px;align-items:flex-start;">${part(t("seatsDoctors"), clinic.seats?.doctors)}${part(t("seatsSecretaries"), clinic.seats?.secretaries)}</small>`;
+}
+
 // Presets only fill the two numeric fields; the numbers are what the server stores (blank = unlimited).
 const ADMIN_SEAT_PLANS = {
     solo: { key: "planSolo", doctors: 1, secretaries: 1 },
@@ -509,7 +523,8 @@ function adminBindSeatPlanPicker(form) {
 // ------------------------------------------
 // Super Admin Action Modals
 // ------------------------------------------
-function adminOpenCreateClinicModal() {
+async function adminOpenCreateClinicModal() {
+    await ensureCountries();
     modal(t("createClinicTitle"), `
         <form id="adminCreateClinicForm" class="form-grid">
             <div class="field full-span">
@@ -520,14 +535,7 @@ function adminOpenCreateClinicModal() {
                 <label>${t("phone")}</label>
                 <input name="phone" placeholder="+963 ...">
             </div>
-            <div class="field">
-                <label>${t("currency")}</label>
-                <select name="currency">
-                    <option value="SYR">SYR</option>
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                </select>
-            </div>
+            ${regionFieldsHtml({ country: "", currency: "SYR" })}
             <div class="field full-span">
                 <label>${t("address")}</label>
                 <input name="address" placeholder="${t("phAddress")}">
@@ -564,6 +572,7 @@ function adminOpenCreateClinicModal() {
     `);
 
     adminBindSeatPlanPicker($("#adminCreateClinicForm"));
+    bindRegionFields($("#adminCreateClinicForm"));
     $("#adminCreateClinicForm").onsubmit = async (e) => {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(e.target));
@@ -666,7 +675,8 @@ function adminOpenManageSubscriptionModal(clinicId) {
     };
 }
 
-function adminOpenEditClinicModal(clinicId) {
+async function adminOpenEditClinicModal(clinicId) {
+    await ensureCountries();
     const clinic = (state.adminClinics || []).find((c) => c.id === clinicId);
     if (!clinic) return;
 
@@ -680,14 +690,7 @@ function adminOpenEditClinicModal(clinicId) {
                 <label>${t("phone")}</label>
                 <input name="phone" value="${esc(clinic.phone || "")}">
             </div>
-            <div class="field">
-                <label>${t("currency")}</label>
-                <select name="currency">
-                    <option value="SYR" ${clinic.currency === "SYR" ? "selected" : ""}>SYR</option>
-                    <option value="USD" ${clinic.currency === "USD" ? "selected" : ""}>USD</option>
-                    <option value="EUR" ${clinic.currency === "EUR" ? "selected" : ""}>EUR</option>
-                </select>
-            </div>
+            ${regionFieldsHtml({ country: clinic.country || "", currency: clinic.currency || "SYR" })}
             <div class="field full-span">
                 <label>${t("address")}</label>
                 <input name="address" value="${esc(clinic.address || "")}">
@@ -714,6 +717,7 @@ function adminOpenEditClinicModal(clinicId) {
     }
 
     adminBindSeatPlanPicker($("#adminEditClinicForm"));
+    bindRegionFields($("#adminEditClinicForm"));
     $("#adminEditClinicForm").onsubmit = async (e) => {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(e.target));

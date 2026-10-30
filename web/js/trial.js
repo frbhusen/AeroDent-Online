@@ -5,6 +5,7 @@
     const LANGUAGE_KEY = "aerodent-language";
     const EMAIL_RE = /^[^@\s]{1,64}@[^@\s]+\.[^@\s]{2,}$/;
     const PHONE_RE = /^\+?[0-9 ()\-]{6,30}$/;
+    const USERNAME_RE = /^[A-Za-z][A-Za-z0-9_]{2,29}$/;
 
     const form = document.getElementById("trialForm");
     const submit = document.getElementById("trialSubmit");
@@ -67,6 +68,7 @@
         if (!PHONE_RE.test(values.phone) || digits < 6) errors.phone = "trialErrorPhone";
         if (!EMAIL_RE.test(values.email)) errors.email = "trialErrorEmail";
         if (values.message.length > 1000) errors.message = "trialErrorMessage";
+        if (!USERNAME_RE.test(values.username)) errors.username = "trialErrorUsername";
         return errors;
     }
 
@@ -74,6 +76,7 @@
         const data = new FormData(form);
         return {
             name: String(data.get("name") || "").trim(),
+            username: String(data.get("username") || "").trim(),
             phone: String(data.get("phone") || "").trim(),
             email: String(data.get("email") || "").trim(),
             message: String(data.get("message") || "").trim(),
@@ -86,6 +89,7 @@
         phone: "trialErrorPhone",
         email: "trialErrorEmail",
         message: "trialErrorMessage",
+        username: "trialErrorUsername",
     };
 
     form.addEventListener("input", (event) => {
@@ -100,8 +104,8 @@
         setFormError(null);
         const values = formValues();
         const errors = validate(values);
-        ["name", "phone", "email", "message"].forEach((field) => setFieldError(field, errors[field] || null));
-        const firstInvalid = ["name", "phone", "email", "message"].find((field) => errors[field]);
+        ["name", "username", "phone", "email", "message"].forEach((field) => setFieldError(field, errors[field] || null));
+        const firstInvalid = ["name", "username", "phone", "email", "message"].find((field) => errors[field]);
         if (firstInvalid) {
             form.elements[firstInvalid].focus();
             return;
@@ -118,6 +122,12 @@
             });
             const payload = await response.json().catch(() => ({}));
             if (response.ok) {
+                const creds = payload.data;
+                document.getElementById("trialCreds").classList.toggle("hidden", !creds);
+                if (creds) {
+                    document.getElementById("trialCredEmail").textContent = creds.email;
+                    document.getElementById("trialCredPassword").textContent = creds.password;
+                }
                 form.classList.add("hidden");
                 document.getElementById("trialSuccess").classList.remove("hidden");
                 document.querySelector("#trialSuccess a")?.focus();

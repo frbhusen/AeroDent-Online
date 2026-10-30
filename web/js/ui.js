@@ -158,15 +158,12 @@ function renderNav() {
             }
             return true;
         });
-        if (state.auth?.user?.role === "head_doctor") {
-            navItems.push(["audit_logs", "📜", "auditLogs"]);
-        }
     }
 
     $("#nav").innerHTML =
         navItems.map(
             ([id, icon, key]) =>
-                `<button class="nav-item ${state.view === id
+                `<button class="nav-item ${(state.view === id || (id === "settings" && state.view === "audit_logs"))
                     ? "active"
                     : ""
                 }" data-view="${id}">
@@ -237,9 +234,10 @@ async function loadViewData(view) {
     } else if (view === "odontogram" && state.selectedPatient) {
         await loadOnlineOdontogram();
     } else if (view === "settings") {
+        await ensureCountries();
         if (hasPermission("clinic_settings.read")) await loadOnlineSettings();
-        if (hasPermission("staff.read")) await loadOnlineStaff();
-        if (typeof loadActiveSessions === "function") await loadActiveSessions();
+        if (hasPermission("staff.read") && !window.AERODENT_STANDALONE) await loadOnlineStaff();
+        if (typeof loadActiveSessions === "function" && !window.AERODENT_STANDALONE) await loadActiveSessions();
     } else if (view === "hr") {
         if (typeof loadOnlineHRData === "function") await loadOnlineHRData();
     } else if (view === "inventory") {

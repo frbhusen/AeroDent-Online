@@ -7,7 +7,7 @@ from backend.auth import login_required, require_permission
 from backend.extensions import db
 from backend.models import Odontogram, Patient
 from backend.services.audit import log_activity
-from backend.services.odontogram_billing import clinic_prices, parse_money, sync_billing
+from backend.services.odontogram_billing import billing_by_record, clinic_prices, parse_money, sync_billing
 
 
 odontogram_blueprint = Blueprint(
@@ -61,8 +61,9 @@ def _validate_tooth(tooth_mode, tooth_number):
     return None
 
 
-def _serialize_odontogram(record):
+def _serialize_odontogram(record, billing=None):
     return {
+        "billing": billing,
         "id": record.id,
         "tooth_number": record.tooth_number,
         "tooth_mode": record.tooth_mode,
@@ -134,9 +135,13 @@ def list_odontogram(patient_id):
         query.order_by(Odontogram.tooth_mode, Odontogram.tooth_number)
     ).all()
 
+    billing_map = billing_by_record(g.current_user.clinic_id, [record.id for record in records])
+
     return jsonify(
         {
-            "data": [_serialize_odontogram(record) for record in records],
+            "data": [
+                _serialize_odontogram(record, billing_map.get(record.id)) for record in records
+            ],
             "meta": {
                 "patient_id": patient.id,
                 "count": len(records),
@@ -215,7 +220,11 @@ def upsert_odontogram(patient_id, tooth_mode, tooth_number):
         db.session.rollback()
         return _error("Odontogram could not be saved.", 409)
 
-    return jsonify({"data": _serialize_odontogram(record), "billing": billing}), 201 if created else 200
+    current_billing = billing_by_record(g.current_user.clinic_id, [record.id]).get(record.id)
+    return (
+        jsonify({"data": _serialize_odontogram(record, current_billing), "billing": billing}),
+        201 if created else 200,
+    )
 
 
 @odontogram_blueprint.delete(

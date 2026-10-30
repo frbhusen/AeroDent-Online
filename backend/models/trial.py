@@ -20,6 +20,13 @@ class TrialRequest(db.Model):
     message = db.Column(db.Text, nullable=True)
     language = db.Column(db.String(5), nullable=False, default="en")
     status = db.Column(db.String(20), nullable=False, default="new")
+    # Set when the request produced a trial account (see services/trial_accounts.py).
+    username = db.Column(db.String(30), nullable=True)
+    created_clinic_id = db.Column(
+        db.Integer,
+        db.ForeignKey("clinics.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     ip_hash = db.Column(db.String(64), nullable=True)
     created_at = db.Column(
         db.DateTime(timezone=True),

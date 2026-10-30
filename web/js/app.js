@@ -459,6 +459,7 @@ async function loadOnlineSettings() {
       phone: d.phone,
       address: d.address,
       currencySymbol: d.currency || "SYR",
+      country: d.country || null,
       workStartHour: d.work_start,
       workEndHour: d.work_end,
       slotDuration: d.slot_duration,
@@ -498,7 +499,7 @@ function renderSettings() {
     const s = state.settings;
     const canReadClinic = hasPermission("clinic_settings.read");
     const canEditClinic = hasPermission("clinic_settings.update");
-    const canManageStaff = hasPermission("staff.read");
+    const canManageStaff = hasPermission("staff.read") && !window.AERODENT_STANDALONE;
 
     const securityCard = `
       <div class="card">
@@ -525,7 +526,7 @@ function renderSettings() {
         </form>
       </div>`;
 
-    const sessionsCard = typeof renderActiveSessionsCard === "function" ? renderActiveSessionsCard() : "";
+    const sessionsCard = typeof renderActiveSessionsCard === "function" && !window.AERODENT_STANDALONE ? renderActiveSessionsCard() : "";
 
     if (!canReadClinic) {
       return `<section class="content-grid">${securityCard}${sessionsCard}</section>`;
@@ -549,14 +550,7 @@ function renderSettings() {
             <label>${t("address")}</label>
             <input name="address" value="${esc(s.address || "")}" ${!canEditClinic ? "disabled" : ""}>
           </div>
-          <div class="field">
-            <label>${t("currency")}</label>
-            <select name="currency" ${!canEditClinic ? "disabled" : ""}>
-              <option value="SYR" ${s.currencySymbol === "SYR" ? "selected" : ""}>SYR</option>
-              <option value="USD" ${s.currencySymbol === "USD" ? "selected" : ""}>USD</option>
-              <option value="EUR" ${s.currencySymbol === "EUR" ? "selected" : ""}>EUR</option>
-            </select>
-          </div>
+          ${regionFieldsHtml({ country: s.country || "", currency: s.currencySymbol || "SYR", disabled: !canEditClinic })}
           <div class="field">
             <label>${t("slot")}</label>
             <select name="slot_duration" ${!canEditClinic ? "disabled" : ""}>
@@ -653,7 +647,24 @@ function renderSettings() {
         </div>`;
     }
 
-    return `<section class="content-grid">${clinicForm}${securityCard}${sessionsCard}${backupCard}${staffCard}</section>`;
+    // The audit log lives here (head doctor only) instead of in the sidebar.
+    const auditCard = state.auth?.user?.role === "head_doctor" ? `
+      <div class="card">
+        <div class="card-heading">
+          <h2>📜 ${t("auditLogs")}</h2>
+        </div>
+        <p class="muted">${t("auditLogsCardHint")}</p>
+        <div class="form-actions" style="justify-content:flex-start">
+          <button class="button button-primary" type="button" data-view="audit_logs">${t("auditLogsOpen")}</button>
+        </div>
+      </div>` : "";
+
+    // Two independent columns keep the gaps even regardless of card heights; backup sits right under security.
+    return `<section class="settings-layout">
+      <div class="settings-col">${clinicForm}${sessionsCard}${auditCard}</div>
+      <div class="settings-col">${securityCard}${backupCard}</div>
+      ${staffCard}
+    </section>`;
   }
 
   const s = state.settings;
@@ -935,6 +946,7 @@ async function refreshOnlineWorkspace() {
     return;
   }
 
+  await loadClinicProfile();
   if (hasPermission("clinic_settings.read")) {
     await loadOnlineSettings();
   }
@@ -953,6 +965,13 @@ async function startApplication() {
     setText();
     updateClock();
     setInterval(updateClock, 1000);
+    if (isStandalone()) {
+      applyStandaloneChrome();
+      if (await standaloneSetupNeeded()) {
+        await showStandaloneSetup();
+        return;
+      }
+    }
     const authenticated = await initializeOnlineAuth();
     if (authenticated) {
       await refreshOnlineWorkspace();
@@ -983,4 +1002,5 @@ async function initializeOfflineWorkspace() {
 }
 
 startApplication();
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js");
+// The desktop edition talks to its own local server, so it needs no offline asset cache.
+if ("serviceWorker" in navigator && !window.AERODENT_STANDALONE) navigator.serviceWorker.register("./sw.js");

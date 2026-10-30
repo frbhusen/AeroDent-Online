@@ -4,8 +4,30 @@
     {
       "name": "aerodent-unified-server",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "flask", "--app", "backend.app", "run", "--port", "5000"],
+      "runtimeArgs": [
+        "-m",
+        "flask",
+        "--app",
+        "backend.app",
+        "run",
+        "--port",
+        "5000"
+      ],
       "port": 5000
+    },
+    {
+      "name": "aerodent-standalone",
+      "runtimeExecutable": ".venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "-m",
+        "standalone.launcher",
+        "--no-window",
+        "--port",
+        "48998",
+        "--data-dir",
+        "C:/Users/Husen/AppData/Local/Temp/aerodent-standalone-preview"
+      ],
+      "port": 48998
     }
   ]
 }

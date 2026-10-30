@@ -139,3 +139,53 @@ def reset_password(email):
     revoke_user_sessions(user.id)
     db.session.commit()
     click.echo(f"Password for {user.email} updated; all of its sessions were signed out.")
+
+
+# ---------------------------------------------------------------------------
+# Phone numbers
+# ---------------------------------------------------------------------------
+
+phones_cli = AppGroup("phones", help="Phone number maintenance (run on the server).")
+
+
+@phones_cli.command("normalize")
+@click.option("--clinic-id", type=int, default=None, help="Only this clinic (default: every clinic that has a country).")
+@click.option("--apply", "apply_changes", is_flag=True, help="Save the changes. Without it this is a dry run.")
+def normalize_phones(clinic_id, apply_changes):
+    """Rewrites existing patient and clinic phone numbers in international format.
+
+    Only clinics with a country are touched; numbers that cannot be normalized are listed and left
+    as they are. Dry run by default: nothing is saved without --apply.
+    """
+    from backend.models import Clinic, Patient
+    from backend.services.phone import normalize_phone
+
+    query = db.select(Clinic).where(Clinic.country.is_not(None))
+    if clinic_id is not None:
+        query = query.where(Clinic.id == clinic_id)
+    changed = unchanged = skipped = 0
+    for clinic in db.session.scalars(query).all():
+        records = [("clinic", clinic.id, clinic)] + [
+            ("patient", patient.id, patient)
+            for patient in db.session.scalars(db.select(Patient).where(Patient.clinic_id == clinic.id)).all()
+        ]
+        for kind, record_id, record in records:
+            if not record.phone:
+                continue
+            normalized, error = normalize_phone(record.phone, clinic.country)
+            if error:
+                skipped += 1
+                click.echo(f"skip   clinic={clinic.id} {kind}={record_id}: {record.phone!r} ({error})")
+            elif normalized == record.phone:
+                unchanged += 1
+            else:
+                changed += 1
+                click.echo(f"change clinic={clinic.id} {kind}={record_id}: {record.phone!r} -> {normalized!r}")
+                if apply_changes:
+                    record.phone = normalized
+    if apply_changes:
+        db.session.commit()
+    else:
+        db.session.rollback()
+    mode = "applied" if apply_changes else "dry run (use --apply to save)"
+    click.echo(f"{mode}: changed={changed} unchanged={unchanged} skipped={skipped}")

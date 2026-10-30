@@ -180,7 +180,8 @@ const NAV = [
     ["prescriptions", "💊", "prescriptions"],
     ["xrays", "🩻", "xrays"],
     ["inventory", "📦", "inventory"],
-    ["hr", "👔", "hrManagement"],
+    // HR is hidden from the sidebar for now; the "hr" view and its code are untouched.
+    // ["hr", "👔", "hrManagement"],
     ["settings", "⚙️", "settings"],
 ];
 

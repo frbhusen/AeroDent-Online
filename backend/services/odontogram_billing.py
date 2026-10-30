@@ -105,6 +105,62 @@ def _reprice(invoice, fee):
     invoice.status = "unpaid"
 
 
+def billing_by_record(clinic_id, record_ids):
+    """{odontogram id: {treatment_id, fee, invoice_id, locked}} for the live generated treatments.
+
+    ``locked`` is True once money was paid, i.e. the fee can no longer be edited from the odontogram.
+    """
+    if not record_ids:
+        return {}
+    treatments = db.session.scalars(
+        db.select(Treatment)
+        .where(
+            Treatment.clinic_id == clinic_id,
+            Treatment.odontogram_id.in_(record_ids),
+            Treatment.status != "cancelled",
+        )
+        .order_by(Treatment.id)
+    ).all()
+    result = {}
+    for treatment in treatments:  # later (newer) treatments win
+        invoices = _invoices_for(treatment)
+        result[treatment.odontogram_id] = {
+            "treatment_id": treatment.id,
+            "fee": format(treatment.fee, ".2f"),
+            "invoice_id": invoices[0].id if invoices else None,
+            "locked": _is_settled(invoices),
+        }
+    return result
+
+
+def _update_fee(clinic, user, record, linked, fee, create_invoice):
+    """Re-prices the tooth's current treatment/invoice without changing its procedure."""
+    invoices = _invoices_for(linked)
+    if _is_settled(invoices):
+        return None  # paid work is never rewritten
+    linked.fee = fee
+    for invoice in invoices:
+        _reprice(invoice, fee)
+    invoice_id = invoices[0].id if invoices else None
+    want_invoice = clinic.auto_invoice_odontogram if create_invoice is None else bool(create_invoice)
+    if not invoices and want_invoice and fee > 0 and user_has_permission(user, "invoices.create"):
+        invoice = Invoice(
+            clinic_id=record.clinic_id,
+            patient_id=record.patient_id,
+            treatment_id=linked.id,
+            amount=fee,
+            discount=Decimal("0.00"),
+            paid_amount=Decimal("0.00"),
+            balance=fee,
+            status="unpaid",
+            created_by=user.id,
+        )
+        db.session.add(invoice)
+        db.session.flush()
+        invoice_id = invoice.id
+    return {"action": "updated", "treatment_id": linked.id, "invoice_id": invoice_id, "fee": format(fee, ".2f")}
+
+
 def sync_billing(clinic, user, record, previous_condition, fee=None, create_invoice=None):
     """Create/update/cancel the treatment (and invoice) matching the tooth's new condition.
 
@@ -113,10 +169,16 @@ def sync_billing(clinic, user, record, previous_condition, fee=None, create_invo
     Returns a small summary dict for the API response, or None when nothing was touched.
     """
     new_condition = record.condition
-    if new_condition == previous_condition:
-        return None
     if not user_has_permission(user, "treatments.create"):
         return None
+    if new_condition == previous_condition:
+        # Same procedure again: only an explicit fee changes anything (fee edit from the tooth panel).
+        if fee is None or new_condition not in BILLABLE_CONDITIONS:
+            return None
+        linked_now = _linked_treatment(record)
+        if linked_now is None:
+            return None
+        return _update_fee(clinic, user, record, linked_now, fee, create_invoice)
 
     linked = _linked_treatment(record)
 

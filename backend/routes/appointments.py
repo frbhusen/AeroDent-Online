@@ -1,7 +1,7 @@
 from datetime import date, datetime, time, timedelta
 
 from flask import Blueprint, g, jsonify, request
-from sqlalchemy import and_, func, or_, text
+from sqlalchemy import and_, func, or_
 from sqlalchemy.exc import IntegrityError
 
 from backend.auth import login_required, require_permission
@@ -197,24 +197,24 @@ def _has_conflict(appointment_date, doctor_id, start_time, duration, exclude_id=
     if doctor_id is None:
         return False
 
-    new_end = (
-        datetime.combine(appointment_date, start_time) + timedelta(minutes=duration)
-    ).time()
-    existing_end = Appointment.start_time + (
-        Appointment.duration * text("INTERVAL '1 minute'")
-    )
-    query = db.select(Appointment.id).where(
+    # The doctor's other appointments that day are compared in Python (a handful of rows), which
+    # keeps this independent of the database's time arithmetic (PostgreSQL vs the local SQLite).
+    new_start = start_time.hour * 60 + start_time.minute
+    new_end = new_start + duration
+    query = db.select(Appointment.start_time, Appointment.duration).where(
         Appointment.clinic_id == g.current_user.clinic_id,
         Appointment.doctor_id == doctor_id,
         Appointment.date == appointment_date,
         Appointment.status != "cancelled",
-        Appointment.start_time < new_end,
-        existing_end > start_time,
     )
     if exclude_id is not None:
         query = query.where(Appointment.id != exclude_id)
 
-    return db.session.scalar(query) is not None
+    for other_start, other_duration in db.session.execute(query):
+        other_start_minutes = other_start.hour * 60 + other_start.minute
+        if other_start_minutes < new_end and other_start_minutes + other_duration > new_start:
+            return True
+    return False
 
 
 @appointments_blueprint.get("")

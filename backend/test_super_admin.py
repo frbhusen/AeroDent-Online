@@ -200,14 +200,14 @@ def run_super_admin_tests():
             with app.test_client() as client_doc_a:
                 res = client_doc_a.post("/api/auth/login", json={"email": clinic_a_doctor_email, "password": TEST_PASSWORD})
                 assert res.status_code == 403
-                assert "head doctor account is inactive" in res.json["error"].lower()
+                assert res.json["error"] == "headDoctorInactive"
                 print("PASS: Doctor A is blocked from signing in because Head Doctor A is deactivated.")
 
             # CRITICAL CASCADE RULE: Secretary A in Clinic A CANNOT sign in!
             with app.test_client() as client_sec_a:
                 res = client_sec_a.post("/api/auth/login", json={"email": clinic_a_sec_email, "password": TEST_PASSWORD})
                 assert res.status_code == 403
-                assert "head doctor account is inactive" in res.json["error"].lower()
+                assert res.json["error"] == "headDoctorInactive"
                 print("PASS: Secretary A is blocked from signing in because Head Doctor A is deactivated.")
 
             # INDEPENDENCE RULE: Clinic B is completely unaffected!
@@ -248,7 +248,7 @@ def run_super_admin_tests():
             with app.test_client() as client_doc_a:
                 res = client_doc_a.post("/api/auth/login", json={"email": clinic_a_doctor_email, "password": TEST_PASSWORD})
                 assert res.status_code == 403
-                assert "clinic account has been deactivated" in res.json["error"].lower()
+                assert res.json["error"] == "subscriptionInactive"
                 print("PASS: Deactivated clinic blocks all sign-ins.")
 
             # 9. Super Admin subscription extend

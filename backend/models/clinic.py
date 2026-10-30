@@ -32,6 +32,13 @@ class Clinic(db.Model):
         default="SYR",
     )
 
+    # ISO 3166-1 alpha-2 code (see services/countries.py). Decides how phone numbers are saved;
+    # NULL keeps numbers as typed.
+    country = db.Column(
+        db.String(2),
+        nullable=True,
+    )
+
     work_start = db.Column(
         db.Time,
         nullable=False,

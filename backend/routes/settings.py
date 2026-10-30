@@ -5,7 +5,9 @@ from sqlalchemy.exc import DataError, IntegrityError
 from backend.auth import login_required, require_permission
 from backend.extensions import db
 from backend.services.audit import log_activity
+from backend.services.countries import get_country, list_countries
 from backend.services.odontogram_billing import clinic_prices, normalize_prices
+from backend.services.phone import normalize_phone
 from backend.auth.service import verify_password
 from backend.services.auth_security import clear_failures, failure_lock_wait, rate_limited, record_failure
 from backend.services.clinic_backup import BackupError, export_archive, import_archive, read_archive
@@ -20,6 +22,7 @@ ALLOWED_SETTING_FIELDS = frozenset(
         "phone",
         "address",
         "currency",
+        "country",
         "work_start",
         "work_end",
         "slot_duration",
@@ -50,6 +53,7 @@ def _serialize_settings(clinic):
         "phone": clinic.phone or "",
         "address": clinic.address or "",
         "currency": clinic.currency or "SYR",
+        "country": clinic.country,
         "work_start": clinic.work_start.strftime("%H:%M") if clinic.work_start else "09:00",
         "work_end": clinic.work_end.strftime("%H:%M") if clinic.work_end else "18:00",
         "slot_duration": clinic.slot_duration or 30,
@@ -59,6 +63,30 @@ def _serialize_settings(clinic):
         "created_at": clinic.created_at.isoformat() if clinic.created_at else None,
         "updated_at": clinic.updated_at.isoformat() if clinic.updated_at else None,
     }
+
+
+@settings_blueprint.get("/countries")
+@login_required
+def get_countries():
+    """Countries (dialling code + suggested currency) for the clinic and admin forms."""
+    return jsonify({"data": list_countries()})
+
+
+@settings_blueprint.get("/clinic/profile")
+@login_required
+def get_clinic_profile():
+    """Display basics every clinic role needs (currency for amounts, country for phone hints)."""
+    clinic = g.current_clinic
+    return jsonify(
+        {
+            "data": {
+                "id": clinic.id,
+                "name": clinic.name,
+                "currency": clinic.currency or "SYR",
+                "country": clinic.country,
+            }
+        }
+    )
 
 
 @settings_blueprint.get("/settings")
@@ -93,10 +121,22 @@ def update_settings():
             return _error("Clinic name is too long.", 422)
         clinic.name = data["name"].strip()
 
+    if "country" in data:
+        country = data["country"]
+        if country in (None, ""):
+            clinic.country = None
+        elif get_country(country) is None:
+            return _error("Unknown country.", 422)
+        else:
+            clinic.country = country
+
     if "phone" in data:
         if data["phone"] is not None and not isinstance(data["phone"], str):
             return _error("Phone must be a string or null.", 422)
-        clinic.phone = data["phone"].strip() if data["phone"] else None
+        phone, phone_error = normalize_phone(data["phone"], clinic.country)
+        if phone_error:
+            return _error(phone_error, 422)
+        clinic.phone = phone
 
     if "address" in data:
         if data["address"] is not None and not isinstance(data["address"], str):

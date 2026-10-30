@@ -60,6 +60,7 @@
           <li><a href="#features" data-i18n="nav.features">المزايا</a></li>
           <li><a href="#preview" data-i18n="nav.preview">لمحة عن النظام</a></li>
           <li><a href="#how" data-i18n="nav.how">كيف يعمل</a></li>
+          <li><a href="#pricing" data-i18n="nav.pricing">الأسعار</a></li>
           <li><a href="#faq" data-i18n="nav.faq">الأسئلة الشائعة</a></li>
           <li><a href="user-manual.html" data-i18n="nav.manual">دليل الاستخدام</a></li>
         </ul>
@@ -412,6 +413,72 @@
       </div>
     </section>
 
+    <!-- ============================ PRICING ============================ -->
+    <!-- Prices are a proposal; edit the amounts here (and the matching pricing.* keys in i18n.js). -->
+    <section class="section section-alt" id="pricing">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow" data-i18n="pricing.eyebrow">الأسعار</span>
+          <h2 data-i18n="pricing.title">خطط بسيطة تناسب حجم عيادتك</h2>
+          <p data-i18n="pricing.subtitle">كل الخطط تتضمن جميع المزايا، وتختلف فقط بعدد الأطباء والسكرتارية. جرّب مجانًا 14 يومًا قبل أن تقرر.</p>
+        </div>
+        <div class="plan-grid">
+          <article class="plan-card">
+            
+            <h3 data-i18n="pricing.solo.name">فردية</h3>
+            <p class="plan-who" data-i18n="pricing.solo.who">لطبيب واحد</p>
+            <p class="plan-price"><span class="plan-amount" dir="ltr">$25</span> <span class="plan-per" data-i18n="pricing.perMonth">/ شهريًا</span></p>
+            <ul class="plan-list">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="pricing.solo.doctors">طبيب واحد</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="pricing.solo.secretaries">سكرتير واحد</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="pricing.allFeatures">جميع المزايا مشمولة</span></li>
+            </ul>
+            <a class="btn btn-ghost btn-block" href="#trial" data-i18n="pricing.cta">ابدأ تجربتك المجانية</a>
+          </article>
+          <article class="plan-card plan-featured">
+            <span class="plan-badge" data-i18n="pricing.popular">الأكثر طلبًا</span>
+            <h3 data-i18n="pricing.clinic.name">عيادة</h3>
+            <p class="plan-who" data-i18n="pricing.clinic.who">للعيادات الصغيرة والمتوسطة</p>
+            <p class="plan-price"><span class="plan-amount" dir="ltr">$50</span> <span class="plan-per" data-i18n="pricing.perMonth">/ شهريًا</span></p>
+            <ul class="plan-list">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="pricing.clinic.doctors">حتى 3 أطباء</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="pricing.clinic.secretaries">حتى 3 سكرتارية</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="pricing.allFeatures">جميع المزايا مشمولة</span></li>
+            </ul>
+            <a class="btn btn-primary btn-block" href="#trial" data-i18n="pricing.cta">ابدأ تجربتك المجانية</a>
+          </article>
+          <article class="plan-card">
+            
+            <h3 data-i18n="pricing.center.name">مركز</h3>
+            <p class="plan-who" data-i18n="pricing.center.who">للمراكز والفروع</p>
+            <p class="plan-price"><span class="plan-amount" dir="ltr">$90</span> <span class="plan-per" data-i18n="pricing.perMonth">/ شهريًا</span></p>
+            <ul class="plan-list">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="pricing.center.doctors">حتى 8 أطباء</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="pricing.center.secretaries">حتى 8 سكرتارية</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="pricing.allFeatures">جميع المزايا مشمولة</span></li>
+            </ul>
+            <a class="btn btn-ghost btn-block" href="#trial" data-i18n="pricing.cta">ابدأ تجربتك المجانية</a>
+          </article>
+          <article class="plan-card">
+            <h3 data-i18n="pricing.chain.name">مجموعة عيادات</h3>
+            <p class="plan-who" data-i18n="pricing.chain.who">لعدد أكبر من الفروع والأطباء</p>
+            <p class="plan-price"><span class="plan-amount" data-i18n="pricing.chain.price">حسب الاتفاق</span></p>
+            <ul class="plan-list">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="pricing.chain.l1">عدد مخصص من الحسابات</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="pricing.chain.l2">دعم وإعداد مخصّصان</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="pricing.allFeatures">جميع المزايا مشمولة</span></li>
+            </ul>
+            <a class="btn btn-ghost btn-block" href="#trial" data-i18n="pricing.contact">تواصل معنا</a>
+          </article>
+        </div>
+        <ul class="plan-notes">
+          <li data-i18n="pricing.note.launch">عرض الإطلاق: أول 10 عيادات تحصل على خصم 30% مدى الحياة.</li>
+          <li data-i18n="pricing.note.annual">الدفع السنوي: ادفع 10 أشهر واحصل على 12.</li>
+          <li data-i18n="pricing.note.region">أسعار خاصة حسب بلدك. بدون بطاقة ائتمان في التجربة المجانية.</li>
+        </ul>
+      </div>
+    </section>
+
     <!-- ============================ TRIAL FORM ============================ -->
     <section class="section trial-section" id="trial">
       <div class="container trial-wrap">
@@ -442,6 +509,15 @@
               <input id="fClinic" name="clinic" type="text" autocomplete="organization" maxlength="120" required
                 aria-required="true" aria-describedby="errClinic" />
               <p class="field-error" id="errClinic" data-error-for="clinic" role="alert"></p>
+            </div>
+
+            <div class="field">
+              <label for="fUsername" data-i18n="form.username">اسم المستخدم (بالإنجليزية، بدون مسافات)<span class="req" aria-hidden="true">*</span></label>
+              <input id="fUsername" name="username" type="text" dir="ltr" autocapitalize="none" autocorrect="off"
+                spellcheck="false" autocomplete="username" maxlength="30" required aria-required="true"
+                aria-describedby="errUsername hintUsername" />
+              <p class="field-hint" id="hintUsername" data-i18n="form.usernameHint">سنستخدمه لإنشاء بريد الدخول وكلمة المرور الخاصة بتجربتك.</p>
+              <p class="field-error" id="errUsername" data-error-for="username" role="alert"></p>
             </div>
 
             <div class="field">
@@ -480,7 +556,13 @@
           <div id="trialSuccess" class="trial-success hidden" role="status" tabindex="-1">
             <div class="icon" aria-hidden="true">✓</div>
             <h3 data-i18n="form.success.t">تم استلام طلبك</h3>
-            <p data-i18n="form.success.d">شكرًا لك. سنتواصل معك قريبًا لتجهيز تجربتك المجانية لمدة 14 يومًا.</p>
+            <p data-i18n="form.success.d">تم إنشاء حساب التجربة الخاص بك. استخدم البيانات التالية لتسجيل الدخول.</p>
+            <dl class="trial-creds" id="trialCreds" dir="ltr">
+              <div><dt data-i18n="form.success.email">البريد الإلكتروني</dt><dd><code id="credEmail"></code></dd></div>
+              <div><dt data-i18n="form.success.password">كلمة المرور</dt><dd><code id="credPassword"></code></dd></div>
+            </dl>
+            <p class="field-hint" data-i18n="form.success.note">احفظ هذه البيانات الآن، وغيّر كلمة المرور من الإعدادات بعد أول تسجيل دخول.</p>
+            <a class="btn btn-primary btn-block" href="/login" data-i18n="form.success.login">تسجيل الدخول إلى حسابك</a>
           </div>
         </div>
       </div>

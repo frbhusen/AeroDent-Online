@@ -23,6 +23,7 @@ from datetime import datetime, timedelta, timezone
 from flask import current_app, request, session
 from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
 from backend.extensions import db
 from backend.models.security import AuthThrottle, UserSession
@@ -82,18 +83,23 @@ def validate_new_password(password):
 def _row(scope, key_hash, *, lock=True):
     """Fetches (creating if needed) and row-locks the throttle row for this subject."""
     now = _now()
-    db.session.execute(
-        insert(AuthThrottle)
-        .values(
-            scope=scope,
-            key_hash=key_hash,
-            count=0,
-            window_started_at=now,
-            expires_at=now + FAILURE_MEMORY,
-            updated_at=now,
-        )
-        .on_conflict_do_nothing(constraint="uq_auth_throttle_scope_key")
+    values = dict(
+        scope=scope,
+        key_hash=key_hash,
+        count=0,
+        window_started_at=now,
+        expires_at=now + FAILURE_MEMORY,
+        updated_at=now,
     )
+    if db.session.get_bind().dialect.name == "sqlite":  # standalone edition (local SQLite file)
+        statement = sqlite_insert(AuthThrottle).values(**values).on_conflict_do_nothing(
+            index_elements=["scope", "key_hash"]
+        )
+    else:
+        statement = insert(AuthThrottle).values(**values).on_conflict_do_nothing(
+            constraint="uq_auth_throttle_scope_key"
+        )
+    db.session.execute(statement)
     query = select(AuthThrottle).where(AuthThrottle.scope == scope, AuthThrottle.key_hash == key_hash)
     if lock:
         query = query.with_for_update()

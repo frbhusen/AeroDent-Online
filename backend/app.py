@@ -1,10 +1,11 @@
 import os
-from flask import Flask, jsonify
+from flask import Flask, Response, jsonify
 from sqlalchemy.exc import DataError
 from werkzeug.routing import IntegerConverter
 from werkzeug.security import safe_join
 
 from backend.config import Config
+from backend.edition import STANDALONE
 from backend.extensions import db, migrate
 from backend.auth.routes import auth_blueprint
 from backend.routes.odontogram import odontogram_blueprint
@@ -39,7 +40,8 @@ class DatabaseIdConverter(IntegerConverter):
         super().__init__(map, *args, **kwargs)
 
 
-WEB_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "web"))
+# AERODENT_WEB_DIR lets a packaged edition point at its own copy of the frontend.
+WEB_DIR = os.path.abspath(os.environ.get("AERODENT_WEB_DIR") or os.path.join(os.path.dirname(__file__), "..", "web"))
 
 # The public landing page submits its "request a trial" form directly to Web3Forms (a static
 # form-delivery service), so its document needs connect-src to reach that one external host.
@@ -61,7 +63,14 @@ def create_app() -> Flask:
     app = Flask(__name__, static_folder=None)
     app.url_map.converters["int"] = DatabaseIdConverter
     app.config.from_object(Config)
-    assets = StaticAssets(WEB_DIR)
+    assets = None
+    if STANDALONE:
+        # A packaged desktop build carries its frontend inside the program (no loose source files).
+        from standalone.packed_assets import load_packed_assets
+
+        assets = load_packed_assets()
+    if assets is None:
+        assets = StaticAssets(WEB_DIR)
     app.extensions["aerodent_assets"] = assets
 
     db.init_app(app)
@@ -79,18 +88,25 @@ def create_app() -> Flask:
     app.register_blueprint(settings_blueprint)
     app.register_blueprint(staff_blueprint)
     app.register_blueprint(timeline_blueprint)
-    app.register_blueprint(admin_blueprint)
+    if not STANDALONE:  # platform administration only exists in the online edition
+        app.register_blueprint(admin_blueprint)
     app.register_blueprint(audit_blueprint)
     app.register_blueprint(payments_blueprint)
     app.register_blueprint(waitlist_blueprint)
     app.register_blueprint(hr_blueprint)
     app.register_blueprint(inventory_blueprint)
-    app.register_blueprint(trial_blueprint)
+    if STANDALONE:
+        from backend.routes.setup import setup_blueprint
 
-    from backend.cli import admin_cli, xrays_cli
+        app.register_blueprint(setup_blueprint)  # first-run setup of the desktop edition
+    else:
+        app.register_blueprint(trial_blueprint)  # trial sign-up is an online-edition feature
+
+    from backend.cli import admin_cli, phones_cli, xrays_cli
 
     app.cli.add_command(xrays_cli)
     app.cli.add_command(admin_cli)
+    app.cli.add_command(phones_cli)
 
     from flask import request as req
 
@@ -144,6 +160,14 @@ def create_app() -> Flask:
     def serve_frontend(path):
         if path.startswith("api/") or path == "api":
             return {"error": "Endpoint not found."}, 404
+        if STANDALONE and path == "js/edition.js":
+            # Tells the frontend which edition it runs in (the checked-in file says "online").
+            response = Response("window.AERODENT_STANDALONE = true;\n", mimetype="text/javascript")
+            response.headers["Cache-Control"] = "no-store"
+            return response
+        if STANDALONE and (path == "" or path.startswith("landing page")):
+            # The desktop edition opens straight into the app; there is no marketing site.
+            return assets.serve_index()
         if path == "":
             # The site root is the public marketing landing page (web/landing page/).
             response = assets.serve_landing_home()
@@ -157,8 +181,7 @@ def create_app() -> Flask:
             return assets.serve_index()
         if path == "sw.js":
             return assets.serve_service_worker()
-        target_path = safe_join(WEB_DIR, path)
-        if target_path and os.path.isfile(target_path):
+        if assets.exists(path):
             response = assets.serve_file(path)
             # Landing-page documents need the relaxed CSP so the trial form can post to Web3Forms.
             if path.startswith("landing page/") and path.endswith(".html"):

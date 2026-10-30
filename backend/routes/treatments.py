@@ -161,6 +161,7 @@ def _serialize_treatment(treatment):
         "fee": format(treatment.fee, ".2f"),
         "description": treatment.description,
         "procedure": treatment.procedure,
+        "odontogram_id": treatment.odontogram_id,
         "date": treatment.date.isoformat(),
         "created_by": treatment.created_by,
         "created_at": treatment.created_at.isoformat() if treatment.created_at else None,

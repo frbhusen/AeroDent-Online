@@ -293,16 +293,18 @@ def run_permission_tests():
                 for field in {"allergies", "medical_flags", "notes"}:
                     assert validate_patient_update(users[role], {field: "value"})
 
+            # Secretaries may edit every patient field (clinical ones included); only ownership
+            # fields stay server-controlled.
             for field in {"allergies", "medical_flags", "notes"}:
+                assert validate_patient_update(users["secretary"], {field: "value"})
+            for field in ("clinic_id", "id"):
                 try:
-                    validate_patient_update(users["secretary"], {field: "value"})
+                    validate_patient_update(users["secretary"], {field: 1})
                 except PermissionError:
                     pass
                 else:
-                    raise AssertionError(
-                        f"Secretary was allowed to update {field}."
-                    )
-            print("PASS: Patient clinical fields are protected server-side.")
+                    raise AssertionError(f"Secretary was allowed to change {field}.")
+            print("PASS: Patient ownership fields are protected server-side.")
 
             assert authorize_resource(
                 users["doctor"], "treatments.update", treatment_a

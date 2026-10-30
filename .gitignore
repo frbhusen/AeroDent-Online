@@ -52,3 +52,8 @@ mobile/
 
 whatsapp-messages.md
 leads.csv
+
+# Desktop edition build artifacts
+standalone/_frontend_blob.py
+standalone/tools/node_modules/
+standalone/tools/package-lock.json

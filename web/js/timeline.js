@@ -37,6 +37,37 @@ async function loadOnlinePatientTimeline(patientId) {
     }
 }
 
+// The timeline API returns English fallback texts (e.g. "Appointment", "Tooth #5", "Diagnosis: ...").
+// Translate them for the current language; user-entered text (procedures, file names) is left alone.
+function localizeTimelineEvent(event) {
+    const fallbackTitles = {
+        appointment: ["Appointment", "appointment"],
+        treatment: ["Treatment", "treatment"],
+        "treatment-plan": ["Treatment Plan", "treatmentPlan"],
+        prescription: ["Prescription", "prescriptions"],
+        xray: ["X-ray", "xrays"],
+    };
+    const localized = { ...event };
+    const fallback = fallbackTitles[event.type];
+    if (fallback && event.title === fallback[0]) localized.title = t(fallback[1]);
+    if (event.type === "treatment" && typeof treatmentLabel === "function") {
+        localized.title = treatmentLabel({ description: event.title });
+    }
+
+    const description = String(event.description ?? "");
+    if (event.type === "appointment") {
+        localized.description = `${event.time || ""} · ${t(event.status || "booked")}`;
+    } else if (event.type === "treatment-plan") {
+        localized.description = description.replace("Diagnosis:", `${t("diagnosis")}:`);
+    } else if (event.type === "prescription" && description === "Medication") {
+        localized.description = t("medication");
+    } else if (event.type === "xray") {
+        const [kind, ...rest] = description.split(" · ");
+        localized.description = [t(kind), ...rest.map((part) => part.replace("Tooth #", `${t("toothNumber")} #`))].join(" · ");
+    }
+    return localized;
+}
+
 function renderPatientTimeline(patientId) {
     if (window.AERODENT_ONLINE) {
         if (!state.onlineTimeline || state.onlineTimeline.patientId !== patientId) {
@@ -52,7 +83,7 @@ function renderPatientTimeline(patientId) {
             return `<div class="timeline-empty"><p class="login-error">${esc(state.onlineTimeline.error)}</p></div>`;
         }
 
-        const events = state.onlineTimeline.events || [];
+        const events = (state.onlineTimeline.events || []).map(localizeTimelineEvent);
         if (!events.length) {
             return `<div class="timeline-empty">${t("noVisits")}</div>`;
         }

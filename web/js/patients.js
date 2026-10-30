@@ -96,9 +96,15 @@ function patientRow(patient) {
     const initials = parts.length > 1
         ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
         : (parts[0] ? parts[0].slice(0, 2).toUpperCase() : "PT");
-    const alerts = [patient.allergies, patient.medicalFlags ?? patient.medical_flags].filter(isClinicalAlert);
-    const hasAlert = alerts.length > 0;
-    const alertText = alerts.join(" · ");
+    // Label the badge by what is actually flagged: allergies, medical alerts, or both.
+    const flagged = [
+        [t("allergies"), patient.allergies],
+        [t("medicalFlags"), patient.medicalFlags ?? patient.medical_flags],
+    ].filter(([, value]) => isClinicalAlert(value));
+    const hasAlert = flagged.length > 0;
+    const hasAllergy = isClinicalAlert(patient.allergies);
+    const alertText = flagged.map(([label, value]) => `${label}: ${value}`).join(" · ");
+    const alertLabel = flagged.map(([label]) => label).join(" · ");
 
     return `
       <div class="patient-row" data-patient-id="${patient.id}">
@@ -109,7 +115,7 @@ function patientRow(patient) {
         </div>
         <div class="patient-row-status">
           ${hasAlert
-            ? `<span class="badge badge-danger" title="${esc(alertText)}">⚠ ${t("allergies")}</span>`
+            ? `<span class="badge ${hasAllergy ? "badge-danger" : "badge-amber"}" title="${esc(alertText)}">⚠ ${esc(alertLabel)}</span>`
             : `<span class="badge badge-success">✓ ${t("healthy")}</span>`}
         </div>
       </div>
@@ -137,7 +143,7 @@ function renderPatients() {
 }
 function patientForm(patient, canDelete = true) {
     const clinicalFields = !window.AERODENT_ONLINE || onlinePatientClinicalFieldsAllowed();
-    return `<div class="card-heading"><h2>${esc(patient.name)}</h2><span class="badge ${isClinicalAlert(patient.allergies) ? "badge-danger" : "badge-success"}">${isClinicalAlert(patient.allergies) ? "! " + esc(patient.allergies) : "✓ " + t("healthy")}</span></div>${isClinicalAlert(patient.medicalFlags) ? `<div class="alert-banner">⚠ ${esc(patient.medicalFlags)}</div>` : ""}<form id="patientForm" class="form-grid"><div class="field"><label>${t("patient")}</label><input name="name" value="${esc(patient.name)}" required></div><div class="field"><label>${t("phone")}</label><input name="phone" value="${esc(patient.phone)}"></div><div class="field"><label>${t("location")}</label><input name="location" value="${esc(patient.location)}"></div><div class="field"><label>${t("workStudy")}</label><input name="workStudy" value="${esc(patient.workStudy)}"></div><div class="field"><label>${t("dob")}</label><input type="date" name="dob" value="${esc(patient.dob)}"></div><div class="field"><label>${t("gender")}</label><select name="gender"><option
+    return `<div class="card-heading"><h2>${esc(patient.name)}</h2><span class="badge ${isClinicalAlert(patient.allergies) ? "badge-danger" : "badge-success"}">${isClinicalAlert(patient.allergies) ? "! " + esc(patient.allergies) : "✓ " + t("healthy")}</span></div>${isClinicalAlert(patient.medicalFlags) ? `<div class="alert-banner ${isClinicalAlert(patient.allergies) ? "" : "alert-banner-warning"}">⚠ ${esc(patient.medicalFlags)}</div>` : ""}<form id="patientForm" class="form-grid"><div class="field"><label>${t("patient")}</label><input name="name" value="${esc(patient.name)}" required></div><div class="field"><label>${t("phone")}</label><input name="phone" value="${esc(patient.phone)}"></div><div class="field"><label>${t("location")}</label><input name="location" value="${esc(patient.location)}"></div><div class="field"><label>${t("workStudy")}</label><input name="workStudy" value="${esc(patient.workStudy)}"></div><div class="field"><label>${t("dob")}</label><input type="date" name="dob" value="${esc(patient.dob)}"></div><div class="field"><label>${t("gender")}</label><select name="gender"><option
     value="Female"
     ${String(patient.gender || "").toLowerCase() !== "male" ? "selected" : ""}
 >
