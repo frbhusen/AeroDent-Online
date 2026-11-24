@@ -36,6 +36,7 @@ Thumbs.db
 
 package-lock.json
 package.json
+!standalone/tools/package.json
 helper.txt
 
 # Android
