@@ -57,3 +57,4 @@ leads.csv
 standalone/_frontend_blob.py
 standalone/tools/node_modules/
 standalone/tools/package-lock.json
+!/standalone/tools/package.json
