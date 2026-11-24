@@ -27,6 +27,32 @@ The first build takes a long time (the whole backend is compiled to native code)
 Unzip anywhere and double-click `AeroDent.exe`. The first start shows the setup screen (clinic name,
 doctor name, sign-in email, password, country, currency).
 
+### Build a Windows installer from GitHub Actions
+
+The Windows build must run on Windows. The repository includes
+`.github/workflows/build-windows-installer.yml`; it runs Nuitka and creates both
+`AeroDent-Setup.exe` and `AeroDent-windows.zip`.
+
+1. Commit and push these files:
+   - `standalone/build.py`
+   - `standalone/AeroDent.iss`
+   - `.github/workflows/build-windows-installer.yml`
+2. Open the GitHub repository in a browser.
+3. Open **Actions**.
+4. Select **Build Windows AeroDent installer**.
+5. Click **Run workflow**, choose `main`, and start the workflow.
+6. When the workflow succeeds, open it and download the **AeroDent-Windows** artifact.
+7. Extract the artifact. It contains:
+   - `AeroDent-Setup.exe` - install AeroDent for Windows
+   - `AeroDent-windows.zip` - portable application package
+
+To build automatically for a release, push a version tag instead:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
 ### What the installed program contains
 
 * **Python (backend + launcher):** compiled to native machine code by Nuitka. No `.py` or `.pyc` files are shipped.
